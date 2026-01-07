@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model WatchlistItem {
+  id          String   @id @default(cuid())
+  type        String   // ANIME, MOVIE, SHOW
+  title       String
+  status      String   @default("PLAN_TO_WATCH")
+  externalId  String
+  imageUrl    String?
+  description String?  @db.Text
+  rating      Float?
+  year        Int?
+  episodes    Int?
+  progress    String?
+  notes       String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([externalId, type])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model GameListItem {
+  id                String   @id @default(cuid())
+  title             String
+  status            String
+  platform          String?
+  externalId        String?
+  coverImage        String?
+  description       String?  @db.Text
+  rating            Int?
+  hoursPlayed       Int?
+  completionPercent Int?
+  notes             String?  @db.Text
+  addedAt           DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([status])
+  @@index([platform])
+  @@index([addedAt])
+}
+
+model SportPreference {
+  id        String   @id @default(cuid())
+  sport     String
+  teams     String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([sport])
+}
+
+model UserSettings {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+}
+
