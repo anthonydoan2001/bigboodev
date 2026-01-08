@@ -49,14 +49,27 @@ export async function GET() {
         high: Math.round(currentData.main.temp_max),
         low: Math.round(currentData.main.temp_min),
       },
-      // Map first 8 forecast items as "hourly" (they are 3-hour steps)
-      hourly: forecastData?.list.slice(0, 8).map((item: any) => ({
-        time: new Date(item.dt * 1000).toLocaleTimeString('en-US', { hour: 'numeric', hour12: true }),
-        temperature: Math.round(item.main.temp),
-        condition: item.weather[0].main,
-        icon: item.weather[0].icon,
-        precipitation: Math.round(item.pop * 100)
-      })) || [],
+      // Map first 12 forecast items as "hourly" (they are 3-hour steps)
+      hourly: forecastData?.list.slice(0, 12).map((item: any) => {
+        const date = new Date(item.dt * 1000);
+        const hour = date.getHours();
+        const isToday = date.toDateString() === new Date().toDateString();
+        let timeLabel = '';
+        
+        if (isToday && hour === new Date().getHours()) {
+          timeLabel = 'Now';
+        } else {
+          timeLabel = date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
+        }
+        
+        return {
+          time: timeLabel,
+          temperature: Math.round(item.main.temp),
+          condition: item.weather[0].main,
+          icon: item.weather[0].icon,
+          precipitation: Math.round(item.pop * 100)
+        };
+      }) || [],
       // Map distinct days for daily
       daily: forecastData ? processDailyForecast(forecastData.list) : []
     };
@@ -92,10 +105,11 @@ function processDailyForecast(list: any[]): any[] {
     }
   });
 
-  return Array.from(dailyMap.values()).slice(1, 4).map(day => ({
+  return Array.from(dailyMap.values()).slice(0, 10).map(day => ({
     ...day,
     high: Math.round(day.high),
-    low: Math.round(day.low)
+    low: Math.round(day.low),
+    precipitation: Math.round(day.precipitation)
   }));
 }
 

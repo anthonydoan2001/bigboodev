@@ -38,13 +38,14 @@ export function TopPerformersView({ performers, sport }: TopPerformersProps) {
   });
 
   // Sort each category by stat value and take top performers
+  const topCount = sport === 'NBA' ? 10 : 5; // Top 10 for NBA, Top 5 for others
   Object.keys(grouped).forEach((statKey) => {
     grouped[statKey].sort((a, b) => {
       const aVal = a.stats[statKey] || 0;
       const bVal = b.stats[statKey] || 0;
       return bVal - aVal;
     });
-    grouped[statKey] = grouped[statKey].slice(0, 5); // Top 5 per category
+    grouped[statKey] = grouped[statKey].slice(0, topCount);
   });
 
   // Stat label mapping
