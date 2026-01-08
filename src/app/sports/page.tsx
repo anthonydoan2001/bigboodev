@@ -125,7 +125,13 @@ export default function SportsPage() {
     error: performersError,
   } = useQuery({
     queryKey: ['performers', selectedSport, selectedDate.toDateString()],
-    queryFn: () => fetchTopPerformers(selectedSport, selectedDate),
+    queryFn: () => {
+      // Type guard: ensure selectedSport is a valid SportType
+      if (selectedSport === 'FAVORITES') {
+        throw new Error('Cannot fetch performers for FAVORITES');
+      }
+      return fetchTopPerformers(selectedSport, selectedDate);
+    },
     staleTime: 0, // Always consider data stale so refetchInterval works properly
     refetchOnWindowFocus: false,
     enabled: selectedSport === 'NBA' || selectedSport === 'NFL', // Only for NBA and NFL
