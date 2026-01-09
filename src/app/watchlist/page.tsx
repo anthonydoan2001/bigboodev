@@ -10,7 +10,7 @@ import { WatchlistItem } from '@prisma/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, CheckCircle2, ListVideo, Plus, Trash2, Trophy } from 'lucide-react';
 import Image from 'next/image';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 
 type ViewMode = 'list' | 'watched' | 'search' | 'top';
 
@@ -18,6 +18,10 @@ export default function WatchlistPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const queryClient = useQueryClient();
+  
+  // Stable randomized order - only created once per page load
+  const randomizedOrderRef = useRef<Map<string, number>>(new Map());
+  const hasInitializedRef = useRef(false);
 
   // Fetch user's watchlist (always loaded)
   const { data: watchlistData, isLoading: listLoading } = useQuery({
@@ -91,6 +95,8 @@ export default function WatchlistPage() {
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/watchlist?id=${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
+      // Clean up the order reference
+      randomizedOrderRef.current.delete(id);
       return res.json();
     },
     onSuccess: () => {
@@ -135,26 +141,79 @@ export default function WatchlistPage() {
     );
   };
 
-  // Randomize all watchlist items for the combined section
-  const randomizedWatchlist = useMemo(() => {
-    const shuffled = [...watchlistItems];
-    // Fisher-Yates shuffle algorithm
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  // Create stable randomized order only on initial load
+  useEffect(() => {
+    if (!hasInitializedRef.current && watchlistData && !listLoading) {
+      // Initialize random order for watchlist items (only those not watched)
+      const currentWatchlist = watchlistData.items.filter(item => item.status !== 'WATCHED');
+      const watchlistOrder = currentWatchlist.map((_, index) => index);
+      for (let i = watchlistOrder.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [watchlistOrder[i], watchlistOrder[j]] = [watchlistOrder[j], watchlistOrder[i]];
+      }
+      currentWatchlist.forEach((item, originalIndex) => {
+        randomizedOrderRef.current.set(item.id, watchlistOrder[originalIndex]);
+      });
+
+      // Initialize random order for watched items
+      const currentWatched = watchlistData.items.filter(item => item.status === 'WATCHED');
+      const watchedOrder = currentWatched.map((_, index) => index);
+      for (let i = watchedOrder.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [watchedOrder[i], watchedOrder[j]] = [watchedOrder[j], watchedOrder[i]];
+      }
+      currentWatched.forEach((item, originalIndex) => {
+        randomizedOrderRef.current.set(item.id, watchedOrder[originalIndex] + 10000); // Offset to separate from watchlist
+      });
+
+      hasInitializedRef.current = true;
     }
-    return shuffled;
+  }, [watchlistData, listLoading]);
+
+  // Get randomized watchlist items - filter to only include current items, maintain stable order
+  const randomizedWatchlist = useMemo(() => {
+    if (!hasInitializedRef.current) return watchlistItems;
+    
+    // Assign orders: existing items keep their order, new items get random order at end
+    const watchlistOrders = Array.from(randomizedOrderRef.current.values()).filter(v => v < 10000);
+    const maxWatchlistOrder = watchlistOrders.length > 0 ? Math.max(...watchlistOrders) : -1;
+    
+    const itemsWithOrder = watchlistItems
+      .map(item => {
+        let order = randomizedOrderRef.current.get(item.id);
+        if (order === undefined || order >= 10000) {
+          // New item - assign it a random position at the end
+          order = Math.random() * 1000 + maxWatchlistOrder + 1000;
+          randomizedOrderRef.current.set(item.id, order);
+        }
+        return { item, order };
+      })
+      .sort((a, b) => a.order - b.order);
+    
+    return itemsWithOrder.map(({ item }) => item);
   }, [watchlistItems]);
 
-  // Randomize watched items
+  // Get randomized watched items - filter to only include current items, maintain stable order
   const randomizedWatched = useMemo(() => {
-    const shuffled = [...watchedItems];
-    // Fisher-Yates shuffle algorithm
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
+    if (!hasInitializedRef.current) return watchedItems;
+    
+    // Assign orders: existing items keep their order, new items get random order at end
+    const watchedOrders = Array.from(randomizedOrderRef.current.values()).filter(v => v >= 10000);
+    const maxWatchedOrder = watchedOrders.length > 0 ? Math.max(...watchedOrders) : 9999;
+    
+    const itemsWithOrder = watchedItems
+      .map(item => {
+        let order = randomizedOrderRef.current.get(item.id);
+        if (order === undefined || order < 10000) {
+          // New item (or moved from watchlist) - assign it a random position at the end
+          order = Math.random() * 1000 + maxWatchedOrder + 1000;
+          randomizedOrderRef.current.set(item.id, order);
+        }
+        return { item, order };
+      })
+      .sort((a, b) => a.order - b.order);
+    
+    return itemsWithOrder.map(({ item }) => item);
   }, [watchedItems]);
 
   // Group watchlist by type (excluding watched)
