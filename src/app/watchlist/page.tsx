@@ -6,9 +6,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Carousel } from '@/components/watchlist/Carousel';
 import { SearchBar } from '@/components/watchlist/SearchBar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { WatchlistItem } from '@prisma/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, CheckCircle2, Eye, ListVideo, Plus, Trash2, Trophy } from 'lucide-react';
+import { Check, CheckCircle2, Eye, ListVideo, MoreVertical, Plus, Trash2, Trophy } from 'lucide-react';
 import Image from 'next/image';
 import { useMemo, useState, useEffect, useRef } from 'react';
 
@@ -412,8 +419,7 @@ export default function WatchlistPage() {
                 setViewMode('top');
               }}
             >
-              <Trophy className="h-4 w-4 mr-2" />
-              Top
+              <Trophy className="h-4 w-4" />
             </Button>
           </div>
           <div className="flex-1 max-w-md">
@@ -790,83 +796,102 @@ function CardSkeleton() {
 function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching }: { item: WatchlistItem; onDelete: () => void; onMarkWatched?: () => void; onMarkWatching?: () => void }) {
   const isWatched = item.status === 'WATCHED';
   const isWatching = item.status === 'WATCHING';
+  const [open, setOpen] = useState(false);
   
   return (
-    <div className="group relative w-[180px] space-y-2">
-      <div className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20">
-        {/* Tooltip */}
-        <div className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full mb-2 z-50 px-3 py-2 bg-black/90 text-white text-sm font-medium rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none max-w-[220px] break-words text-center">
-          {item.title}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black/90"></div>
-        </div>
-
-        <div className="relative aspect-[2/3] overflow-hidden rounded-xl">
-          {item.imageUrl ? (
-            <Image
-              src={item.imageUrl}
-              alt={item.title}
-              fill
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-              sizes="(max-width: 768px) 33vw, (max-width: 1024px) 20vw, 180px"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-secondary text-muted-foreground">
-              <span className="text-sm font-medium">No Image</span>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <div className="group relative w-[180px] space-y-2">
+        <div 
+          className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20 cursor-context-menu"
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setOpen(true);
+          }}
+        >
+          <DropdownMenuTrigger asChild className="hidden">
+            <div />
+          </DropdownMenuTrigger>
+            {/* Tooltip */}
+            <div className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full mb-2 z-50 px-3 py-2 bg-black/90 text-white text-sm font-medium rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none max-w-[220px] break-words text-center">
+              {item.title}
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black/90"></div>
             </div>
+
+            <div className="relative aspect-[2/3] overflow-hidden rounded-xl">
+              {item.imageUrl ? (
+                <Image
+                  src={item.imageUrl}
+                  alt={item.title}
+                  fill
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  sizes="(max-width: 768px) 33vw, (max-width: 1024px) 20vw, 180px"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-secondary text-muted-foreground">
+                  <span className="text-sm font-medium">No Image</span>
+                </div>
+              )}
+            </div>
+
+            {/* Watched Badge */}
+            {isWatched && (
+              <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-emerald-500/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-md shadow-sm z-10">
+                <CheckCircle2 className="h-3 w-3" />
+                Watched
+              </div>
+            )}
+
+            {/* Watching Badge */}
+            {isWatching && (
+              <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-blue-500/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-md shadow-sm z-10">
+                <Eye className="h-3 w-3" />
+                Watching
+              </div>
+            )}
+
+            {/* Hover Overlay - Remove Button Icon */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-end p-3 pointer-events-none gap-2">
+              <div className="pointer-events-auto flex items-center justify-end gap-2">
+                <Button
+                  size="icon"
+                  variant="destructive"
+                  className="h-8 w-8 opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Rating Badge */}
+            {item.rating && (
+              <div className="absolute right-2 top-2 rounded-md bg-black/60 px-2 py-1 text-xs font-bold text-white backdrop-blur-md flex items-center gap-1 z-10">
+                <span className="text-yellow-400">★</span> {item.rating.toFixed(1)}
+              </div>
+            )}
+          </div>
+        <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
+          {!isWatched && onMarkWatched && (
+            <DropdownMenuItem onClick={onMarkWatched}>
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              Mark Watched
+            </DropdownMenuItem>
           )}
-        </div>
-
-        {/* Watched Badge */}
-        {isWatched && (
-          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-emerald-500/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-md shadow-sm z-10">
-            <CheckCircle2 className="h-3 w-3" />
-            Watched
-          </div>
-        )}
-
-        {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-end p-3 pointer-events-none gap-2">
-          <div className="pointer-events-auto flex flex-col gap-2">
-            {!isWatched && !isWatching && onMarkWatched && (
-              <Button
-                size="sm"
-                variant="default"
-                className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
-                onClick={onMarkWatched}
-              >
-                <CheckCircle2 className="mr-1.5 h-4 w-4" />
-                Mark Watched
-              </Button>
-            )}
-            {!isWatched && !isWatching && onMarkWatching && (
-              <Button
-                size="sm"
-                variant="default"
-                className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
-                onClick={onMarkWatching}
-              >
-                <Eye className="mr-1.5 h-4 w-4" />
-                Mark Watching
-              </Button>
-            )}
-            <Button
-              size="sm"
-              variant="destructive"
-              className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
-              onClick={onDelete}
-            >
-              <Trash2 className="mr-1.5 h-4 w-4" />
-              Remove
-            </Button>
-          </div>
-        </div>
-
-        {/* Rating Badge */}
-        {item.rating && (
-          <div className="absolute right-2 top-2 rounded-md bg-black/60 px-2 py-1 text-xs font-bold text-white backdrop-blur-md flex items-center gap-1 z-10">
-            <span className="text-yellow-400">★</span> {item.rating.toFixed(1)}
-          </div>
-        )}
+          {!isWatching && onMarkWatching && (
+            <DropdownMenuItem onClick={onMarkWatching}>
+              <Eye className="mr-2 h-4 w-4" />
+              Mark Watching
+            </DropdownMenuItem>
+          )}
+          {(onMarkWatched || onMarkWatching) && <DropdownMenuSeparator />}
+          <DropdownMenuItem variant="destructive" onClick={onDelete}>
+            <Trash2 className="mr-2 h-4 w-4" />
+            Remove
+          </DropdownMenuItem>
+        </DropdownMenuContent>
       </div>
 
       <div className="space-y-1.5">
@@ -883,7 +908,7 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching }: { item
           )}
         </div>
       </div>
-    </div>
+    </DropdownMenu>
   );
 }
 
@@ -911,143 +936,121 @@ function SearchResultCard({
   onMarkWatching?: () => void;
   isMarkingWatching?: boolean;
 }) {
+  const [open, setOpen] = useState(false);
+  
   return (
-    <div className="group relative w-[180px] space-y-2">
-      <div className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20">
-        {/* Tooltip */}
-        <div className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full mb-2 z-50 px-3 py-2 bg-black/90 text-white text-sm font-medium rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none max-w-[220px] break-words text-center">
-          {result.title}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black/90"></div>
-        </div>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <div className="group relative w-[180px] space-y-2">
+        <div 
+          className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20 cursor-context-menu"
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setOpen(true);
+          }}
+        >
+          <DropdownMenuTrigger asChild className="hidden">
+            <div />
+          </DropdownMenuTrigger>
+          {/* Tooltip */}
+          <div className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full mb-2 z-50 px-3 py-2 bg-black/90 text-white text-sm font-medium rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none max-w-[220px] break-words text-center">
+            {result.title}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black/90"></div>
+          </div>
 
-        <div className="relative aspect-[2/3] overflow-hidden rounded-xl">
-          {result.image ? (
-            <Image
-              src={result.image}
-              alt={result.title}
-              fill
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-              sizes="(max-width: 768px) 33vw, (max-width: 1024px) 20vw, 180px"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-secondary text-muted-foreground">
-              <span className="text-sm font-medium">No Image</span>
+          <div className="relative aspect-[2/3] overflow-hidden rounded-xl">
+            {result.image ? (
+              <Image
+                src={result.image}
+                alt={result.title}
+                fill
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                sizes="(max-width: 768px) 33vw, (max-width: 1024px) 20vw, 180px"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-secondary text-muted-foreground">
+                <span className="text-sm font-medium">No Image</span>
+              </div>
+            )}
+          </div>
+
+          {/* Type Badge */}
+          <div className="absolute right-2 top-2 rounded-md bg-black/60 px-2 py-1 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-md z-10">
+            {result.type}
+          </div>
+
+          {/* Added Badge */}
+          {alreadyInList && !isWatched && !isWatching && (
+            <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-emerald-500/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-md shadow-sm z-10">
+              <Check className="h-3 w-3" />
+              Added
             </div>
           )}
-        </div>
 
-        {/* Type Badge */}
-        <div className="absolute right-2 top-2 rounded-md bg-black/60 px-2 py-1 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-md z-10">
-          {result.type}
-        </div>
+          {/* Watched Badge */}
+          {isWatched && (
+            <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-emerald-500/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-md shadow-sm z-10">
+              <CheckCircle2 className="h-3 w-3" />
+              Watched
+            </div>
+          )}
 
-        {/* Added Badge */}
-        {alreadyInList && !isWatched && (
-          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-emerald-500/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-md shadow-sm z-10">
-            <Check className="h-3 w-3" />
-            Added
-          </div>
-        )}
+          {/* Watching Badge */}
+          {isWatching && (
+            <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-blue-500/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-md shadow-sm z-10">
+              <Eye className="h-3 w-3" />
+              Watching
+            </div>
+          )}
 
-        {/* Watched Badge */}
-        {isWatched && (
-          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-emerald-500/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-md shadow-sm z-10">
-            <CheckCircle2 className="h-3 w-3" />
-            Watched
-          </div>
-        )}
-
-        {/* Watching Badge */}
-        {isWatching && (
-          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-blue-500/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-md shadow-sm z-10">
-            <Eye className="h-3 w-3" />
-            Watching
-          </div>
-        )}
-
-        {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-end p-3 pointer-events-none gap-2">
-          <div className="pointer-events-auto flex flex-col gap-2">
-            {isWatched ? (
-              <Button size="sm" className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0" disabled variant="secondary">
-                <CheckCircle2 className="mr-1.5 h-4 w-4" />
-                Watched
-              </Button>
-            ) : isWatching ? (
-              <Button size="sm" className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0" disabled variant="secondary">
-                <Eye className="mr-1.5 h-4 w-4" />
-                Watching
-              </Button>
-            ) : alreadyInList ? (
-              <>
-                {onMarkWatched && (
-                  <Button
-                    size="sm"
-                    variant="default"
-                    className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
-                    onClick={onMarkWatched}
-                    disabled={isMarkingWatched}
-                  >
-                    <CheckCircle2 className="mr-1.5 h-4 w-4" />
-                    {isMarkingWatched ? 'Marking...' : 'Mark Watched'}
-                  </Button>
-                )}
-                {onMarkWatching && (
-                  <Button
-                    size="sm"
-                    variant="default"
-                    className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
-                    onClick={onMarkWatching}
-                    disabled={isMarkingWatching}
-                  >
-                    <Eye className="mr-1.5 h-4 w-4" />
-                    {isMarkingWatching ? 'Marking...' : 'Mark Watching'}
-                  </Button>
-                )}
+          {/* Hover Overlay - Add Button */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-end p-3 pointer-events-none gap-2">
+            <div className="pointer-events-auto flex flex-col gap-2">
+              {isWatched ? (
+                <Button size="sm" className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0" disabled variant="secondary">
+                  <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                  Watched
+                </Button>
+              ) : isWatching ? (
+                <Button size="sm" className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0" disabled variant="secondary">
+                  <Eye className="mr-1.5 h-4 w-4" />
+                  Watching
+                </Button>
+              ) : alreadyInList ? (
                 <Button size="sm" className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0" disabled variant="secondary">
                   <Check className="mr-1.5 h-4 w-4" />
                   Saved
                 </Button>
-              </>
-            ) : (
-              <>
-                {onMarkWatched && (
-                  <Button
-                    size="sm"
-                    variant="default"
-                    className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
-                    onClick={onMarkWatched}
-                    disabled={isMarkingWatched}
-                  >
-                    <CheckCircle2 className="mr-1.5 h-4 w-4" />
-                    {isMarkingWatched ? 'Marking...' : 'Mark Watched'}
-                  </Button>
-                )}
-                {onMarkWatching && (
-                  <Button
-                    size="sm"
-                    variant="default"
-                    className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
-                    onClick={onMarkWatching}
-                    disabled={isMarkingWatching}
-                  >
-                    <Eye className="mr-1.5 h-4 w-4" />
-                    {isMarkingWatching ? 'Marking...' : 'Mark Watching'}
-                  </Button>
-                )}
+              ) : (
                 <Button
                   size="sm"
                   className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
-                  onClick={onAdd}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAdd();
+                  }}
                   disabled={isAdding}
                 >
                   <Plus className="mr-1.5 h-4 w-4" />
                   {isAdding ? 'Adding...' : 'Add'}
                 </Button>
-              </>
-            )}
+              )}
+            </div>
           </div>
         </div>
+        <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
+          {!isWatched && onMarkWatched && (
+            <DropdownMenuItem onClick={onMarkWatched} disabled={isMarkingWatched}>
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              {isMarkingWatched ? 'Marking...' : 'Mark Watched'}
+            </DropdownMenuItem>
+          )}
+          {!isWatching && onMarkWatching && (
+            <DropdownMenuItem onClick={onMarkWatching} disabled={isMarkingWatching}>
+              <Eye className="mr-2 h-4 w-4" />
+              {isMarkingWatching ? 'Marking...' : 'Mark Watching'}
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
       </div>
 
       <div className="space-y-1">
@@ -1068,6 +1071,6 @@ function SearchResultCard({
           )}
         </div>
       </div>
-    </div>
+    </DropdownMenu>
   );
 }
