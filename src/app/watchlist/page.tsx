@@ -8,7 +8,7 @@ import { Carousel } from '@/components/watchlist/Carousel';
 import { SearchBar } from '@/components/watchlist/SearchBar';
 import { WatchlistItem } from '@prisma/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, CheckCircle2, ListVideo, Plus, Trash2, Trophy } from 'lucide-react';
+import { Check, CheckCircle2, Eye, ListVideo, Plus, Trash2, Trophy } from 'lucide-react';
 import Image from 'next/image';
 import { useMemo, useState, useEffect, useRef } from 'react';
 
