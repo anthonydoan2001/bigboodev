@@ -8,11 +8,11 @@ import { Carousel } from '@/components/watchlist/Carousel';
 import { SearchBar } from '@/components/watchlist/SearchBar';
 import { WatchlistItem } from '@prisma/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, ListVideo, Plus, Trash2, Trophy } from 'lucide-react';
+import { Check, CheckCircle2, ListVideo, Plus, Trash2, Trophy } from 'lucide-react';
 import Image from 'next/image';
 import { useMemo, useState } from 'react';
 
-type ViewMode = 'list' | 'search' | 'top';
+type ViewMode = 'list' | 'watched' | 'search' | 'top';
 
 export default function WatchlistPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -110,13 +110,27 @@ export default function WatchlistPage() {
     setViewMode('list');
   };
 
-  const watchlistItems: WatchlistItem[] = watchlistData?.items || [];
-  const searchResults: UniversalSearchResult[] = searchData?.results || [];
-  const topItems: TopItem[] = topData?.results || [];
+  const allItems: WatchlistItem[] = watchlistData?.items || [];
+  // Filter out watched items from regular watchlist
+  const watchlistItems: WatchlistItem[] = allItems.filter(item => item.status !== 'WATCHED');
+  // Get only watched items
+  const watchedItems: WatchlistItem[] = allItems.filter(item => item.status === 'WATCHED');
+  
+  // Filter out items without images from search results
+  const searchResults: UniversalSearchResult[] = (searchData?.results || []).filter(result => result.image && result.image.trim() !== '');
+  // Filter out items without images from top items
+  const topItems: TopItem[] = (topData?.results || []).filter(item => item.image && item.image.trim() !== '');
 
   // Helper to check if item is in watchlist
   const isInWatchlist = (externalId: number, type: string) => {
     return watchlistItems.some(
+      item => item.externalId === String(externalId) && item.type === type.toUpperCase()
+    );
+  };
+
+  // Helper to check if item is watched
+  const isWatched = (externalId: number, type: string) => {
+    return watchedItems.some(
       item => item.externalId === String(externalId) && item.type === type.toUpperCase()
     );
   };
@@ -132,19 +146,81 @@ export default function WatchlistPage() {
     return shuffled;
   }, [watchlistItems]);
 
-  // Group watchlist by type
+  // Randomize watched items
+  const randomizedWatched = useMemo(() => {
+    const shuffled = [...watchedItems];
+    // Fisher-Yates shuffle algorithm
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }, [watchedItems]);
+
+  // Group watchlist by type (excluding watched)
   const animeList = watchlistItems.filter(item => item.type === 'ANIME');
   const moviesList = watchlistItems.filter(item => item.type === 'MOVIE');
   const showsList = watchlistItems.filter(item => item.type === 'SHOW');
+
+  // Group watched items by type
+  const watchedAnimeList = watchedItems.filter(item => item.type === 'ANIME');
+  const watchedMoviesList = watchedItems.filter(item => item.type === 'MOVIE');
+  const watchedShowsList = watchedItems.filter(item => item.type === 'SHOW');
 
   // Group top items by type
   const topAnime = topItems.filter(item => item.type === 'anime');
   const topMovies = topItems.filter(item => item.type === 'movie');
   const topShows = topItems.filter(item => item.type === 'show');
 
+  // Mark as watched mutation
+  const markWatchedMutation = useMutation({
+    mutationFn: async ({ id, item }: { id?: string; item?: UniversalSearchResult | WatchlistItem }) => {
+      if (id) {
+        // Update existing item
+        const res = await fetch('/api/watchlist', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, status: 'WATCHED' }),
+        });
+        if (!res.ok) throw new Error('Failed to mark as watched');
+        return res.json();
+      } else if (item) {
+        // Add new item as watched
+        const res = await fetch('/api/watchlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            externalId: String(item.externalId || (item as WatchlistItem).externalId),
+            type: ((item as UniversalSearchResult).type || (item as WatchlistItem).type).toUpperCase(),
+            title: (item as UniversalSearchResult).title || (item as WatchlistItem).title,
+            imageUrl: (item as UniversalSearchResult).image || (item as WatchlistItem).imageUrl,
+            year: (item as UniversalSearchResult).year || (item as WatchlistItem).year,
+            rating: (item as UniversalSearchResult).rating || (item as WatchlistItem).rating,
+            episodes: (item as UniversalSearchResult).episodes || (item as WatchlistItem).episodes,
+            status: 'WATCHED',
+          }),
+        });
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error || 'Failed to add to watched');
+        }
+        return res.json();
+      }
+      throw new Error('Invalid parameters');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['watchlist'] });
+    },
+    onError: (error: Error) => {
+      console.error('Mark watched error:', error);
+      alert(error.message);
+    },
+  });
+
   // Show search results if there's a query, otherwise show list
   const showingSearch = searchQuery.length > 0;
   const showingTop = viewMode === 'top';
+  const showingWatched = viewMode === 'watched';
 
   return (
     <div className="container mx-auto py-8 px-8 min-h-screen max-w-full">
@@ -161,6 +237,16 @@ export default function WatchlistPage() {
             >
               <ListVideo className="h-4 w-4 mr-2" />
               Watchlist ({watchlistItems.length})
+            </Button>
+            <Button
+              variant={viewMode === 'watched' && !showingSearch ? 'default' : 'outline'}
+              onClick={() => {
+                setSearchQuery('');
+                setViewMode('watched');
+              }}
+            >
+              <CheckCircle2 className="h-4 w-4 mr-2" />
+              Watched ({watchedItems.length})
             </Button>
             <Button
               variant={viewMode === 'top' ? 'default' : 'outline'}
@@ -187,7 +273,7 @@ export default function WatchlistPage() {
         {showingSearch ? (
           <div>
             {searchLoading ? (
-              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                 {Array.from({ length: 12 }).map((_, i) => (
                   <CardSkeleton key={i} />
                 ))}
@@ -197,9 +283,10 @@ export default function WatchlistPage() {
                 <p className="text-muted-foreground font-medium text-sm">
                   Found {searchResults.length} results for "{searchQuery}"
                 </p>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                   {searchResults.map((result) => {
                     const alreadyInList = isInWatchlist(result.externalId, result.type);
+                    const itemWatched = isWatched(result.externalId, result.type);
                     return (
                       <SearchResultCard
                         key={result.id}
@@ -207,17 +294,90 @@ export default function WatchlistPage() {
                         onAdd={() => addMutation.mutate(result)}
                         isAdding={addMutation.isPending}
                         alreadyInList={alreadyInList}
+                        isWatched={itemWatched}
+                        onMarkWatched={() => markWatchedMutation.mutate({ item: result })}
+                        isMarkingWatched={markWatchedMutation.isPending}
                       />
                     );
                   })}
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                 {Array.from({ length: 12 }).map((_, i) => (
                   <CardSkeleton key={i} />
                 ))}
               </div>
+            )}
+          </div>
+        ) : showingWatched ? (
+          <div className="space-y-8">
+            {listLoading ? (
+              <div className="space-y-8">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="space-y-4">
+                    <Skeleton className="h-8 w-48 rounded-lg" />
+                    <div className="flex gap-4 overflow-hidden">
+                      {Array.from({ length: 8 }).map((_, j) => (
+                        <CardSkeleton key={j} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : watchedItems.length === 0 ? (
+              <Card>
+                <CardContent className="p-12 text-center text-muted-foreground space-y-4">
+                  <p className="text-lg">No watched items yet</p>
+                  <p className="text-sm">Mark items from your watchlist or search results as watched</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {/* Watched Section - All items combined in random order */}
+                {randomizedWatched.length > 0 && (
+                  <Carousel title="Watched" count={randomizedWatched.length} icon={<CheckCircle2 className="h-4 w-4" />}>
+                    {randomizedWatched.map((item) => (
+                      <div key={item.id} className="flex-shrink-0 w-[180px]">
+                        <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} />
+                      </div>
+                    ))}
+                  </Carousel>
+                )}
+
+                {/* Watched Anime Section */}
+                {watchedAnimeList.length > 0 && (
+                  <Carousel title="Watched Anime" count={watchedAnimeList.length} icon={<CheckCircle2 className="h-4 w-4" />}>
+                    {watchedAnimeList.map((item) => (
+                      <div key={item.id} className="flex-shrink-0 w-[180px]">
+                        <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} />
+                      </div>
+                    ))}
+                  </Carousel>
+                )}
+
+                {/* Watched Movies Section */}
+                {watchedMoviesList.length > 0 && (
+                  <Carousel title="Watched Movies" count={watchedMoviesList.length} icon={<CheckCircle2 className="h-4 w-4" />}>
+                    {watchedMoviesList.map((item) => (
+                      <div key={item.id} className="flex-shrink-0 w-[180px]">
+                        <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} />
+                      </div>
+                    ))}
+                  </Carousel>
+                )}
+
+                {/* Watched Shows Section */}
+                {watchedShowsList.length > 0 && (
+                  <Carousel title="Watched TV Shows" count={watchedShowsList.length} icon={<CheckCircle2 className="h-4 w-4" />}>
+                    {watchedShowsList.map((item) => (
+                      <div key={item.id} className="flex-shrink-0 w-[180px]">
+                        <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} />
+                      </div>
+                    ))}
+                  </Carousel>
+                )}
+              </>
             )}
           </div>
         ) : showingTop ? (
@@ -242,6 +402,7 @@ export default function WatchlistPage() {
                   <Carousel title="Top Anime" count={topAnime.length} icon={<ListVideo className="h-4 w-4" />}>
                     {topAnime.map((item) => {
                       const alreadyInList = isInWatchlist(item.externalId, item.type);
+                      const itemWatched = isWatched(item.externalId, item.type);
                       return (
                         <div key={item.id} className="flex-shrink-0 w-[180px]">
                           <SearchResultCard
@@ -249,6 +410,9 @@ export default function WatchlistPage() {
                             onAdd={() => addMutation.mutate(item as any)}
                             isAdding={addMutation.isPending}
                             alreadyInList={alreadyInList}
+                            isWatched={itemWatched}
+                            onMarkWatched={() => markWatchedMutation.mutate({ item: item as any })}
+                            isMarkingWatched={markWatchedMutation.isPending}
                           />
                         </div>
                       );
@@ -261,6 +425,7 @@ export default function WatchlistPage() {
                   <Carousel title="Top Movies" count={topMovies.length} icon={<ListVideo className="h-4 w-4" />}>
                     {topMovies.map((item) => {
                       const alreadyInList = isInWatchlist(item.externalId, item.type);
+                      const itemWatched = isWatched(item.externalId, item.type);
                       return (
                         <div key={item.id} className="flex-shrink-0 w-[180px]">
                           <SearchResultCard
@@ -268,6 +433,9 @@ export default function WatchlistPage() {
                             onAdd={() => addMutation.mutate(item as any)}
                             isAdding={addMutation.isPending}
                             alreadyInList={alreadyInList}
+                            isWatched={itemWatched}
+                            onMarkWatched={() => markWatchedMutation.mutate({ item: item as any })}
+                            isMarkingWatched={markWatchedMutation.isPending}
                           />
                         </div>
                       );
@@ -280,6 +448,7 @@ export default function WatchlistPage() {
                   <Carousel title="Top TV Shows" count={topShows.length} icon={<ListVideo className="h-4 w-4" />}>
                     {topShows.map((item) => {
                       const alreadyInList = isInWatchlist(item.externalId, item.type);
+                      const itemWatched = isWatched(item.externalId, item.type);
                       return (
                         <div key={item.id} className="flex-shrink-0 w-[180px]">
                           <SearchResultCard
@@ -287,6 +456,9 @@ export default function WatchlistPage() {
                             onAdd={() => addMutation.mutate(item as any)}
                             isAdding={addMutation.isPending}
                             alreadyInList={alreadyInList}
+                            isWatched={itemWatched}
+                            onMarkWatched={() => markWatchedMutation.mutate({ item: item as any })}
+                            isMarkingWatched={markWatchedMutation.isPending}
                           />
                         </div>
                       );
@@ -331,7 +503,11 @@ export default function WatchlistPage() {
                   <Carousel title="Watchlist" count={randomizedWatchlist.length} icon={<ListVideo className="h-4 w-4" />}>
                     {randomizedWatchlist.map((item) => (
                       <div key={item.id} className="flex-shrink-0 w-[180px]">
-                        <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} />
+                        <WatchlistCard 
+                          item={item} 
+                          onDelete={() => deleteMutation.mutate(item.id)}
+                          onMarkWatched={() => markWatchedMutation.mutate({ id: item.id })}
+                        />
                       </div>
                     ))}
                   </Carousel>
@@ -342,7 +518,11 @@ export default function WatchlistPage() {
                   <Carousel title="Anime" count={animeList.length} icon={<ListVideo className="h-4 w-4" />}>
                     {animeList.map((item) => (
                       <div key={item.id} className="flex-shrink-0 w-[180px]">
-                        <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} />
+                        <WatchlistCard 
+                          item={item} 
+                          onDelete={() => deleteMutation.mutate(item.id)}
+                          onMarkWatched={() => markWatchedMutation.mutate({ id: item.id })}
+                        />
                       </div>
                     ))}
                   </Carousel>
@@ -353,7 +533,11 @@ export default function WatchlistPage() {
                   <Carousel title="Movies" count={moviesList.length} icon={<ListVideo className="h-4 w-4" />}>
                     {moviesList.map((item) => (
                       <div key={item.id} className="flex-shrink-0 w-[180px]">
-                        <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} />
+                        <WatchlistCard 
+                          item={item} 
+                          onDelete={() => deleteMutation.mutate(item.id)}
+                          onMarkWatched={() => markWatchedMutation.mutate({ id: item.id })}
+                        />
                       </div>
                     ))}
                   </Carousel>
@@ -364,7 +548,11 @@ export default function WatchlistPage() {
                   <Carousel title="TV Shows" count={showsList.length} icon={<ListVideo className="h-4 w-4" />}>
                     {showsList.map((item) => (
                       <div key={item.id} className="flex-shrink-0 w-[180px]">
-                        <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} />
+                        <WatchlistCard 
+                          item={item} 
+                          onDelete={() => deleteMutation.mutate(item.id)}
+                          onMarkWatched={() => markWatchedMutation.mutate({ id: item.id })}
+                        />
                       </div>
                     ))}
                   </Carousel>
@@ -383,9 +571,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 // Loading Skeleton Component
 function CardSkeleton() {
   return (
-    <div className="space-y-3 w-[180px]">
+    <div className="space-y-2 w-[180px]">
       <Skeleton className="h-[270px] w-full rounded-xl" />
-      <div className="space-y-1.5">
+      <div className="space-y-1">
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-4 w-1/2" />
       </div>
@@ -394,9 +582,11 @@ function CardSkeleton() {
 }
 
 // Watchlist Card Component
-function WatchlistCard({ item, onDelete }: { item: WatchlistItem; onDelete: () => void }) {
+function WatchlistCard({ item, onDelete, onMarkWatched }: { item: WatchlistItem; onDelete: () => void; onMarkWatched?: () => void }) {
+  const isWatched = item.status === 'WATCHED';
+  
   return (
-    <div className="group relative w-[180px] space-y-3">
+    <div className="group relative w-[180px] space-y-2">
       <div className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20">
         {/* Tooltip */}
         <div className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full mb-2 z-50 px-3 py-2 bg-black/90 text-white text-sm font-medium rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none max-w-[220px] break-words text-center">
@@ -420,9 +610,28 @@ function WatchlistCard({ item, onDelete }: { item: WatchlistItem; onDelete: () =
           )}
         </div>
 
+        {/* Watched Badge */}
+        {isWatched && (
+          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-emerald-500/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-md shadow-sm z-10">
+            <CheckCircle2 className="h-3 w-3" />
+            Watched
+          </div>
+        )}
+
         {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-end p-3 pointer-events-none">
-          <div className="pointer-events-auto">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-end p-3 pointer-events-none gap-2">
+          <div className="pointer-events-auto flex flex-col gap-2">
+            {!isWatched && onMarkWatched && (
+              <Button
+                size="sm"
+                variant="default"
+                className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
+                onClick={onMarkWatched}
+              >
+                <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                Mark Watched
+              </Button>
+            )}
             <Button
               size="sm"
               variant="destructive"
@@ -467,14 +676,20 @@ function SearchResultCard({
   onAdd,
   isAdding,
   alreadyInList,
+  isWatched,
+  onMarkWatched,
+  isMarkingWatched,
 }: {
   result: UniversalSearchResult;
   onAdd: () => void;
   isAdding: boolean;
   alreadyInList: boolean;
+  isWatched?: boolean;
+  onMarkWatched?: () => void;
+  isMarkingWatched?: boolean;
 }) {
   return (
-    <div className="group relative w-[180px] space-y-3">
+    <div className="group relative w-[180px] space-y-2">
       <div className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20">
         {/* Tooltip */}
         <div className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full mb-2 z-50 px-3 py-2 bg-black/90 text-white text-sm font-medium rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none max-w-[220px] break-words text-center">
@@ -504,37 +719,78 @@ function SearchResultCard({
         </div>
 
         {/* Added Badge */}
-        {alreadyInList && (
+        {alreadyInList && !isWatched && (
           <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-emerald-500/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-md shadow-sm z-10">
             <Check className="h-3 w-3" />
             Added
           </div>
         )}
 
+        {/* Watched Badge */}
+        {isWatched && (
+          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-emerald-500/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-md shadow-sm z-10">
+            <CheckCircle2 className="h-3 w-3" />
+            Watched
+          </div>
+        )}
+
         {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-end p-3 pointer-events-none">
-          <div className="pointer-events-auto">
-            {alreadyInList ? (
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-end p-3 pointer-events-none gap-2">
+          <div className="pointer-events-auto flex flex-col gap-2">
+            {isWatched ? (
               <Button size="sm" className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0" disabled variant="secondary">
-                <Check className="mr-1.5 h-4 w-4" />
-                Saved
+                <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                Watched
               </Button>
+            ) : alreadyInList ? (
+              <>
+                {onMarkWatched && (
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
+                    onClick={onMarkWatched}
+                    disabled={isMarkingWatched}
+                  >
+                    <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                    {isMarkingWatched ? 'Marking...' : 'Mark Watched'}
+                  </Button>
+                )}
+                <Button size="sm" className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0" disabled variant="secondary">
+                  <Check className="mr-1.5 h-4 w-4" />
+                  Saved
+                </Button>
+              </>
             ) : (
-              <Button
-                size="sm"
-                className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
-                onClick={onAdd}
-                disabled={isAdding}
-              >
-                <Plus className="mr-1.5 h-4 w-4" />
-                {isAdding ? 'Adding...' : 'Add'}
-              </Button>
+              <>
+                {onMarkWatched && (
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
+                    onClick={onMarkWatched}
+                    disabled={isMarkingWatched}
+                  >
+                    <CheckCircle2 className="mr-1.5 h-4 w-4" />
+                    {isMarkingWatched ? 'Marking...' : 'Mark Watched'}
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
+                  onClick={onAdd}
+                  disabled={isAdding}
+                >
+                  <Plus className="mr-1.5 h-4 w-4" />
+                  {isAdding ? 'Adding...' : 'Add'}
+                </Button>
+              </>
             )}
           </div>
         </div>
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-1">
         <h3 className="line-clamp-2 text-base font-semibold leading-snug text-foreground/90 min-h-[2.5rem]" title={result.title}>
           {result.title}
         </h3>
