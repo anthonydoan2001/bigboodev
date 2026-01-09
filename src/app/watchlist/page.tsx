@@ -118,9 +118,13 @@ export default function WatchlistPage() {
 
   const allItems: WatchlistItem[] = watchlistData?.items || [];
   // Filter out watched items from regular watchlist
-  const watchlistItems: WatchlistItem[] = allItems.filter(item => item.status !== 'WATCHED');
+  const watchlistItems: WatchlistItem[] = allItems.filter(item => item.status !== 'WATCHED' && item.status !== 'WATCHING');
   // Get only watched items
   const watchedItems: WatchlistItem[] = allItems.filter(item => item.status === 'WATCHED');
+  // Get only watching items
+  const watchingItems: WatchlistItem[] = allItems
+    .filter(item => item.status === 'WATCHING')
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); // Recently added on top
   
   // Filter out items without images from search results
   const searchResults: UniversalSearchResult[] = (searchData?.results || []).filter((result: UniversalSearchResult) => result.image && result.image.trim() !== '');
