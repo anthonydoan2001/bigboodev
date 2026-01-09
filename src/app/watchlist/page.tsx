@@ -612,7 +612,6 @@ export default function WatchlistPage() {
                             isMarkingWatched={markWatchedMutation.isPending}
                             onMarkWatching={() => markWatchingMutation.mutate({ item: item as any })}
                             isMarkingWatching={markWatchingMutation.isPending}
-                            disableContextMenu={true}
                           />
                         </div>
                       );
@@ -640,7 +639,6 @@ export default function WatchlistPage() {
                             isMarkingWatched={markWatchedMutation.isPending}
                             onMarkWatching={() => markWatchingMutation.mutate({ item: item as any })}
                             isMarkingWatching={markWatchingMutation.isPending}
-                            disableContextMenu={true}
                           />
                         </div>
                       );
@@ -668,7 +666,6 @@ export default function WatchlistPage() {
                             isMarkingWatched={markWatchedMutation.isPending}
                             onMarkWatching={() => markWatchingMutation.mutate({ item: item as any })}
                             isMarkingWatching={markWatchingMutation.isPending}
-                            disableContextMenu={true}
                           />
                         </div>
                       );
