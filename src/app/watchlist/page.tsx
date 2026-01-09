@@ -186,7 +186,7 @@ export default function WatchlistPage() {
                 <p className="text-muted-foreground font-medium text-sm">
                   Found {searchResults.length} results for "{searchQuery}"
                 </p>
-                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
                   {searchResults.map((result) => {
                     const alreadyInList = isInWatchlist(result.externalId, result.type);
                     return (
@@ -232,7 +232,7 @@ export default function WatchlistPage() {
                     {topAnime.map((item) => {
                       const alreadyInList = isInWatchlist(item.externalId, item.type);
                       return (
-                        <div key={item.id} className="flex-shrink-0 w-[150px]">
+                        <div key={item.id} className="flex-shrink-0 w-[180px]">
                           <SearchResultCard
                             result={item}
                             onAdd={() => addMutation.mutate(item as any)}
@@ -251,7 +251,7 @@ export default function WatchlistPage() {
                     {topMovies.map((item) => {
                       const alreadyInList = isInWatchlist(item.externalId, item.type);
                       return (
-                        <div key={item.id} className="flex-shrink-0 w-[150px]">
+                        <div key={item.id} className="flex-shrink-0 w-[180px]">
                           <SearchResultCard
                             result={item}
                             onAdd={() => addMutation.mutate(item as any)}
@@ -270,7 +270,7 @@ export default function WatchlistPage() {
                     {topShows.map((item) => {
                       const alreadyInList = isInWatchlist(item.externalId, item.type);
                       return (
-                        <div key={item.id} className="flex-shrink-0 w-[150px]">
+                        <div key={item.id} className="flex-shrink-0 w-[180px]">
                           <SearchResultCard
                             result={item}
                             onAdd={() => addMutation.mutate(item as any)}
@@ -319,7 +319,7 @@ export default function WatchlistPage() {
                 {animeList.length > 0 && (
                   <Carousel title="Anime" count={animeList.length} icon={<ListVideo className="h-4 w-4" />}>
                     {animeList.map((item) => (
-                      <div key={item.id} className="flex-shrink-0 w-[150px]">
+                      <div key={item.id} className="flex-shrink-0 w-[180px]">
                         <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} />
                       </div>
                     ))}
@@ -330,7 +330,7 @@ export default function WatchlistPage() {
                 {moviesList.length > 0 && (
                   <Carousel title="Movies" count={moviesList.length} icon={<ListVideo className="h-4 w-4" />}>
                     {moviesList.map((item) => (
-                      <div key={item.id} className="flex-shrink-0 w-[150px]">
+                      <div key={item.id} className="flex-shrink-0 w-[180px]">
                         <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} />
                       </div>
                     ))}
@@ -341,7 +341,7 @@ export default function WatchlistPage() {
                 {showsList.length > 0 && (
                   <Carousel title="TV Shows" count={showsList.length} icon={<ListVideo className="h-4 w-4" />}>
                     {showsList.map((item) => (
-                      <div key={item.id} className="flex-shrink-0 w-[150px]">
+                      <div key={item.id} className="flex-shrink-0 w-[180px]">
                         <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} />
                       </div>
                     ))}
@@ -361,11 +361,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 // Loading Skeleton Component
 function CardSkeleton() {
   return (
-    <div className="space-y-3 w-[150px]">
-      <Skeleton className="h-[225px] w-full rounded-xl" />
+    <div className="space-y-3 w-[180px]">
+      <Skeleton className="h-[270px] w-full rounded-xl" />
       <div className="space-y-1.5">
-        <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="h-3 w-1/2" />
+        <Skeleton className="h-5 w-3/4" />
+        <Skeleton className="h-4 w-1/2" />
       </div>
     </div>
   )
@@ -374,7 +374,7 @@ function CardSkeleton() {
 // Watchlist Card Component
 function WatchlistCard({ item, onDelete }: { item: WatchlistItem; onDelete: () => void }) {
   return (
-    <div className="group relative w-[150px] space-y-3">
+    <div className="group relative w-[180px] space-y-3">
       <div className="relative aspect-[2/3] overflow-hidden rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20">
         {item.imageUrl ? (
           <Image
@@ -382,11 +382,11 @@ function WatchlistCard({ item, onDelete }: { item: WatchlistItem; onDelete: () =
             alt={item.title}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-105"
-            sizes="(max-width: 768px) 33vw, (max-width: 1024px) 20vw, 150px"
+            sizes="(max-width: 768px) 33vw, (max-width: 1024px) 20vw, 180px"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-secondary text-muted-foreground">
-            <span className="text-xs font-medium">No Image</span>
+            <span className="text-sm font-medium">No Image</span>
           </div>
         )}
 
@@ -395,27 +395,27 @@ function WatchlistCard({ item, onDelete }: { item: WatchlistItem; onDelete: () =
           <Button
             size="sm"
             variant="destructive"
-            className="h-8 w-full text-xs font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
+            className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
             onClick={onDelete}
           >
-            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+            <Trash2 className="mr-1.5 h-4 w-4" />
             Remove
           </Button>
         </div>
 
         {/* Rating Badge */}
         {item.rating && (
-          <div className="absolute right-2 top-2 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md flex items-center gap-1">
+          <div className="absolute right-2 top-2 rounded-md bg-black/60 px-2 py-1 text-xs font-bold text-white backdrop-blur-md flex items-center gap-1">
             <span className="text-yellow-400">★</span> {item.rating.toFixed(1)}
           </div>
         )}
       </div>
 
-      <div className="space-y-1">
-        <h3 className="line-clamp-1 text-sm font-semibold leading-tight text-foreground/90" title={item.title}>
+      <div className="space-y-1.5">
+        <h3 className="line-clamp-1 text-base font-semibold leading-tight text-foreground/90" title={item.title}>
           {item.title}
         </h3>
-        <div className="flex items-center gap-2 text-[11px] font-medium text-muted-foreground">
+        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
           {item.year && <span>{item.year}</span>}
           {item.episodes && (
             <>
@@ -442,7 +442,7 @@ function SearchResultCard({
   alreadyInList: boolean;
 }) {
   return (
-    <div className="group relative w-[150px] space-y-3">
+    <div className="group relative w-[180px] space-y-3">
       <div className="relative aspect-[2/3] overflow-hidden rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20">
         {result.image ? (
           <Image
@@ -450,23 +450,23 @@ function SearchResultCard({
             alt={result.title}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-105"
-            sizes="(max-width: 768px) 33vw, (max-width: 1024px) 20vw, 150px"
+            sizes="(max-width: 768px) 33vw, (max-width: 1024px) 20vw, 180px"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-secondary text-muted-foreground">
-            <span className="text-xs font-medium">No Image</span>
+            <span className="text-sm font-medium">No Image</span>
           </div>
         )}
 
         {/* Type Badge */}
-        <div className="absolute right-2 top-2 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-md">
+        <div className="absolute right-2 top-2 rounded-md bg-black/60 px-2 py-1 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-md">
           {result.type}
         </div>
 
         {/* Added Badge */}
         {alreadyInList && (
-          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-emerald-500/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md shadow-sm">
-            <Check className="h-2.5 w-2.5" />
+          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-emerald-500/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-md shadow-sm">
+            <Check className="h-3 w-3" />
             Added
           </div>
         )}
@@ -474,29 +474,29 @@ function SearchResultCard({
         {/* Hover Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-end p-3">
           {alreadyInList ? (
-            <Button size="sm" className="h-8 w-full text-xs font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0" disabled variant="secondary">
-              <Check className="mr-1.5 h-3.5 w-3.5" />
+            <Button size="sm" className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0" disabled variant="secondary">
+              <Check className="mr-1.5 h-4 w-4" />
               Saved
             </Button>
           ) : (
             <Button
               size="sm"
-              className="h-8 w-full text-xs font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
+              className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
               onClick={onAdd}
               disabled={isAdding}
             >
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              <Plus className="mr-1.5 h-4 w-4" />
               {isAdding ? 'Adding...' : 'Add'}
             </Button>
           )}
         </div>
       </div>
 
-      <div className="space-y-1">
-        <h3 className="line-clamp-1 text-sm font-semibold leading-tight text-foreground/90" title={result.title}>
+      <div className="space-y-1.5">
+        <h3 className="line-clamp-1 text-base font-semibold leading-tight text-foreground/90" title={result.title}>
           {result.title}
-        .</h3>
-        <div className="flex items-center gap-2 text-[11px] font-medium text-muted-foreground">
+        </h3>
+        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
           {result.rating && (
             <span className="flex items-center gap-1 text-yellow-500">
               ★ {result.rating.toFixed(1)}
