@@ -41,11 +41,11 @@ export async function POST(request: Request) {
     });
 
     if (existing) {
-      // If status is being set to WATCHED, update the existing item
-      if (status === 'WATCHED') {
+      // If status is being set to WATCHED or WATCHING, update the existing item
+      if (status === 'WATCHED' || status === 'WATCHING') {
         const updated = await db.watchlistItem.update({
           where: { id: existing.id },
-          data: { status: 'WATCHED' }
+          data: { status: status.toUpperCase() }
         });
         return NextResponse.json({ item: updated });
       }
