@@ -145,7 +145,7 @@ export default function WatchlistPage() {
   useEffect(() => {
     if (!hasInitializedRef.current && watchlistData && !listLoading) {
       // Initialize random order for watchlist items (only those not watched)
-      const currentWatchlist = watchlistData.items.filter(item => item.status !== 'WATCHED');
+      const currentWatchlist = watchlistData.items.filter((item: WatchlistItem) => item.status !== 'WATCHED');
       const watchlistOrder = currentWatchlist.map((_, index) => index);
       for (let i = watchlistOrder.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -156,7 +156,7 @@ export default function WatchlistPage() {
       });
 
       // Initialize random order for watched items
-      const currentWatched = watchlistData.items.filter(item => item.status === 'WATCHED');
+      const currentWatched = watchlistData.items.filter((item: WatchlistItem) => item.status === 'WATCHED');
       const watchedOrder = currentWatched.map((_, index) => index);
       for (let i = watchedOrder.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
