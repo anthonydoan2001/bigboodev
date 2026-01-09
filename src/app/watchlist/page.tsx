@@ -818,31 +818,17 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching, disableC
     }
   }, [open, position]);
 
-  // Close dropdown on scroll
+  // Close dropdown on scroll - don't interfere with scrolling
   useEffect(() => {
     if (open) {
-      let lastScrollY = window.scrollY;
       const handleScroll = () => {
-        const currentScrollY = window.scrollY;
-        // Only close if actually scrolled (not just wheel event without scroll)
-        if (Math.abs(currentScrollY - lastScrollY) > 1) {
-          setOpen(false);
-        }
-        lastScrollY = currentScrollY;
+        // Close after scroll has happened
+        setOpen(false);
       };
-      // Listen to scroll events - close when scroll position changes
+      // Only listen to actual scroll events, not wheel (to not interfere)
       window.addEventListener('scroll', handleScroll, { passive: true });
-      // Also listen to wheel for immediate feedback
-      const handleWheel = () => {
-        // Small delay to allow scroll to happen first
-        requestAnimationFrame(() => {
-          setOpen(false);
-        });
-      };
-      window.addEventListener('wheel', handleWheel, { passive: true });
       return () => {
         window.removeEventListener('scroll', handleScroll);
-        window.removeEventListener('wheel', handleWheel);
       };
     }
   }, [open]);
@@ -935,16 +921,10 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching, disableC
         <DropdownMenuContent 
           align="end" 
           onCloseAutoFocus={(e) => e.preventDefault()}
-          style={{
-            position: 'fixed',
-            left: `${position.x}px`,
-            top: `${position.y}px`,
-            transform: 'translate(-100%, 0)',
-          }}
-          className="!fixed w-48 p-1 bg-background/80 backdrop-blur-xl border-border/50 shadow-xl rounded-xl"
+          className="w-48 p-1 bg-background/80 backdrop-blur-xl border-border/50 shadow-xl rounded-xl"
         >
           {!isWatched && onMarkWatched && (
-            <DropdownMenuItem onClick={onMarkWatched}>
+            <DropdownMenuItem onClick={onMarkWatched} className="rounded-lg focus:bg-accent/50 focus:text-accent-foreground cursor-pointer">
               <CheckCircle2 className="mr-2 h-4 w-4" />
               Mark Watched
             </DropdownMenuItem>
@@ -1025,31 +1005,17 @@ function SearchResultCard({
     }
   }, [open, position]);
 
-  // Close dropdown on scroll
+  // Close dropdown on scroll - don't interfere with scrolling
   useEffect(() => {
     if (open) {
-      let lastScrollY = window.scrollY;
       const handleScroll = () => {
-        const currentScrollY = window.scrollY;
-        // Only close if actually scrolled (not just wheel event without scroll)
-        if (Math.abs(currentScrollY - lastScrollY) > 1) {
-          setOpen(false);
-        }
-        lastScrollY = currentScrollY;
+        // Close after scroll has happened
+        setOpen(false);
       };
-      // Listen to scroll events - close when scroll position changes
+      // Only listen to actual scroll events, not wheel (to not interfere)
       window.addEventListener('scroll', handleScroll, { passive: true });
-      // Also listen to wheel for immediate feedback
-      const handleWheel = () => {
-        // Small delay to allow scroll to happen first
-        requestAnimationFrame(() => {
-          setOpen(false);
-        });
-      };
-      window.addEventListener('wheel', handleWheel, { passive: true });
       return () => {
         window.removeEventListener('scroll', handleScroll);
-        window.removeEventListener('wheel', handleWheel);
       };
     }
   }, [open]);
@@ -1172,16 +1138,10 @@ function SearchResultCard({
         <DropdownMenuContent 
           align="end" 
           onCloseAutoFocus={(e) => e.preventDefault()}
-          style={{
-            position: 'fixed',
-            left: `${position.x}px`,
-            top: `${position.y}px`,
-            transform: 'translate(-100%, 0)',
-          }}
-          className="!fixed w-48 p-1 bg-background/80 backdrop-blur-xl border-border/50 shadow-xl rounded-xl"
+          className="w-48 p-1 bg-background/80 backdrop-blur-xl border-border/50 shadow-xl rounded-xl"
         >
           {!isWatched && onMarkWatched && (
-            <DropdownMenuItem onClick={onMarkWatched} disabled={isMarkingWatched}>
+            <DropdownMenuItem onClick={onMarkWatched} disabled={isMarkingWatched} className="rounded-lg focus:bg-accent/50 focus:text-accent-foreground cursor-pointer">
               <CheckCircle2 className="mr-2 h-4 w-4" />
               {isMarkingWatched ? 'Marking...' : 'Mark Watched'}
             </DropdownMenuItem>
