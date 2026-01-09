@@ -143,35 +143,54 @@ export default function WatchlistPage() {
 
   // Create stable randomized order only on initial load
   useEffect(() => {
-    if (!hasInitializedRef.current && watchlistData && !listLoading) {
+    // Only initialize once when data is first loaded (not loading and data exists)
+    if (!hasInitializedRef.current && !listLoading && watchlistData) {
       // Initialize random order for watchlist items (only those not watched)
       const currentWatchlist = watchlistData.items.filter((item: WatchlistItem) => item.status !== 'WATCHED');
-      const watchlistOrder = currentWatchlist.map((_: WatchlistItem, index: number) => index);
-      for (let i = watchlistOrder.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [watchlistOrder[i], watchlistOrder[j]] = [watchlistOrder[j], watchlistOrder[i]];
+      if (currentWatchlist.length > 0) {
+        const watchlistOrder = currentWatchlist.map((_: WatchlistItem, index: number) => index);
+        for (let i = watchlistOrder.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [watchlistOrder[i], watchlistOrder[j]] = [watchlistOrder[j], watchlistOrder[i]];
+        }
+        currentWatchlist.forEach((item: WatchlistItem, originalIndex: number) => {
+          randomizedOrderRef.current.set(item.id, watchlistOrder[originalIndex]);
+        });
       }
-      currentWatchlist.forEach((item: WatchlistItem, originalIndex: number) => {
-        randomizedOrderRef.current.set(item.id, watchlistOrder[originalIndex]);
-      });
 
       // Initialize random order for watched items
       const currentWatched = watchlistData.items.filter((item: WatchlistItem) => item.status === 'WATCHED');
-      const watchedOrder = currentWatched.map((_: WatchlistItem, index: number) => index);
-      for (let i = watchedOrder.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [watchedOrder[i], watchedOrder[j]] = [watchedOrder[j], watchedOrder[i]];
+      if (currentWatched.length > 0) {
+        const watchedOrder = currentWatched.map((_: WatchlistItem, index: number) => index);
+        for (let i = watchedOrder.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [watchedOrder[i], watchedOrder[j]] = [watchedOrder[j], watchedOrder[i]];
+        }
+        currentWatched.forEach((item: WatchlistItem, originalIndex: number) => {
+          randomizedOrderRef.current.set(item.id, watchedOrder[originalIndex] + 10000); // Offset to separate from watchlist
+        });
       }
-      currentWatched.forEach((item: WatchlistItem, originalIndex: number) => {
-        randomizedOrderRef.current.set(item.id, watchedOrder[originalIndex] + 10000); // Offset to separate from watchlist
-      });
 
+      // Mark as initialized even if there are no items
       hasInitializedRef.current = true;
     }
   }, [watchlistData, listLoading]);
 
   // Get randomized watchlist items - filter to only include current items, maintain stable order
   const randomizedWatchlist = useMemo(() => {
+    // If not initialized yet but we have items, initialize now
+    if (!hasInitializedRef.current && watchlistItems.length > 0) {
+      const watchlistOrder = watchlistItems.map((_: WatchlistItem, index: number) => index);
+      for (let i = watchlistOrder.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [watchlistOrder[i], watchlistOrder[j]] = [watchlistOrder[j], watchlistOrder[i]];
+      }
+      watchlistItems.forEach((item: WatchlistItem, originalIndex: number) => {
+        randomizedOrderRef.current.set(item.id, watchlistOrder[originalIndex]);
+      });
+      hasInitializedRef.current = true;
+    }
+    
     if (!hasInitializedRef.current) return watchlistItems;
     
     // Assign orders: existing items keep their order, new items get random order at end
@@ -195,6 +214,19 @@ export default function WatchlistPage() {
 
   // Get randomized watched items - filter to only include current items, maintain stable order
   const randomizedWatched = useMemo(() => {
+    // If not initialized yet but we have items, initialize now
+    if (!hasInitializedRef.current && watchedItems.length > 0) {
+      const watchedOrder = watchedItems.map((_: WatchlistItem, index: number) => index);
+      for (let i = watchedOrder.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [watchedOrder[i], watchedOrder[j]] = [watchedOrder[j], watchedOrder[i]];
+      }
+      watchedItems.forEach((item: WatchlistItem, originalIndex: number) => {
+        randomizedOrderRef.current.set(item.id, watchedOrder[originalIndex] + 10000);
+      });
+      hasInitializedRef.current = true;
+    }
+    
     if (!hasInitializedRef.current) return watchedItems;
     
     // Assign orders: existing items keep their order, new items get random order at end
