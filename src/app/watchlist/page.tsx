@@ -824,18 +824,28 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching, disableC
   // Close dropdown on scroll
   useEffect(() => {
     if (open) {
+      let lastScrollY = window.scrollY;
       const handleScroll = () => {
-        setOpen(false);
+        const currentScrollY = window.scrollY;
+        // Only close if actually scrolled (not just wheel event without scroll)
+        if (Math.abs(currentScrollY - lastScrollY) > 1) {
+          setOpen(false);
+        }
+        lastScrollY = currentScrollY;
       };
+      // Listen to scroll events - close when scroll position changes
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      // Also listen to wheel for immediate feedback
       const handleWheel = () => {
-        setOpen(false);
+        // Small delay to allow scroll to happen first
+        requestAnimationFrame(() => {
+          setOpen(false);
+        });
       };
-      // Listen to scroll and wheel events - close immediately
-      window.addEventListener('scroll', handleScroll, true);
-      window.addEventListener('wheel', handleWheel, { passive: true, capture: true });
+      window.addEventListener('wheel', handleWheel, { passive: true });
       return () => {
-        window.removeEventListener('scroll', handleScroll, true);
-        window.removeEventListener('wheel', handleWheel, true);
+        window.removeEventListener('scroll', handleScroll);
+        window.removeEventListener('wheel', handleWheel);
       };
     }
   }, [open]);
@@ -1021,18 +1031,28 @@ function SearchResultCard({
   // Close dropdown on scroll
   useEffect(() => {
     if (open) {
+      let lastScrollY = window.scrollY;
       const handleScroll = () => {
-        setOpen(false);
+        const currentScrollY = window.scrollY;
+        // Only close if actually scrolled (not just wheel event without scroll)
+        if (Math.abs(currentScrollY - lastScrollY) > 1) {
+          setOpen(false);
+        }
+        lastScrollY = currentScrollY;
       };
+      // Listen to scroll events - close when scroll position changes
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      // Also listen to wheel for immediate feedback
       const handleWheel = () => {
-        setOpen(false);
+        // Small delay to allow scroll to happen first
+        requestAnimationFrame(() => {
+          setOpen(false);
+        });
       };
-      // Listen to scroll and wheel events - close immediately
-      window.addEventListener('scroll', handleScroll, true);
-      window.addEventListener('wheel', handleWheel, { passive: true, capture: true });
+      window.addEventListener('wheel', handleWheel, { passive: true });
       return () => {
-        window.removeEventListener('scroll', handleScroll, true);
-        window.removeEventListener('wheel', handleWheel, true);
+        window.removeEventListener('scroll', handleScroll);
+        window.removeEventListener('wheel', handleWheel);
       };
     }
   }, [open]);
