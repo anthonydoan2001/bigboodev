@@ -797,6 +797,7 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching }: { item
   const isWatched = item.status === 'WATCHED';
   const isWatching = item.status === 'WATCHING';
   const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
   
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -805,6 +806,7 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching }: { item
           className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20 cursor-context-menu"
           onContextMenu={(e) => {
             e.preventDefault();
+            setPosition({ x: e.clientX, y: e.clientY });
             setOpen(true);
           }}
         >
@@ -855,13 +857,13 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching }: { item
                 <Button
                   size="icon"
                   variant="destructive"
-                  className="h-8 w-8 opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
+                  className="h-8 w-8 opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 hover:scale-110 hover:rotate-12"
                   onClick={(e) => {
                     e.stopPropagation();
                     onDelete();
                   }}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4 transition-transform duration-200" />
                 </Button>
               </div>
             </div>
@@ -873,7 +875,13 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching }: { item
               </div>
             )}
           </div>
-        <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
+        <DropdownMenuContent 
+          align="end" 
+          side="right"
+          onCloseAutoFocus={(e) => e.preventDefault()}
+          sideOffset={5}
+          alignOffset={-10}
+        >
           {!isWatched && onMarkWatched && (
             <DropdownMenuItem onClick={onMarkWatched}>
               <CheckCircle2 className="mr-2 h-4 w-4" />
@@ -937,20 +945,26 @@ function SearchResultCard({
   isMarkingWatching?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
   
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <div className="group relative w-[180px] space-y-2">
-        <div 
-          className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20 cursor-context-menu"
-          onContextMenu={(e) => {
-            e.preventDefault();
-            setOpen(true);
-          }}
-        >
-          <DropdownMenuTrigger asChild className="hidden">
-            <div />
-          </DropdownMenuTrigger>
+        <DropdownMenuTrigger asChild>
+          <div 
+            ref={cardRef}
+            className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20 cursor-context-menu"
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setOpen(true);
+            }}
+            onClick={(e) => {
+              // Prevent left-click from opening menu
+              if (e.button === 0) {
+                e.preventDefault();
+              }
+            }}
+          >
           {/* Tooltip */}
           <div className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full mb-2 z-50 px-3 py-2 bg-black/90 text-white text-sm font-medium rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none max-w-[220px] break-words text-center">
             {result.title}
@@ -1037,7 +1051,13 @@ function SearchResultCard({
             </div>
           </div>
         </div>
-        <DropdownMenuContent align="end" onCloseAutoFocus={(e) => e.preventDefault()}>
+        <DropdownMenuContent 
+          align="end" 
+          side="right"
+          onCloseAutoFocus={(e) => e.preventDefault()}
+          sideOffset={5}
+          alignOffset={-10}
+        >
           {!isWatched && onMarkWatched && (
             <DropdownMenuItem onClick={onMarkWatched} disabled={isMarkingWatched}>
               <CheckCircle2 className="mr-2 h-4 w-4" />
