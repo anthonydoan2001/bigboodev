@@ -824,11 +824,21 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching, disableC
   // Close dropdown on scroll
   useEffect(() => {
     if (open) {
+      let scrollTimeout: NodeJS.Timeout;
       const handleScroll = () => {
-        setOpen(false);
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+          setOpen(false);
+        }, 50);
       };
+      // Listen to scroll and wheel events
       window.addEventListener('scroll', handleScroll, true);
-      return () => window.removeEventListener('scroll', handleScroll, true);
+      window.addEventListener('wheel', handleScroll, { passive: true });
+      return () => {
+        clearTimeout(scrollTimeout);
+        window.removeEventListener('scroll', handleScroll, true);
+        window.removeEventListener('wheel', handleScroll);
+      };
     }
   }, [open]);
   
@@ -844,14 +854,9 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching, disableC
             setPosition({ x: e.clientX, y: e.clientY });
             setOpen(true);
           }}
-          onWheel={(e) => {
-            if (open) {
-              e.preventDefault();
-              e.stopPropagation();
-            }
-          }}
           onMouseDown={(e) => {
-            if (e.button === 1 || e.button === 2) {
+            // Prevent middle mouse button (button 1) from scrolling
+            if (e.button === 1) {
               e.preventDefault();
               e.stopPropagation();
             }
@@ -1018,11 +1023,21 @@ function SearchResultCard({
   // Close dropdown on scroll
   useEffect(() => {
     if (open) {
+      let scrollTimeout: NodeJS.Timeout;
       const handleScroll = () => {
-        setOpen(false);
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+          setOpen(false);
+        }, 50);
       };
+      // Listen to scroll and wheel events
       window.addEventListener('scroll', handleScroll, true);
-      return () => window.removeEventListener('scroll', handleScroll, true);
+      window.addEventListener('wheel', handleScroll, { passive: true });
+      return () => {
+        clearTimeout(scrollTimeout);
+        window.removeEventListener('scroll', handleScroll, true);
+        window.removeEventListener('wheel', handleScroll);
+      };
     }
   }, [open]);
   
@@ -1040,14 +1055,9 @@ function SearchResultCard({
               setPosition({ x: e.clientX, y: e.clientY });
               setOpen(true);
             }}
-            onWheel={(e) => {
-              if (open) {
-                e.preventDefault();
-                e.stopPropagation();
-              }
-            }}
             onMouseDown={(e) => {
-              if (e.button === 1 || e.button === 2) {
+              // Prevent middle mouse button (button 1) from scrolling
+              if (e.button === 1) {
                 e.preventDefault();
                 e.stopPropagation();
               }
