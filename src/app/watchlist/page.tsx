@@ -534,7 +534,7 @@ export default function WatchlistPage() {
                   <Carousel title="Watched" count={randomizedWatched.length} icon={<CheckCircle2 className="h-4 w-4" />}>
                     {randomizedWatched.map((item) => (
                       <div key={item.id} className="flex-shrink-0 w-[180px]">
-                        <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} />
+                        <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} disableContextMenu={true} />
                       </div>
                     ))}
                   </Carousel>
@@ -545,7 +545,7 @@ export default function WatchlistPage() {
                   <Carousel title="Watched Anime" count={watchedAnimeList.length} icon={<CheckCircle2 className="h-4 w-4" />}>
                     {watchedAnimeList.map((item) => (
                       <div key={item.id} className="flex-shrink-0 w-[180px]">
-                        <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} />
+                        <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} disableContextMenu={true} />
                       </div>
                     ))}
                   </Carousel>
@@ -556,7 +556,7 @@ export default function WatchlistPage() {
                   <Carousel title="Watched Movies" count={watchedMoviesList.length} icon={<CheckCircle2 className="h-4 w-4" />}>
                     {watchedMoviesList.map((item) => (
                       <div key={item.id} className="flex-shrink-0 w-[180px]">
-                        <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} />
+                        <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} disableContextMenu={true} />
                       </div>
                     ))}
                   </Carousel>
@@ -567,7 +567,7 @@ export default function WatchlistPage() {
                   <Carousel title="Watched TV Shows" count={watchedShowsList.length} icon={<CheckCircle2 className="h-4 w-4" />}>
                     {watchedShowsList.map((item) => (
                       <div key={item.id} className="flex-shrink-0 w-[180px]">
-                        <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} />
+                        <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} disableContextMenu={true} />
                       </div>
                     ))}
                   </Carousel>
@@ -612,6 +612,7 @@ export default function WatchlistPage() {
                             isMarkingWatched={markWatchedMutation.isPending}
                             onMarkWatching={() => markWatchingMutation.mutate({ item: item as any })}
                             isMarkingWatching={markWatchingMutation.isPending}
+                            disableContextMenu={true}
                           />
                         </div>
                       );
@@ -639,6 +640,7 @@ export default function WatchlistPage() {
                             isMarkingWatched={markWatchedMutation.isPending}
                             onMarkWatching={() => markWatchingMutation.mutate({ item: item as any })}
                             isMarkingWatching={markWatchingMutation.isPending}
+                            disableContextMenu={true}
                           />
                         </div>
                       );
@@ -666,6 +668,7 @@ export default function WatchlistPage() {
                             isMarkingWatched={markWatchedMutation.isPending}
                             onMarkWatching={() => markWatchingMutation.mutate({ item: item as any })}
                             isMarkingWatching={markWatchingMutation.isPending}
+                            disableContextMenu={true}
                           />
                         </div>
                       );
@@ -793,25 +796,28 @@ function CardSkeleton() {
 }
 
 // Watchlist Card Component
-function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching }: { item: WatchlistItem; onDelete: () => void; onMarkWatched?: () => void; onMarkWatching?: () => void }) {
+function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching, disableContextMenu = false }: { item: WatchlistItem; onDelete: () => void; onMarkWatched?: () => void; onMarkWatching?: () => void; disableContextMenu?: boolean }) {
   const isWatched = item.status === 'WATCHED';
   const isWatching = item.status === 'WATCHING';
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const menuId = useRef(`menu-${item.id}`);
   
   useEffect(() => {
     if (open && position.x > 0 && position.y > 0) {
       // Use setTimeout to ensure the menu is rendered in the portal
-      setTimeout(() => {
-        const menuElement = document.querySelector(`[data-menu-id="${menuId.current}"]`) as HTMLElement;
+      const timeoutId = setTimeout(() => {
+        // Find the dropdown menu content element (Radix UI renders it in a portal)
+        const menuElements = document.querySelectorAll('[data-slot="dropdown-menu-content"]');
+        const menuElement = Array.from(menuElements).pop() as HTMLElement;
         if (menuElement) {
           menuElement.style.position = 'fixed';
           menuElement.style.left = `${position.x}px`;
           menuElement.style.top = `${position.y}px`;
-          menuElement.style.transform = 'translate(-100%, 0)';
+          menuElement.style.transform = 'translate(10px, 0)'; // Position to the right of cursor
+          menuElement.style.margin = '0';
         }
-      }, 0);
+      }, 10);
+      return () => clearTimeout(timeoutId);
     }
   }, [open, position]);
   
@@ -821,6 +827,7 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching }: { item
         <div 
           className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20 cursor-context-menu"
           onContextMenu={(e) => {
+            if (disableContextMenu) return;
             e.preventDefault();
             setPosition({ x: e.clientX, y: e.clientY });
             setOpen(true);
@@ -947,6 +954,7 @@ function SearchResultCard({
   isMarkingWatched,
   onMarkWatching,
   isMarkingWatching,
+  disableContextMenu = false,
 }: {
   result: UniversalSearchResult;
   onAdd: () => void;
@@ -958,6 +966,7 @@ function SearchResultCard({
   isMarkingWatched?: boolean;
   onMarkWatching?: () => void;
   isMarkingWatching?: boolean;
+  disableContextMenu?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -974,7 +983,7 @@ function SearchResultCard({
           menuElement.style.position = 'fixed';
           menuElement.style.left = `${position.x}px`;
           menuElement.style.top = `${position.y}px`;
-          menuElement.style.transform = 'translate(-100%, 0)';
+          menuElement.style.transform = 'translate(10px, 0)'; // Position to the right of cursor
           menuElement.style.margin = '0';
         }
       }, 10);
@@ -990,6 +999,7 @@ function SearchResultCard({
             ref={cardRef}
             className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20 cursor-context-menu"
             onContextMenu={(e) => {
+              if (disableContextMenu) return;
               e.preventDefault();
               setPosition({ x: e.clientX, y: e.clientY });
               setOpen(true);
