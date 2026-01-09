@@ -820,6 +820,17 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching, disableC
       return () => clearTimeout(timeoutId);
     }
   }, [open, position]);
+
+  // Close dropdown on scroll
+  useEffect(() => {
+    if (open) {
+      const handleScroll = () => {
+        setOpen(false);
+      };
+      window.addEventListener('scroll', handleScroll, true);
+      return () => window.removeEventListener('scroll', handleScroll, true);
+    }
+  }, [open]);
   
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -829,8 +840,21 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching, disableC
           onContextMenu={(e) => {
             if (disableContextMenu) return;
             e.preventDefault();
+            e.stopPropagation();
             setPosition({ x: e.clientX, y: e.clientY });
             setOpen(true);
+          }}
+          onWheel={(e) => {
+            if (open) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }}
+          onMouseDown={(e) => {
+            if (e.button === 1 || e.button === 2) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
           }}
         >
           <DropdownMenuTrigger asChild className="hidden">
@@ -990,6 +1014,17 @@ function SearchResultCard({
       return () => clearTimeout(timeoutId);
     }
   }, [open, position]);
+
+  // Close dropdown on scroll
+  useEffect(() => {
+    if (open) {
+      const handleScroll = () => {
+        setOpen(false);
+      };
+      window.addEventListener('scroll', handleScroll, true);
+      return () => window.removeEventListener('scroll', handleScroll, true);
+    }
+  }, [open]);
   
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -1001,8 +1036,21 @@ function SearchResultCard({
             onContextMenu={(e) => {
               if (disableContextMenu) return;
               e.preventDefault();
+              e.stopPropagation();
               setPosition({ x: e.clientX, y: e.clientY });
               setOpen(true);
+            }}
+            onWheel={(e) => {
+              if (open) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            }}
+            onMouseDown={(e) => {
+              if (e.button === 1 || e.button === 2) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
             }}
             onClick={(e) => {
               // Prevent left-click from opening menu
