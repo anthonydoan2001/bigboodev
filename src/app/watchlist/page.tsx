@@ -10,7 +10,7 @@ import { WatchlistItem } from '@prisma/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, ListVideo, Plus, Trash2, Trophy } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 type ViewMode = 'list' | 'search' | 'top';
 
@@ -120,6 +120,17 @@ export default function WatchlistPage() {
       item => item.externalId === String(externalId) && item.type === type.toUpperCase()
     );
   };
+
+  // Randomize all watchlist items for the combined section
+  const randomizedWatchlist = useMemo(() => {
+    const shuffled = [...watchlistItems];
+    // Fisher-Yates shuffle algorithm
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }, [watchlistItems]);
 
   // Group watchlist by type
   const animeList = watchlistItems.filter(item => item.type === 'ANIME');
@@ -315,6 +326,17 @@ export default function WatchlistPage() {
               </Card>
             ) : (
               <>
+                {/* Watchlist Section - All items combined in random order */}
+                {randomizedWatchlist.length > 0 && (
+                  <Carousel title="Watchlist" count={randomizedWatchlist.length} icon={<ListVideo className="h-4 w-4" />}>
+                    {randomizedWatchlist.map((item) => (
+                      <div key={item.id} className="flex-shrink-0 w-[180px]">
+                        <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} />
+                      </div>
+                    ))}
+                  </Carousel>
+                )}
+
                 {/* Anime Section */}
                 {animeList.length > 0 && (
                   <Carousel title="Anime" count={animeList.length} icon={<ListVideo className="h-4 w-4" />}>
@@ -364,7 +386,7 @@ function CardSkeleton() {
     <div className="space-y-3 w-[180px]">
       <Skeleton className="h-[270px] w-full rounded-xl" />
       <div className="space-y-1.5">
-        <Skeleton className="h-5 w-3/4" />
+        <Skeleton className="h-10 w-full" />
         <Skeleton className="h-4 w-1/2" />
       </div>
     </div>
@@ -375,44 +397,54 @@ function CardSkeleton() {
 function WatchlistCard({ item, onDelete }: { item: WatchlistItem; onDelete: () => void }) {
   return (
     <div className="group relative w-[180px] space-y-3">
-      <div className="relative aspect-[2/3] overflow-hidden rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20">
-        {item.imageUrl ? (
-          <Image
-            src={item.imageUrl}
-            alt={item.title}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-            sizes="(max-width: 768px) 33vw, (max-width: 1024px) 20vw, 180px"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-secondary text-muted-foreground">
-            <span className="text-sm font-medium">No Image</span>
-          </div>
-        )}
+      <div className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20">
+        {/* Tooltip */}
+        <div className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full mb-2 z-50 px-3 py-2 bg-black/90 text-white text-sm font-medium rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none max-w-[220px] break-words text-center">
+          {item.title}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black/90"></div>
+        </div>
+
+        <div className="relative aspect-[2/3] overflow-hidden rounded-xl">
+          {item.imageUrl ? (
+            <Image
+              src={item.imageUrl}
+              alt={item.title}
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              sizes="(max-width: 768px) 33vw, (max-width: 1024px) 20vw, 180px"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-secondary text-muted-foreground">
+              <span className="text-sm font-medium">No Image</span>
+            </div>
+          )}
+        </div>
 
         {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-end p-3">
-          <Button
-            size="sm"
-            variant="destructive"
-            className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
-            onClick={onDelete}
-          >
-            <Trash2 className="mr-1.5 h-4 w-4" />
-            Remove
-          </Button>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-end p-3 pointer-events-none">
+          <div className="pointer-events-auto">
+            <Button
+              size="sm"
+              variant="destructive"
+              className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
+              onClick={onDelete}
+            >
+              <Trash2 className="mr-1.5 h-4 w-4" />
+              Remove
+            </Button>
+          </div>
         </div>
 
         {/* Rating Badge */}
         {item.rating && (
-          <div className="absolute right-2 top-2 rounded-md bg-black/60 px-2 py-1 text-xs font-bold text-white backdrop-blur-md flex items-center gap-1">
+          <div className="absolute right-2 top-2 rounded-md bg-black/60 px-2 py-1 text-xs font-bold text-white backdrop-blur-md flex items-center gap-1 z-10">
             <span className="text-yellow-400">★</span> {item.rating.toFixed(1)}
           </div>
         )}
       </div>
 
       <div className="space-y-1.5">
-        <h3 className="line-clamp-1 text-base font-semibold leading-tight text-foreground/90" title={item.title}>
+        <h3 className="line-clamp-2 text-base font-semibold leading-snug text-foreground/90 min-h-[2.5rem]" title={item.title}>
           {item.title}
         </h3>
         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
@@ -443,57 +475,67 @@ function SearchResultCard({
 }) {
   return (
     <div className="group relative w-[180px] space-y-3">
-      <div className="relative aspect-[2/3] overflow-hidden rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20">
-        {result.image ? (
-          <Image
-            src={result.image}
-            alt={result.title}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-            sizes="(max-width: 768px) 33vw, (max-width: 1024px) 20vw, 180px"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-secondary text-muted-foreground">
-            <span className="text-sm font-medium">No Image</span>
-          </div>
-        )}
+      <div className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20">
+        {/* Tooltip */}
+        <div className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full mb-2 z-50 px-3 py-2 bg-black/90 text-white text-sm font-medium rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none max-w-[220px] break-words text-center">
+          {result.title}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black/90"></div>
+        </div>
+
+        <div className="relative aspect-[2/3] overflow-hidden rounded-xl">
+          {result.image ? (
+            <Image
+              src={result.image}
+              alt={result.title}
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              sizes="(max-width: 768px) 33vw, (max-width: 1024px) 20vw, 180px"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-secondary text-muted-foreground">
+              <span className="text-sm font-medium">No Image</span>
+            </div>
+          )}
+        </div>
 
         {/* Type Badge */}
-        <div className="absolute right-2 top-2 rounded-md bg-black/60 px-2 py-1 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-md">
+        <div className="absolute right-2 top-2 rounded-md bg-black/60 px-2 py-1 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-md z-10">
           {result.type}
         </div>
 
         {/* Added Badge */}
         {alreadyInList && (
-          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-emerald-500/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-md shadow-sm">
+          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-emerald-500/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-md shadow-sm z-10">
             <Check className="h-3 w-3" />
             Added
           </div>
         )}
 
         {/* Hover Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-end p-3">
-          {alreadyInList ? (
-            <Button size="sm" className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0" disabled variant="secondary">
-              <Check className="mr-1.5 h-4 w-4" />
-              Saved
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
-              onClick={onAdd}
-              disabled={isAdding}
-            >
-              <Plus className="mr-1.5 h-4 w-4" />
-              {isAdding ? 'Adding...' : 'Add'}
-            </Button>
-          )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-end p-3 pointer-events-none">
+          <div className="pointer-events-auto">
+            {alreadyInList ? (
+              <Button size="sm" className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0" disabled variant="secondary">
+                <Check className="mr-1.5 h-4 w-4" />
+                Saved
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
+                onClick={onAdd}
+                disabled={isAdding}
+              >
+                <Plus className="mr-1.5 h-4 w-4" />
+                {isAdding ? 'Adding...' : 'Add'}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
       <div className="space-y-1.5">
-        <h3 className="line-clamp-1 text-base font-semibold leading-tight text-foreground/90" title={result.title}>
+        <h3 className="line-clamp-2 text-base font-semibold leading-snug text-foreground/90 min-h-[2.5rem]" title={result.title}>
           {result.title}
         </h3>
         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
