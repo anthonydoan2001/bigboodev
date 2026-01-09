@@ -22,6 +22,7 @@ export default function WatchlistPage() {
   // Stable randomized order - only created once per page load
   const randomizedOrderRef = useRef<Map<string, number>>(new Map());
   const hasInitializedRef = useRef(false);
+  const previousItemCountRef = useRef<{ watchlist: number; watched: number }>({ watchlist: 0, watched: 0 });
 
   // Fetch user's watchlist (always loaded)
   const { data: watchlistData, isLoading: listLoading } = useQuery({
@@ -156,6 +157,7 @@ export default function WatchlistPage() {
         currentWatchlist.forEach((item: WatchlistItem, originalIndex: number) => {
           randomizedOrderRef.current.set(item.id, watchlistOrder[originalIndex]);
         });
+        hasInitializedRef.current = true;
       }
 
       // Initialize random order for watched items
@@ -169,17 +171,21 @@ export default function WatchlistPage() {
         currentWatched.forEach((item: WatchlistItem, originalIndex: number) => {
           randomizedOrderRef.current.set(item.id, watchedOrder[originalIndex] + 10000); // Offset to separate from watchlist
         });
+        // Only mark as initialized if we haven't already (in case watchlist was empty but watched has items)
+        if (!hasInitializedRef.current) {
+          hasInitializedRef.current = true;
+        }
       }
-
-      // Mark as initialized even if there are no items
-      hasInitializedRef.current = true;
     }
   }, [watchlistData, listLoading]);
 
   // Get randomized watchlist items - filter to only include current items, maintain stable order
   const randomizedWatchlist = useMemo(() => {
-    // If not initialized yet but we have items, initialize now
-    if (!hasInitializedRef.current && watchlistItems.length > 0) {
+    // Check if items just appeared (went from 0 to >0) - this indicates first load
+    const itemsJustAppeared = previousItemCountRef.current.watchlist === 0 && watchlistItems.length > 0;
+    
+    // If not initialized yet but we have items, initialize now (fallback for first render)
+    if ((!hasInitializedRef.current && watchlistItems.length > 0) || itemsJustAppeared) {
       const watchlistOrder = watchlistItems.map((_: WatchlistItem, index: number) => index);
       for (let i = watchlistOrder.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -189,9 +195,16 @@ export default function WatchlistPage() {
         randomizedOrderRef.current.set(item.id, watchlistOrder[originalIndex]);
       });
       hasInitializedRef.current = true;
+      previousItemCountRef.current.watchlist = watchlistItems.length;
+    } else {
+      // Update the count even if not initializing
+      previousItemCountRef.current.watchlist = watchlistItems.length;
     }
     
-    if (!hasInitializedRef.current) return watchlistItems;
+    // If still not initialized (no items), return as-is
+    if (!hasInitializedRef.current || watchlistItems.length === 0) {
+      return watchlistItems;
+    }
     
     // Assign orders: existing items keep their order, new items get random order at end
     const watchlistOrders = Array.from(randomizedOrderRef.current.values()).filter(v => v < 10000);
@@ -214,8 +227,11 @@ export default function WatchlistPage() {
 
   // Get randomized watched items - filter to only include current items, maintain stable order
   const randomizedWatched = useMemo(() => {
-    // If not initialized yet but we have items, initialize now
-    if (!hasInitializedRef.current && watchedItems.length > 0) {
+    // Check if items just appeared (went from 0 to >0) - this indicates first load
+    const itemsJustAppeared = previousItemCountRef.current.watched === 0 && watchedItems.length > 0;
+    
+    // If not initialized yet but we have items, initialize now (fallback for first render)
+    if ((!hasInitializedRef.current && watchedItems.length > 0) || itemsJustAppeared) {
       const watchedOrder = watchedItems.map((_: WatchlistItem, index: number) => index);
       for (let i = watchedOrder.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -225,9 +241,16 @@ export default function WatchlistPage() {
         randomizedOrderRef.current.set(item.id, watchedOrder[originalIndex] + 10000);
       });
       hasInitializedRef.current = true;
+      previousItemCountRef.current.watched = watchedItems.length;
+    } else {
+      // Update the count even if not initializing
+      previousItemCountRef.current.watched = watchedItems.length;
     }
     
-    if (!hasInitializedRef.current) return watchedItems;
+    // If still not initialized (no items), return as-is
+    if (!hasInitializedRef.current || watchedItems.length === 0) {
+      return watchedItems;
+    }
     
     // Assign orders: existing items keep their order, new items get random order at end
     const watchedOrders = Array.from(randomizedOrderRef.current.values()).filter(v => v >= 10000);
