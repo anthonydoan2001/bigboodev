@@ -798,6 +798,22 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching }: { item
   const isWatching = item.status === 'WATCHING';
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  const menuId = useRef(`menu-${item.id}`);
+  
+  useEffect(() => {
+    if (open && position.x > 0 && position.y > 0) {
+      // Use setTimeout to ensure the menu is rendered in the portal
+      setTimeout(() => {
+        const menuElement = document.querySelector(`[data-menu-id="${menuId.current}"]`) as HTMLElement;
+        if (menuElement) {
+          menuElement.style.position = 'fixed';
+          menuElement.style.left = `${position.x}px`;
+          menuElement.style.top = `${position.y}px`;
+          menuElement.style.transform = 'translate(-100%, 0)';
+        }
+      }, 0);
+    }
+  }, [open, position]);
   
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -877,10 +893,14 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching }: { item
           </div>
         <DropdownMenuContent 
           align="end" 
-          side="right"
           onCloseAutoFocus={(e) => e.preventDefault()}
-          sideOffset={5}
-          alignOffset={-10}
+          style={{
+            position: 'fixed',
+            left: `${position.x}px`,
+            top: `${position.y}px`,
+            transform: 'translate(-100%, 0)',
+          }}
+          className="!fixed"
         >
           {!isWatched && onMarkWatched && (
             <DropdownMenuItem onClick={onMarkWatched}>
@@ -945,7 +965,27 @@ function SearchResultCard({
   isMarkingWatching?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    if (open && position.x > 0 && position.y > 0) {
+      // Use setTimeout to ensure the menu is rendered in the portal
+      const timeoutId = setTimeout(() => {
+        // Find the dropdown menu content element (Radix UI renders it in a portal)
+        const menuElements = document.querySelectorAll('[data-slot="dropdown-menu-content"]');
+        const menuElement = Array.from(menuElements).pop() as HTMLElement;
+        if (menuElement) {
+          menuElement.style.position = 'fixed';
+          menuElement.style.left = `${position.x}px`;
+          menuElement.style.top = `${position.y}px`;
+          menuElement.style.transform = 'translate(-100%, 0)';
+          menuElement.style.margin = '0';
+        }
+      }, 10);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [open, position]);
   
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -956,6 +996,7 @@ function SearchResultCard({
             className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20 cursor-context-menu"
             onContextMenu={(e) => {
               e.preventDefault();
+              setPosition({ x: e.clientX, y: e.clientY });
               setOpen(true);
             }}
             onClick={(e) => {
@@ -1054,10 +1095,7 @@ function SearchResultCard({
         </DropdownMenuTrigger>
         <DropdownMenuContent 
           align="end" 
-          side="right"
           onCloseAutoFocus={(e) => e.preventDefault()}
-          sideOffset={5}
-          alignOffset={-10}
         >
           {!isWatched && onMarkWatched && (
             <DropdownMenuItem onClick={onMarkWatched} disabled={isMarkingWatched}>
