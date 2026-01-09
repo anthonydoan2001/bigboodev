@@ -117,9 +117,9 @@ export default function WatchlistPage() {
   const watchedItems: WatchlistItem[] = allItems.filter(item => item.status === 'WATCHED');
   
   // Filter out items without images from search results
-  const searchResults: UniversalSearchResult[] = (searchData?.results || []).filter(result => result.image && result.image.trim() !== '');
+  const searchResults: UniversalSearchResult[] = (searchData?.results || []).filter((result: UniversalSearchResult) => result.image && result.image.trim() !== '');
   // Filter out items without images from top items
-  const topItems: TopItem[] = (topData?.results || []).filter(item => item.image && item.image.trim() !== '');
+  const topItems: TopItem[] = (topData?.results || []).filter((item: TopItem) => item.image && item.image.trim() !== '');
 
   // Helper to check if item is in watchlist
   const isInWatchlist = (externalId: number, type: string) => {
