@@ -1050,6 +1050,7 @@ function SearchResultCard({
               )}
             </div>
           </div>
+          </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent 
           align="end" 
