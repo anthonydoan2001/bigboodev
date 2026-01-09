@@ -900,7 +900,7 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching }: { item
             top: `${position.y}px`,
             transform: 'translate(-100%, 0)',
           }}
-          className="!fixed"
+          className="!fixed w-48 p-1 bg-background/80 backdrop-blur-xl border-border/50 shadow-xl rounded-xl"
         >
           {!isWatched && onMarkWatched && (
             <DropdownMenuItem onClick={onMarkWatched}>
@@ -909,16 +909,11 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching }: { item
             </DropdownMenuItem>
           )}
           {!isWatching && onMarkWatching && (
-            <DropdownMenuItem onClick={onMarkWatching}>
+            <DropdownMenuItem onClick={onMarkWatching} className="rounded-lg focus:bg-accent/50 focus:text-accent-foreground cursor-pointer">
               <Eye className="mr-2 h-4 w-4" />
               Mark Watching
             </DropdownMenuItem>
           )}
-          {(onMarkWatched || onMarkWatching) && <DropdownMenuSeparator />}
-          <DropdownMenuItem variant="destructive" onClick={onDelete}>
-            <Trash2 className="mr-2 h-4 w-4" />
-            Remove
-          </DropdownMenuItem>
         </DropdownMenuContent>
         
         <div className="space-y-1.5">
@@ -1096,6 +1091,13 @@ function SearchResultCard({
         <DropdownMenuContent 
           align="end" 
           onCloseAutoFocus={(e) => e.preventDefault()}
+          style={{
+            position: 'fixed',
+            left: `${position.x}px`,
+            top: `${position.y}px`,
+            transform: 'translate(-100%, 0)',
+          }}
+          className="!fixed w-48 p-1 bg-background/80 backdrop-blur-xl border-border/50 shadow-xl rounded-xl"
         >
           {!isWatched && onMarkWatched && (
             <DropdownMenuItem onClick={onMarkWatched} disabled={isMarkingWatched}>
@@ -1104,7 +1106,7 @@ function SearchResultCard({
             </DropdownMenuItem>
           )}
           {!isWatching && onMarkWatching && (
-            <DropdownMenuItem onClick={onMarkWatching} disabled={isMarkingWatching}>
+            <DropdownMenuItem onClick={onMarkWatching} disabled={isMarkingWatching} className="rounded-lg focus:bg-accent/50 focus:text-accent-foreground cursor-pointer">
               <Eye className="mr-2 h-4 w-4" />
               {isMarkingWatching ? 'Marking...' : 'Mark Watching'}
             </DropdownMenuItem>
