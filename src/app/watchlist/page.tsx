@@ -151,7 +151,7 @@ export default function WatchlistPage() {
         const j = Math.floor(Math.random() * (i + 1));
         [watchlistOrder[i], watchlistOrder[j]] = [watchlistOrder[j], watchlistOrder[i]];
       }
-      currentWatchlist.forEach((item, originalIndex) => {
+      currentWatchlist.forEach((item: WatchlistItem, originalIndex: number) => {
         randomizedOrderRef.current.set(item.id, watchlistOrder[originalIndex]);
       });
 
@@ -162,7 +162,7 @@ export default function WatchlistPage() {
         const j = Math.floor(Math.random() * (i + 1));
         [watchedOrder[i], watchedOrder[j]] = [watchedOrder[j], watchedOrder[i]];
       }
-      currentWatched.forEach((item, originalIndex) => {
+      currentWatched.forEach((item: WatchlistItem, originalIndex: number) => {
         randomizedOrderRef.current.set(item.id, watchedOrder[originalIndex] + 10000); // Offset to separate from watchlist
       });
 
