@@ -824,20 +824,18 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching, disableC
   // Close dropdown on scroll
   useEffect(() => {
     if (open) {
-      let scrollTimeout: NodeJS.Timeout;
       const handleScroll = () => {
-        clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(() => {
-          setOpen(false);
-        }, 50);
+        setOpen(false);
       };
-      // Listen to scroll and wheel events
+      const handleWheel = () => {
+        setOpen(false);
+      };
+      // Listen to scroll and wheel events - close immediately
       window.addEventListener('scroll', handleScroll, true);
-      window.addEventListener('wheel', handleScroll, { passive: true });
+      window.addEventListener('wheel', handleWheel, { passive: true, capture: true });
       return () => {
-        clearTimeout(scrollTimeout);
         window.removeEventListener('scroll', handleScroll, true);
-        window.removeEventListener('wheel', handleScroll);
+        window.removeEventListener('wheel', handleWheel, true);
       };
     }
   }, [open]);
@@ -1023,20 +1021,18 @@ function SearchResultCard({
   // Close dropdown on scroll
   useEffect(() => {
     if (open) {
-      let scrollTimeout: NodeJS.Timeout;
       const handleScroll = () => {
-        clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(() => {
-          setOpen(false);
-        }, 50);
+        setOpen(false);
       };
-      // Listen to scroll and wheel events
+      const handleWheel = () => {
+        setOpen(false);
+      };
+      // Listen to scroll and wheel events - close immediately
       window.addEventListener('scroll', handleScroll, true);
-      window.addEventListener('wheel', handleScroll, { passive: true });
+      window.addEventListener('wheel', handleWheel, { passive: true, capture: true });
       return () => {
-        clearTimeout(scrollTimeout);
         window.removeEventListener('scroll', handleScroll, true);
-        window.removeEventListener('wheel', handleScroll);
+        window.removeEventListener('wheel', handleWheel, true);
       };
     }
   }, [open]);
