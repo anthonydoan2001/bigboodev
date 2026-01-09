@@ -900,20 +900,20 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching }: { item
             Remove
           </DropdownMenuItem>
         </DropdownMenuContent>
-      </div>
-
-      <div className="space-y-1.5">
-        <h3 className="line-clamp-2 text-base font-semibold leading-snug text-foreground/90 min-h-[2.5rem]" title={item.title}>
-          {item.title}
-        </h3>
-        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-          {item.year && <span>{item.year}</span>}
-          {item.episodes && (
-            <>
-              <span className="text-muted-foreground/30">•</span>
-              <span>{item.episodes} eps</span>
-            </>
-          )}
+        
+        <div className="space-y-1.5">
+          <h3 className="line-clamp-2 text-base font-semibold leading-snug text-foreground/90 min-h-[2.5rem]" title={item.title}>
+            {item.title}
+          </h3>
+          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+            {item.year && <span>{item.year}</span>}
+            {item.episodes && (
+              <>
+                <span className="text-muted-foreground/30">•</span>
+                <span>{item.episodes} eps</span>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </DropdownMenu>
@@ -1050,7 +1050,7 @@ function SearchResultCard({
               )}
             </div>
           </div>
-        </div>
+        </DropdownMenuTrigger>
         <DropdownMenuContent 
           align="end" 
           side="right"
