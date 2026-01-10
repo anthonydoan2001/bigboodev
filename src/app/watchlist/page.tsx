@@ -1,5 +1,9 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const dynamicParams = true;
+
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useMemo, useState, useEffect, useRef, Suspense } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -19,8 +23,6 @@ import { useGridCardWidth } from '@/lib/hooks/useGridCardWidth';
 import { WatchlistItem } from '@prisma/client';
 
 const ITEMS_PER_PAGE = 22;
-
-export const dynamic = 'force-dynamic';
 
 function WatchlistContent() {
   const router = useRouter();
@@ -419,14 +421,14 @@ export default function WatchlistPage() {
     <Suspense fallback={
       <div className="w-full py-8 px-4 md:px-6 lg:px-8 min-h-screen">
         <div className="w-full space-y-6">
-          <WatchlistNav />
+          <div className="flex items-center justify-center">
+            <Skeleton className="h-10 w-64 rounded-lg" />
+          </div>
           <div className="space-y-4">
             <Skeleton className="h-8 w-48 rounded-lg" />
-            <div className="grid gap-x-4 gap-y-6">
-              {Array.from({ length: 22 }).map((_, i) => (
-                <div key={i} style={{ width: 'var(--item-width, 200px)' }}>
-                  <CardSkeleton />
-                </div>
+            <div className="grid gap-x-4 gap-y-6 grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
+              {Array.from({ length: 16 }).map((_, i) => (
+                <CardSkeleton key={i} />
               ))}
             </div>
           </div>
