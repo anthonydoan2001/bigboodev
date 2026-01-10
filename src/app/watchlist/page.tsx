@@ -24,7 +24,13 @@ type ViewMode = 'list' | 'watched' | 'watching' | 'search' | 'top';
 export default function WatchlistPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchFilter, setSearchFilter] = useState<'all' | 'anime' | 'movie' | 'show'>('all');
+  const [searchPage, setSearchPage] = useState(1);
+  const [watchedFilter, setWatchedFilter] = useState<'all' | 'anime' | 'movie' | 'show'>('all');
+  const [watchedPage, setWatchedPage] = useState(1);
   const queryClient = useQueryClient();
+  
+  const ITEMS_PER_PAGE = 24; // 8 columns × 3 rows
   
   // Stable randomized order - only created once per page load
   const randomizedOrderRef = useRef<Map<string, number>>(new Map());
@@ -113,6 +119,8 @@ export default function WatchlistPage() {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+    setSearchFilter('all'); // Reset filter when searching
+    setSearchPage(1); // Reset to page 1 when searching
     if (query) {
       setViewMode('search');
     }
@@ -120,14 +128,18 @@ export default function WatchlistPage() {
 
   const handleClearSearch = () => {
     setSearchQuery('');
+    setSearchFilter('all'); // Reset filter when clearing
+    setSearchPage(1); // Reset to page 1 when clearing
     setViewMode('list');
   };
 
   const allItems: WatchlistItem[] = watchlistData?.items || [];
   // Filter out watched items from regular watchlist
   const watchlistItems: WatchlistItem[] = allItems.filter(item => item.status !== 'WATCHED' && item.status !== 'WATCHING');
-  // Get only watched items
-  const watchedItems: WatchlistItem[] = allItems.filter(item => item.status === 'WATCHED');
+  // Get only watched items, sorted by date added (most recent first)
+  const watchedItems: WatchlistItem[] = allItems
+    .filter(item => item.status === 'WATCHED')
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   // Get only watching items
   const watchingItems: WatchlistItem[] = allItems
     .filter(item => item.status === 'WATCHING')
@@ -157,6 +169,14 @@ export default function WatchlistPage() {
     return watchingItems.some(
       item => item.externalId === String(externalId) && item.type === type.toUpperCase()
     );
+  };
+
+  // Helper to get watchlist item ID by externalId and type
+  const getWatchlistItemId = (externalId: number, type: string): string | null => {
+    const item = allItems.find(
+      item => item.externalId === String(externalId) && item.type === type.toUpperCase()
+    );
+    return item?.id || null;
   };
 
   // Create stable randomized order only on initial load
@@ -271,15 +291,49 @@ export default function WatchlistPage() {
   const moviesList = watchlistItems.filter(item => item.type === 'MOVIE');
   const showsList = watchlistItems.filter(item => item.type === 'SHOW');
 
-  // Group watched items by type
-  const watchedAnimeList = watchedItems.filter(item => item.type === 'ANIME');
-  const watchedMoviesList = watchedItems.filter(item => item.type === 'MOVIE');
-  const watchedShowsList = watchedItems.filter(item => item.type === 'SHOW');
+  // Filter watched items based on selected filter
+  const filteredWatchedItems = useMemo(() => {
+    if (watchedFilter === 'all') return watchedItems;
+    const filterType = watchedFilter.toUpperCase();
+    return watchedItems.filter(item => item.type === filterType);
+  }, [watchedItems, watchedFilter]);
+
+  // Paginate filtered watched items
+  const paginatedWatchedItems = useMemo(() => {
+    const startIndex = (watchedPage - 1) * ITEMS_PER_PAGE;
+    return filteredWatchedItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredWatchedItems, watchedPage]);
+
+  const totalWatchedPages = Math.ceil(filteredWatchedItems.length / ITEMS_PER_PAGE);
+
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setWatchedPage(1);
+  }, [watchedFilter]);
 
   // Group top items by type
   const topAnime = topItems.filter(item => item.type === 'anime');
   const topMovies = topItems.filter(item => item.type === 'movie');
   const topShows = topItems.filter(item => item.type === 'show');
+
+  // Filter search results based on selected filter
+  const filteredSearchResults = useMemo(() => {
+    if (searchFilter === 'all') return searchResults;
+    return searchResults.filter(item => item.type.toLowerCase() === searchFilter);
+  }, [searchResults, searchFilter]);
+
+  // Paginate filtered search results
+  const paginatedSearchResults = useMemo(() => {
+    const startIndex = (searchPage - 1) * ITEMS_PER_PAGE;
+    return filteredSearchResults.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredSearchResults, searchPage]);
+
+  const totalSearchPages = Math.ceil(filteredSearchResults.length / ITEMS_PER_PAGE);
+
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setSearchPage(1);
+  }, [searchFilter]);
 
   // Mark as watched mutation
   const markWatchedMutation = useMutation({
@@ -456,29 +510,63 @@ export default function WatchlistPage() {
                     item={item} 
                     onDelete={() => deleteMutation.mutate(item.id)}
                     onMarkWatched={() => markWatchedMutation.mutate({ id: item.id })}
+                    hideStatusBadge={true}
                   />
                 ))}
               </div>
             )}
           </div>
         ) : showingSearch ? (
-          <div>
+          <div className="space-y-6">
+            {/* Search Filters */}
+            {searchResults.length > 0 && (
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  variant={searchFilter === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSearchFilter('all')}
+                >
+                  All ({searchResults.length})
+                </Button>
+                <Button
+                  variant={searchFilter === 'anime' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSearchFilter('anime')}
+                >
+                  Anime ({searchResults.filter(item => item.type.toLowerCase() === 'anime').length})
+                </Button>
+                <Button
+                  variant={searchFilter === 'movie' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSearchFilter('movie')}
+                >
+                  Movie ({searchResults.filter(item => item.type.toLowerCase() === 'movie').length})
+                </Button>
+                <Button
+                  variant={searchFilter === 'show' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSearchFilter('show')}
+                >
+                  TV Show ({searchResults.filter(item => item.type.toLowerCase() === 'show').length})
+                </Button>
+              </div>
+            )}
+
+            {/* Search Results - Grid Layout 8 columns × 3 rows */}
             {searchLoading ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-                {Array.from({ length: 12 }).map((_, i) => (
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+                {Array.from({ length: 24 }).map((_, i) => (
                   <CardSkeleton key={i} />
                 ))}
               </div>
-            ) : searchResults.length > 0 ? (
-              <div className="space-y-4">
-                <p className="text-muted-foreground font-medium text-sm">
-                  Found {searchResults.length} results for "{searchQuery}"
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-                  {searchResults.map((result) => {
+            ) : paginatedSearchResults.length > 0 ? (
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+                  {paginatedSearchResults.map((result) => {
                     const alreadyInList = isInWatchlist(result.externalId, result.type);
                     const itemWatched = isWatched(result.externalId, result.type);
                     const itemWatching = isWatching(result.externalId, result.type);
+                    const itemId = getWatchlistItemId(result.externalId, result.type);
                     return (
                       <SearchResultCard
                         key={result.id}
@@ -492,87 +580,146 @@ export default function WatchlistPage() {
                         isMarkingWatched={markWatchedMutation.isPending}
                         onMarkWatching={() => markWatchingMutation.mutate({ item: result })}
                         isMarkingWatching={markWatchingMutation.isPending}
+                        onDelete={itemId ? () => deleteMutation.mutate(itemId) : undefined}
                       />
                     );
                   })}
                 </div>
-              </div>
+                
+                {/* Pagination Controls */}
+                {totalSearchPages > 1 && (
+                  <div className="flex items-center justify-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSearchPage(prev => Math.max(1, prev - 1))}
+                      disabled={searchPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Page {searchPage} of {totalSearchPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSearchPage(prev => Math.min(totalSearchPages, prev + 1))}
+                      disabled={searchPage === totalSearchPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : searchResults.length > 0 ? (
+              <Card>
+                <CardContent className="p-12 text-center text-muted-foreground">
+                  <p>No {searchFilter === 'all' ? '' : searchFilter} results found for "{searchQuery}"</p>
+                </CardContent>
+              </Card>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-                {Array.from({ length: 12 }).map((_, i) => (
-                  <CardSkeleton key={i} />
-                ))}
-              </div>
+              <Card>
+                <CardContent className="p-12 text-center text-muted-foreground">
+                  <p>No results found for "{searchQuery}"</p>
+                </CardContent>
+              </Card>
             )}
           </div>
         ) : showingWatched ? (
-          <div className="space-y-8">
+          <div className="space-y-6">
+            {/* Watched Filters */}
+            {watchedItems.length > 0 && (
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  variant={watchedFilter === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setWatchedFilter('all')}
+                >
+                  All ({watchedItems.length})
+                </Button>
+                <Button
+                  variant={watchedFilter === 'anime' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setWatchedFilter('anime')}
+                >
+                  Anime ({watchedItems.filter(item => item.type === 'ANIME').length})
+                </Button>
+                <Button
+                  variant={watchedFilter === 'movie' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setWatchedFilter('movie')}
+                >
+                  Movie ({watchedItems.filter(item => item.type === 'MOVIE').length})
+                </Button>
+                <Button
+                  variant={watchedFilter === 'show' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setWatchedFilter('show')}
+                >
+                  TV Show ({watchedItems.filter(item => item.type === 'SHOW').length})
+                </Button>
+              </div>
+            )}
+
+            {/* Watched Results - Grid Layout 8 columns × 3 rows */}
             {listLoading ? (
-              <div className="space-y-8">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="space-y-4">
-                    <Skeleton className="h-8 w-48 rounded-lg" />
-                    <div className="flex gap-4 overflow-hidden">
-                      {Array.from({ length: 8 }).map((_, j) => (
-                        <CardSkeleton key={j} />
-                      ))}
-                    </div>
-                  </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+                {Array.from({ length: 24 }).map((_, i) => (
+                  <CardSkeleton key={i} />
                 ))}
               </div>
-            ) : watchedItems.length === 0 ? (
+            ) : paginatedWatchedItems.length > 0 ? (
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+                  {paginatedWatchedItems.map((item) => (
+                    <WatchlistCard
+                      key={item.id}
+                      item={item}
+                      onDelete={() => deleteMutation.mutate(item.id)}
+                      disableContextMenu={true}
+                      hideStatusBadge={true}
+                    />
+                  ))}
+                </div>
+                
+                {/* Pagination Controls */}
+                {totalWatchedPages > 1 && (
+                  <div className="flex items-center justify-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setWatchedPage(prev => Math.max(1, prev - 1))}
+                      disabled={watchedPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Page {watchedPage} of {totalWatchedPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setWatchedPage(prev => Math.min(totalWatchedPages, prev + 1))}
+                      disabled={watchedPage === totalWatchedPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : watchedItems.length > 0 ? (
+              <Card>
+                <CardContent className="p-12 text-center text-muted-foreground">
+                  <p>No {watchedFilter === 'all' ? '' : watchedFilter} watched items found</p>
+                </CardContent>
+              </Card>
+            ) : (
               <Card>
                 <CardContent className="p-12 text-center text-muted-foreground space-y-4">
                   <p className="text-lg">No watched items yet</p>
                   <p className="text-sm">Mark items from your watchlist or search results as watched</p>
                 </CardContent>
               </Card>
-            ) : (
-              <>
-                {/* Watched Section - All items combined in random order */}
-                {randomizedWatched.length > 0 && (
-                  <Carousel title="Watched" count={randomizedWatched.length} icon={<CheckCircle2 className="h-4 w-4" />}>
-                    {randomizedWatched.map((item) => (
-                      <div key={item.id} className="flex-shrink-0 w-[180px]">
-                        <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} disableContextMenu={true} />
-                      </div>
-                    ))}
-                  </Carousel>
-                )}
-
-                {/* Watched Anime Section */}
-                {watchedAnimeList.length > 0 && (
-                  <Carousel title="Watched Anime" count={watchedAnimeList.length} icon={<CheckCircle2 className="h-4 w-4" />}>
-                    {watchedAnimeList.map((item) => (
-                      <div key={item.id} className="flex-shrink-0 w-[180px]">
-                        <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} disableContextMenu={true} />
-                      </div>
-                    ))}
-                  </Carousel>
-                )}
-
-                {/* Watched Movies Section */}
-                {watchedMoviesList.length > 0 && (
-                  <Carousel title="Watched Movies" count={watchedMoviesList.length} icon={<CheckCircle2 className="h-4 w-4" />}>
-                    {watchedMoviesList.map((item) => (
-                      <div key={item.id} className="flex-shrink-0 w-[180px]">
-                        <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} disableContextMenu={true} />
-                      </div>
-                    ))}
-                  </Carousel>
-                )}
-
-                {/* Watched Shows Section */}
-                {watchedShowsList.length > 0 && (
-                  <Carousel title="Watched TV Shows" count={watchedShowsList.length} icon={<CheckCircle2 className="h-4 w-4" />}>
-                    {watchedShowsList.map((item) => (
-                      <div key={item.id} className="flex-shrink-0 w-[180px]">
-                        <WatchlistCard item={item} onDelete={() => deleteMutation.mutate(item.id)} disableContextMenu={true} />
-                      </div>
-                    ))}
-                  </Carousel>
-                )}
-              </>
             )}
           </div>
         ) : showingTop ? (
@@ -599,6 +746,7 @@ export default function WatchlistPage() {
                       const alreadyInList = isInWatchlist(item.externalId, item.type);
                       const itemWatched = isWatched(item.externalId, item.type);
                       const itemWatching = isWatching(item.externalId, item.type);
+                      const itemId = getWatchlistItemId(item.externalId, item.type);
                       return (
                         <div key={item.id} className="flex-shrink-0 w-[180px]">
                           <SearchResultCard
@@ -612,6 +760,7 @@ export default function WatchlistPage() {
                             isMarkingWatched={markWatchedMutation.isPending}
                             onMarkWatching={() => markWatchingMutation.mutate({ item: item as any })}
                             isMarkingWatching={markWatchingMutation.isPending}
+                            onDelete={itemId ? () => deleteMutation.mutate(itemId) : undefined}
                           />
                         </div>
                       );
@@ -626,6 +775,7 @@ export default function WatchlistPage() {
                       const alreadyInList = isInWatchlist(item.externalId, item.type);
                       const itemWatched = isWatched(item.externalId, item.type);
                       const itemWatching = isWatching(item.externalId, item.type);
+                      const itemId = getWatchlistItemId(item.externalId, item.type);
                       return (
                         <div key={item.id} className="flex-shrink-0 w-[180px]">
                           <SearchResultCard
@@ -639,6 +789,7 @@ export default function WatchlistPage() {
                             isMarkingWatched={markWatchedMutation.isPending}
                             onMarkWatching={() => markWatchingMutation.mutate({ item: item as any })}
                             isMarkingWatching={markWatchingMutation.isPending}
+                            onDelete={itemId ? () => deleteMutation.mutate(itemId) : undefined}
                           />
                         </div>
                       );
@@ -653,6 +804,7 @@ export default function WatchlistPage() {
                       const alreadyInList = isInWatchlist(item.externalId, item.type);
                       const itemWatched = isWatched(item.externalId, item.type);
                       const itemWatching = isWatching(item.externalId, item.type);
+                      const itemId = getWatchlistItemId(item.externalId, item.type);
                       return (
                         <div key={item.id} className="flex-shrink-0 w-[180px]">
                           <SearchResultCard
@@ -666,6 +818,7 @@ export default function WatchlistPage() {
                             isMarkingWatched={markWatchedMutation.isPending}
                             onMarkWatching={() => markWatchingMutation.mutate({ item: item as any })}
                             isMarkingWatching={markWatchingMutation.isPending}
+                            onDelete={itemId ? () => deleteMutation.mutate(itemId) : undefined}
                           />
                         </div>
                       );
@@ -793,28 +946,54 @@ function CardSkeleton() {
 }
 
 // Watchlist Card Component
-function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching, disableContextMenu = false }: { item: WatchlistItem; onDelete: () => void; onMarkWatched?: () => void; onMarkWatching?: () => void; disableContextMenu?: boolean }) {
+function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching, disableContextMenu = false, hideStatusBadge = false }: { item: WatchlistItem; onDelete: () => void; onMarkWatched?: () => void; onMarkWatching?: () => void; disableContextMenu?: boolean; hideStatusBadge?: boolean }) {
   const isWatched = item.status === 'WATCHED';
   const isWatching = item.status === 'WATCHING';
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  const menuIdRef = useRef(`menu-${item.id}-${Math.random().toString(36).substr(2, 9)}`);
   
   useEffect(() => {
     if (open && position.x > 0 && position.y > 0) {
-      // Use setTimeout to ensure the menu is rendered in the portal
-      const timeoutId = setTimeout(() => {
-        // Find the dropdown menu content element (Radix UI renders it in a portal)
+      const positionMenu = () => {
         const menuElements = document.querySelectorAll('[data-slot="dropdown-menu-content"]');
-        const menuElement = Array.from(menuElements).pop() as HTMLElement;
+        if (menuElements.length === 0) return;
+        
+        // Get the last one (most recently opened)
+        const menuElement = Array.from(menuElements)[menuElements.length - 1] as HTMLElement;
+        
         if (menuElement) {
+          // Force position to mouse location
           menuElement.style.position = 'fixed';
           menuElement.style.left = `${position.x}px`;
           menuElement.style.top = `${position.y}px`;
-          menuElement.style.transform = 'translate(10px, 0)'; // Position to the right of cursor
+          menuElement.style.transform = 'translate(10px, 0)';
           menuElement.style.margin = '0';
+          menuElement.style.zIndex = '9999';
+          // Prevent Radix from repositioning
+          menuElement.style.setProperty('--radix-dropdown-menu-content-transform-origin', 'var(--radix-popper-transform-origin)');
         }
-      }, 10);
-      return () => clearTimeout(timeoutId);
+      };
+      
+      // Use multiple attempts to catch the menu when it appears
+      const timeout1 = setTimeout(positionMenu, 0);
+      const timeout2 = setTimeout(positionMenu, 10);
+      const timeout3 = setTimeout(positionMenu, 50);
+      const timeout4 = setTimeout(positionMenu, 100);
+      
+      // Also use MutationObserver to catch when menu is added to DOM
+      const observer = new MutationObserver(() => {
+        positionMenu();
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      
+      return () => {
+        clearTimeout(timeout1);
+        clearTimeout(timeout2);
+        clearTimeout(timeout3);
+        clearTimeout(timeout4);
+        observer.disconnect();
+      };
     }
   }, [open, position]);
 
@@ -824,6 +1003,11 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching, disableC
       const handleScroll = () => {
         // Close after scroll has happened
         setOpen(false);
+        // Clean up positioned flag
+        const menuElements = document.querySelectorAll('[data-slot="dropdown-menu-content"]');
+        menuElements.forEach(el => {
+          delete (el as HTMLElement).dataset.positioned;
+        });
       };
       // Only listen to actual scroll events, not wheel (to not interfere)
       window.addEventListener('scroll', handleScroll, { passive: true });
@@ -834,7 +1018,7 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching, disableC
   }, [open]);
   
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
       <div className="group relative w-[180px] space-y-2">
         <div 
           className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20 cursor-context-menu"
@@ -879,7 +1063,7 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching, disableC
             </div>
 
             {/* Watched Badge */}
-            {isWatched && (
+            {!hideStatusBadge && isWatched && (
               <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-emerald-500/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-md shadow-sm z-10">
                 <CheckCircle2 className="h-3 w-3" />
                 Watched
@@ -887,7 +1071,7 @@ function WatchlistCard({ item, onDelete, onMarkWatched, onMarkWatching, disableC
             )}
 
             {/* Watching Badge */}
-            {isWatching && (
+            {!hideStatusBadge && isWatching && (
               <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-blue-500/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-md shadow-sm z-10">
                 <Eye className="h-3 w-3" />
                 Watching
@@ -968,6 +1152,7 @@ function SearchResultCard({
   isMarkingWatched,
   onMarkWatching,
   isMarkingWatching,
+  onDelete,
   disableContextMenu = false,
 }: {
   result: UniversalSearchResult;
@@ -980,28 +1165,55 @@ function SearchResultCard({
   isMarkingWatched?: boolean;
   onMarkWatching?: () => void;
   isMarkingWatching?: boolean;
+  onDelete?: () => void;
   disableContextMenu?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
+  const menuIdRef = useRef(`menu-${result.id}-${Math.random().toString(36).substr(2, 9)}`);
   
   useEffect(() => {
     if (open && position.x > 0 && position.y > 0) {
-      // Use setTimeout to ensure the menu is rendered in the portal
-      const timeoutId = setTimeout(() => {
-        // Find the dropdown menu content element (Radix UI renders it in a portal)
+      const positionMenu = () => {
         const menuElements = document.querySelectorAll('[data-slot="dropdown-menu-content"]');
-        const menuElement = Array.from(menuElements).pop() as HTMLElement;
+        if (menuElements.length === 0) return;
+        
+        // Get the last one (most recently opened)
+        const menuElement = Array.from(menuElements)[menuElements.length - 1] as HTMLElement;
+        
         if (menuElement) {
+          // Force position to mouse location
           menuElement.style.position = 'fixed';
           menuElement.style.left = `${position.x}px`;
           menuElement.style.top = `${position.y}px`;
-          menuElement.style.transform = 'translate(10px, 0)'; // Position to the right of cursor
+          menuElement.style.transform = 'translate(10px, 0)';
           menuElement.style.margin = '0';
+          menuElement.style.zIndex = '9999';
+          // Prevent Radix from repositioning
+          menuElement.style.setProperty('--radix-dropdown-menu-content-transform-origin', 'var(--radix-popper-transform-origin)');
         }
-      }, 10);
-      return () => clearTimeout(timeoutId);
+      };
+      
+      // Use multiple attempts to catch the menu when it appears
+      const timeout1 = setTimeout(positionMenu, 0);
+      const timeout2 = setTimeout(positionMenu, 10);
+      const timeout3 = setTimeout(positionMenu, 50);
+      const timeout4 = setTimeout(positionMenu, 100);
+      
+      // Also use MutationObserver to catch when menu is added to DOM
+      const observer = new MutationObserver(() => {
+        positionMenu();
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      
+      return () => {
+        clearTimeout(timeout1);
+        clearTimeout(timeout2);
+        clearTimeout(timeout3);
+        clearTimeout(timeout4);
+        observer.disconnect();
+      };
     }
   }, [open, position]);
 
@@ -1011,6 +1223,11 @@ function SearchResultCard({
       const handleScroll = () => {
         // Close after scroll has happened
         setOpen(false);
+        // Clean up positioned flag
+        const menuElements = document.querySelectorAll('[data-slot="dropdown-menu-content"]');
+        menuElements.forEach(el => {
+          delete (el as HTMLElement).dataset.positioned;
+        });
       };
       // Only listen to actual scroll events, not wheel (to not interfere)
       window.addEventListener('scroll', handleScroll, { passive: true });
@@ -1021,33 +1238,29 @@ function SearchResultCard({
   }, [open]);
   
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
       <div className="group relative w-[180px] space-y-2">
-        <DropdownMenuTrigger asChild>
-          <div 
-            ref={cardRef}
-            className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20 cursor-context-menu"
-            onContextMenu={(e) => {
-              if (disableContextMenu) return;
+        <div 
+          ref={cardRef}
+          className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20 cursor-context-menu"
+          onContextMenu={(e) => {
+            if (disableContextMenu) return;
+            e.preventDefault();
+            e.stopPropagation();
+            setPosition({ x: e.clientX, y: e.clientY });
+            setOpen(true);
+          }}
+          onMouseDown={(e) => {
+            // Prevent middle mouse button (button 1) from scrolling
+            if (e.button === 1) {
               e.preventDefault();
               e.stopPropagation();
-              setPosition({ x: e.clientX, y: e.clientY });
-              setOpen(true);
-            }}
-            onMouseDown={(e) => {
-              // Prevent middle mouse button (button 1) from scrolling
-              if (e.button === 1) {
-                e.preventDefault();
-                e.stopPropagation();
-              }
-            }}
-            onClick={(e) => {
-              // Prevent left-click from opening menu
-              if (e.button === 0) {
-                e.preventDefault();
-              }
-            }}
-          >
+            }
+          }}
+        >
+          <DropdownMenuTrigger asChild className="hidden">
+            <div />
+          </DropdownMenuTrigger>
           {/* Tooltip */}
           <div className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full mb-2 z-50 px-3 py-2 bg-black/90 text-white text-sm font-medium rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none max-w-[220px] break-words text-center">
             {result.title}
@@ -1075,49 +1288,30 @@ function SearchResultCard({
             {result.type}
           </div>
 
-          {/* Added Badge */}
+          {/* Status Badge - Top Left */}
           {alreadyInList && !isWatched && !isWatching && (
-            <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-emerald-500/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-md shadow-sm z-10">
+            <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-emerald-500/90 px-2 py-1 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-md shadow-sm z-10">
               <Check className="h-3 w-3" />
-              Added
+              SAVED
             </div>
           )}
-
-          {/* Watched Badge */}
           {isWatched && (
-            <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-emerald-500/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-md shadow-sm z-10">
+            <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-emerald-500/90 px-2 py-1 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-md shadow-sm z-10">
               <CheckCircle2 className="h-3 w-3" />
-              Watched
+              WATCHED
             </div>
           )}
-
-          {/* Watching Badge */}
           {isWatching && (
-            <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-blue-500/90 px-2 py-1 text-xs font-bold text-white backdrop-blur-md shadow-sm z-10">
+            <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-blue-500/90 px-2 py-1 text-xs font-bold uppercase tracking-wider text-white backdrop-blur-md shadow-sm z-10">
               <Eye className="h-3 w-3" />
-              Watching
+              WATCHING
             </div>
           )}
 
           {/* Hover Overlay - Add Button */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-end p-3 pointer-events-none gap-2">
-            <div className="pointer-events-auto flex flex-col gap-2">
-              {isWatched ? (
-                <Button size="sm" className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0" disabled variant="secondary">
-                  <CheckCircle2 className="mr-1.5 h-4 w-4" />
-                  Watched
-                </Button>
-              ) : isWatching ? (
-                <Button size="sm" className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0" disabled variant="secondary">
-                  <Eye className="mr-1.5 h-4 w-4" />
-                  Watching
-                </Button>
-              ) : alreadyInList ? (
-                <Button size="sm" className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0" disabled variant="secondary">
-                  <Check className="mr-1.5 h-4 w-4" />
-                  Saved
-                </Button>
-              ) : (
+          {!alreadyInList && !isWatched && !isWatching && (
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-end p-3 pointer-events-none gap-2">
+              <div className="pointer-events-auto flex flex-col gap-2">
                 <Button
                   size="sm"
                   className="h-9 w-full text-sm font-medium opacity-0 translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0"
@@ -1130,11 +1324,48 @@ function SearchResultCard({
                   <Plus className="mr-1.5 h-4 w-4" />
                   {isAdding ? 'Adding...' : 'Add'}
                 </Button>
-              )}
+              </div>
             </div>
+          )}
+
+          {/* Remove Button - Right Bottom */}
+          {onDelete && (alreadyInList || isWatched || isWatching) && (
+            <div className="absolute right-2 bottom-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none z-20">
+              <Button
+                size="icon"
+                variant="destructive"
+                className="h-8 w-8 pointer-events-auto hover:scale-110 hover:rotate-12"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+              >
+                <Trash2 className="h-4 w-4 transition-transform duration-200" />
+              </Button>
+            </div>
+          )}
+        </div>
+        
+        {/* Title and Metadata - Under the poster */}
+        <div className="space-y-1">
+          <h3 className="line-clamp-2 text-base font-semibold leading-snug text-foreground/90 min-h-[2.5rem]" title={result.title}>
+            {result.title}
+          </h3>
+          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+            {result.rating && (
+              <span className="flex items-center gap-1 text-yellow-500">
+                ★ {result.rating.toFixed(1)}
+              </span>
+            )}
+            {result.year && (
+              <>
+                <span className="text-muted-foreground/30">•</span>
+                <span>{result.year}</span>
+              </>
+            )}
           </div>
-          </div>
-        </DropdownMenuTrigger>
+        </div>
+        
         <DropdownMenuContent 
           align="end" 
           onCloseAutoFocus={(e) => e.preventDefault()}
@@ -1153,25 +1384,6 @@ function SearchResultCard({
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
-      </div>
-
-      <div className="space-y-1">
-        <h3 className="line-clamp-2 text-base font-semibold leading-snug text-foreground/90 min-h-[2.5rem]" title={result.title}>
-          {result.title}
-        </h3>
-        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-          {result.rating && (
-            <span className="flex items-center gap-1 text-yellow-500">
-              ★ {result.rating.toFixed(1)}
-            </span>
-          )}
-          {result.year && (
-            <>
-              <span className="text-muted-foreground/30">•</span>
-              <span>{result.year}</span>
-            </>
-          )}
-        </div>
       </div>
     </DropdownMenu>
   );
