@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useMemo } from 'react';
+import { useMemo, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,7 +12,7 @@ import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { useWatchlistMutations } from '@/lib/hooks/useWatchlistMutations';
 import { useGridCardWidth } from '@/lib/hooks/useGridCardWidth';
 
-export default function WatchingPage() {
+function WatchingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const filter = (searchParams.get('filter') as 'all' | 'anime' | 'movie' | 'show') || 'all';
@@ -175,5 +175,29 @@ export default function WatchingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function WatchingPage() {
+  return (
+    <Suspense fallback={
+      <div className="w-full py-8 px-4 md:px-6 lg:px-8 min-h-screen">
+        <div className="w-full space-y-6">
+          <WatchlistNav />
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-48 rounded-lg" />
+            <div className="grid gap-x-4 gap-y-6">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} style={{ width: 'var(--item-width, 200px)' }}>
+                  <CardSkeleton />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <WatchingContent />
+    </Suspense>
   );
 }

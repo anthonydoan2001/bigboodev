@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef, Suspense } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,7 +20,7 @@ import { WatchlistItem } from '@prisma/client';
 
 const ITEMS_PER_PAGE = 22;
 
-export default function WatchlistPage() {
+function WatchlistContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
@@ -409,5 +409,29 @@ export default function WatchlistPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function WatchlistPage() {
+  return (
+    <Suspense fallback={
+      <div className="w-full py-8 px-4 md:px-6 lg:px-8 min-h-screen">
+        <div className="w-full space-y-6">
+          <WatchlistNav />
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-48 rounded-lg" />
+            <div className="grid gap-x-4 gap-y-6">
+              {Array.from({ length: 22 }).map((_, i) => (
+                <div key={i} style={{ width: 'var(--item-width, 200px)' }}>
+                  <CardSkeleton />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <WatchlistContent />
+    </Suspense>
   );
 }
