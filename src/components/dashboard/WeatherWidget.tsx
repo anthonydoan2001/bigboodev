@@ -1,9 +1,9 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { Card } from '@/components/ui/card';
 import { fetchWeather } from '@/lib/api/weather';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Droplets, Wind, RefreshCw, ArrowUp, ArrowDown } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowDown, ArrowUp, Droplets, RefreshCw, Wind } from 'lucide-react';
 import Image from 'next/image';
 
 export function WeatherWidget() {

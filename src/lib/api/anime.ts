@@ -44,3 +44,5 @@ export async function searchAnime(query: string): Promise<AnimeSearchResult[]> {
 }
 
 
+
+
