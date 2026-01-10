@@ -41,6 +41,14 @@ export async function POST(request: Request) {
     });
 
     if (existing) {
+      // If status is being set to WATCHED or WATCHING, update the existing item
+      if (status === 'WATCHED' || status === 'WATCHING') {
+        const updated = await db.watchlistItem.update({
+          where: { id: existing.id },
+          data: { status: status.toUpperCase() }
+        });
+        return NextResponse.json({ item: updated });
+      }
       console.log('Item already exists:', existing);
       return NextResponse.json({ error: 'Item already in watchlist' }, { status: 400 });
     }
@@ -67,6 +75,27 @@ export async function POST(request: Request) {
       error: 'Failed to add to watchlist',
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const { id, status } = body;
+
+    if (!id || !status) {
+      return NextResponse.json({ error: 'ID and status are required' }, { status: 400 });
+    }
+
+    const item = await db.watchlistItem.update({
+      where: { id },
+      data: { status: status.toUpperCase() }
+    });
+
+    return NextResponse.json({ item });
+  } catch (error) {
+    console.error('Error updating watchlist item:', error);
+    return NextResponse.json({ error: 'Failed to update item' }, { status: 500 });
   }
 }
 

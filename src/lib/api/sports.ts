@@ -208,7 +208,7 @@ export async function fetchScores(sport: SportType, date?: Date): Promise<GameSc
       let topScorer;
       if (sport === 'NBA' && (status === 'live' || status === 'final')) {
         let maxPoints = -1;
-        let topScorerInfo: { name: string; points: number; team: 'home' | 'away' } | undefined;
+        let topScorerInfo: { name: string; points: number; team: 'home' | 'away'; image?: string } | undefined;
 
         // Check leaders from both teams
         competition.competitors.forEach((competitor) => {

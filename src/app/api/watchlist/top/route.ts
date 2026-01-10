@@ -30,16 +30,20 @@ export async function GET() {
     if (animeResponse.ok) {
       const animeData = await animeResponse.json();
       animeData.data.slice(0, 20).forEach((anime: any) => {
-        results.push({
-          id: `anime-${anime.mal_id}`,
-          type: 'anime',
-          title: anime.title,
-          image: anime.images.jpg.large_image_url || anime.images.jpg.image_url,
-          year: anime.year,
-          rating: anime.score,
-          episodes: anime.episodes,
-          externalId: anime.mal_id,
-        });
+        const imageUrl = anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url;
+        // Only add if image exists
+        if (imageUrl) {
+          results.push({
+            id: `anime-${anime.mal_id}`,
+            type: 'anime',
+            title: anime.title,
+            image: imageUrl,
+            year: anime.year,
+            rating: anime.score,
+            episodes: anime.episodes,
+            externalId: anime.mal_id,
+          });
+        }
       });
     }
 
@@ -47,15 +51,18 @@ export async function GET() {
     if (moviesResponse && moviesResponse.ok) {
       const moviesData = await moviesResponse.json();
       moviesData.results.slice(0, 20).forEach((movie: any) => {
-        results.push({
-          id: `movie-${movie.id}`,
-          type: 'movie',
-          title: movie.title,
-          image: movie.poster_path ? `https://image.tmdb.org/t/p/w342${movie.poster_path}` : null,
-          year: movie.release_date ? new Date(movie.release_date).getFullYear() : null,
-          rating: movie.vote_average || null,
-          externalId: movie.id,
-        });
+        // Only add if poster_path exists
+        if (movie.poster_path) {
+          results.push({
+            id: `movie-${movie.id}`,
+            type: 'movie',
+            title: movie.title,
+            image: `https://image.tmdb.org/t/p/w342${movie.poster_path}`,
+            year: movie.release_date ? new Date(movie.release_date).getFullYear() : null,
+            rating: movie.vote_average || null,
+            externalId: movie.id,
+          });
+        }
       });
     }
 
@@ -63,15 +70,18 @@ export async function GET() {
     if (tvResponse && tvResponse.ok) {
       const tvData = await tvResponse.json();
       tvData.results.slice(0, 20).forEach((show: any) => {
-        results.push({
-          id: `show-${show.id}`,
-          type: 'show',
-          title: show.name,
-          image: show.poster_path ? `https://image.tmdb.org/t/p/w342${show.poster_path}` : null,
-          year: show.first_air_date ? new Date(show.first_air_date).getFullYear() : null,
-          rating: show.vote_average || null,
-          externalId: show.id,
-        });
+        // Only add if poster_path exists
+        if (show.poster_path) {
+          results.push({
+            id: `show-${show.id}`,
+            type: 'show',
+            title: show.name,
+            image: `https://image.tmdb.org/t/p/w342${show.poster_path}`,
+            year: show.first_air_date ? new Date(show.first_air_date).getFullYear() : null,
+            rating: show.vote_average || null,
+            externalId: show.id,
+          });
+        }
       });
     }
 
