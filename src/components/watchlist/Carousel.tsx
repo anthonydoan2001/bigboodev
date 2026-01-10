@@ -4,6 +4,7 @@ import { useRef, useState, useEffect, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useSidebar } from '@/lib/providers/SidebarProvider';
 
 interface CarouselProps {
   children: ReactNode;
@@ -16,6 +17,68 @@ export function Carousel({ children, title, count, icon }: CarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [itemWidth, setItemWidth] = useState(200);
+  const { isCollapsed } = useSidebar();
+
+  const calculateItemWidth = () => {
+    if (!scrollRef.current) return;
+    
+    const containerWidth = scrollRef.current.clientWidth;
+    if (containerWidth === 0) return; // Not yet rendered
+    
+    const gap = 16; // gap-4 = 16px
+    const minWidth = 120; // Minimum width for very small screens
+    const maxWidth = 280; // Maximum width - increased to fill more space
+    
+    // Calculate how many items can fit with maximum width (prefer larger items)
+    const maxItemsWithMaxWidth = Math.floor((containerWidth + gap) / (maxWidth + gap));
+    
+    // Calculate how many items can fit with minimum width
+    const maxItemsWithMinWidth = Math.floor((containerWidth + gap) / (minWidth + gap));
+    
+    // Prefer showing fewer, larger items to fill the space better
+    // Start with maxWidth calculation and work down if needed
+    let targetItems = Math.max(1, maxItemsWithMaxWidth);
+    
+    // If we can fit more items, try to find a sweet spot
+    // But prioritize larger items over more items
+    if (maxItemsWithMinWidth > maxItemsWithMaxWidth) {
+      // Try to find optimal number between min and max
+      // Aim for items around 180-220px width for good balance
+      const preferredWidth = 200;
+      const preferredItems = Math.floor((containerWidth + gap) / (preferredWidth + gap));
+      if (preferredItems > 0) {
+        targetItems = preferredItems;
+      }
+    }
+    
+    // Calculate width to fit exactly that many items
+    const totalGaps = gap * (targetItems - 1);
+    let calculatedWidth = Math.floor((containerWidth - totalGaps) / targetItems);
+    
+    // Clamp to min/max bounds
+    calculatedWidth = Math.max(minWidth, Math.min(maxWidth, calculatedWidth));
+    
+    // Verify: ensure the calculated width fits perfectly
+    const totalWidth = (calculatedWidth * targetItems) + (gap * (targetItems - 1));
+    if (totalWidth <= containerWidth + 2) { // Allow 2px tolerance for rounding
+      setItemWidth(calculatedWidth);
+      if (scrollRef.current) {
+        scrollRef.current.style.setProperty('--item-width', `${calculatedWidth}px`);
+      }
+    } else {
+      // If it doesn't fit, reduce by 1 item and recalculate
+      const adjustedItems = Math.max(1, targetItems - 1);
+      const adjustedGaps = gap * (adjustedItems - 1);
+      const adjustedWidth = Math.floor((containerWidth - adjustedGaps) / adjustedItems);
+      const finalWidth = Math.max(minWidth, Math.min(maxWidth, adjustedWidth));
+      
+      setItemWidth(finalWidth);
+      if (scrollRef.current) {
+        scrollRef.current.style.setProperty('--item-width', `${finalWidth}px`);
+      }
+    }
+  };
 
   const checkScroll = () => {
     if (scrollRef.current) {
@@ -26,11 +89,35 @@ export function Carousel({ children, title, count, icon }: CarouselProps) {
   };
 
   useEffect(() => {
-    checkScroll();
-    const handleResize = () => checkScroll();
+    // Initial calculation with a small delay to ensure DOM is ready
+    const timeoutId = setTimeout(() => {
+      calculateItemWidth();
+      checkScroll();
+    }, 0);
+
+    // Use ResizeObserver for more accurate container size tracking
+    const resizeObserver = new ResizeObserver(() => {
+      calculateItemWidth();
+      checkScroll();
+    });
+
+    if (scrollRef.current) {
+      resizeObserver.observe(scrollRef.current);
+    }
+
+    // Fallback to window resize for edge cases
+    const handleResize = () => {
+      calculateItemWidth();
+      checkScroll();
+    };
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [children]);
+
+    return () => {
+      clearTimeout(timeoutId);
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [children, isCollapsed]);
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
@@ -47,9 +134,9 @@ export function Carousel({ children, title, count, icon }: CarouselProps) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 w-full">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between h-[36px]">
         <h2 className="text-xl font-bold flex items-center gap-2">
           {icon && (
             <span className="bg-primary/10 text-primary p-1.5 rounded-md">
@@ -91,11 +178,12 @@ export function Carousel({ children, title, count, icon }: CarouselProps) {
       <div
         ref={scrollRef}
         onScroll={checkScroll}
-        className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth"
+        className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory w-full"
         style={{
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
-        }}
+          '--item-width': `${itemWidth}px`,
+        } as React.CSSProperties & { '--item-width': string }}
       >
         {children}
       </div>

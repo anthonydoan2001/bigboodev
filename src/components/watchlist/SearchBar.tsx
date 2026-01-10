@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,14 @@ interface SearchBarProps {
 }
 
 export function SearchBar({ onSearch, onClear, placeholder = 'Search...', isLoading }: SearchBarProps) {
-  const [query, setQuery] = useState('');
+  const searchParams = useSearchParams();
+  const urlQuery = searchParams.get('search') || '';
+  const [query, setQuery] = useState(urlQuery);
+
+  // Sync with URL query param
+  useEffect(() => {
+    setQuery(urlQuery);
+  }, [urlQuery]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

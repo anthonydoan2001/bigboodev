@@ -2,12 +2,12 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { fetchWeather } from '@/lib/api/weather';
-import { useQuery } from '@tanstack/react-query';
-import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
-import Image from 'next/image';
-import { getWeatherBackground } from '@/lib/weather-utils';
 import { cn } from '@/lib/utils';
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { getWeatherBackground } from '@/lib/weather-utils';
+import { useQuery } from '@tanstack/react-query';
+import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import Image from 'next/image';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export function WeatherWidget() {
   const { data: weather, isLoading, error, refetch, isFetching } = useQuery({
@@ -86,16 +86,16 @@ export function WeatherWidget() {
   // Calculate temperature range for visual bar
   const getTempBarStyle = (day: { high: number; low: number }) => {
     if (daily.length === 0) return { left: '0%', width: '100%' };
-    
+
     const minTemp = Math.min(...daily.map(d => d.low));
     const maxTemp = Math.max(...daily.map(d => d.high));
     const totalRange = maxTemp - minTemp;
-    
+
     if (totalRange === 0) return { left: '0%', width: '100%' };
-    
+
     const barLeft = ((day.low - minTemp) / totalRange) * 100;
     const barWidth = ((day.high - day.low) / totalRange) * 100;
-    
+
     return { left: `${barLeft}%`, width: `${barWidth}%` };
   };
 
@@ -209,7 +209,7 @@ export function WeatherWidget() {
         <div className="hidden md:block relative -mx-2 px-2 py-4 bg-white/10 backdrop-blur-md rounded-xl border border-white/10">
           <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-black/5 to-transparent z-10 pointer-events-none rounded-l-xl" />
           <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-black/5 to-transparent z-10 pointer-events-none rounded-r-xl" />
-          
+
           {/* Left Arrow - Desktop only */}
           {canScrollLeft && (
             <button
@@ -220,7 +220,7 @@ export function WeatherWidget() {
               <ChevronLeft className="h-5 w-5 text-white" />
             </button>
           )}
-          
+
           {/* Right Arrow - Desktop only */}
           {canScrollRight && (
             <button
@@ -280,7 +280,7 @@ export function WeatherWidget() {
                   <div className="w-14 font-medium opacity-90">
                     {formatDayLabel(index)}
                   </div>
-                  
+
                   <div className="relative w-8 h-8 flex-shrink-0">
                     <Image
                       src={`https://openweathermap.org/img/wn/${day.icon}.png`}
@@ -295,14 +295,14 @@ export function WeatherWidget() {
                     <span className="w-8 text-right opacity-80 tabular-nums">
                       {day.low}°
                     </span>
-                    
+
                     <div className="flex-1 h-1.5 bg-black/10 rounded-full overflow-hidden relative">
                       <div
                         className="absolute h-full bg-gradient-to-r from-blue-200 to-yellow-200 rounded-full opacity-80"
                         style={barStyle}
                       />
                     </div>
-                    
+
                     <span className="w-8 text-right font-medium tabular-nums">
                       {day.high}°
                     </span>

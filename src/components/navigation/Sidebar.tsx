@@ -65,7 +65,10 @@ export function Sidebar() {
           {/* Navigation */}
           <nav className="flex-1 space-y-2 p-3">
             {navItems.map((item) => {
-              const isActive = pathname === item.href;
+              // Special handling for watchlist to match sub-routes
+              const isActive = item.href === '/watchlist' 
+                ? pathname.startsWith('/watchlist')
+                : pathname === item.href;
               const Icon = item.icon;
 
               return (

@@ -2,14 +2,15 @@
 
 import { DateNavigator } from '@/components/sports/DateNavigator';
 import { ScoreCard } from '@/components/sports/ScoreCard';
+import { ScoreCardSkeleton } from '@/components/sports/ScoreCardSkeleton';
 import { SportFilter } from '@/components/sports/SportFilter';
 import { TopPerformersView } from '@/components/sports/TopPerformersView';
+import { TopPerformersSkeleton } from '@/components/sports/TopPerformersSkeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { autoFavoriteHoustonGames, getFavorites, isHoustonGame, toggleFavorite as toggleFavoriteInStorage } from '@/lib/favorites';
 import { GameScore, SportType, TopPerformer } from '@/types/sports';
 import { useQuery } from '@tanstack/react-query';
-import { RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 async function fetchScores(sport: SportType, date: Date) {
@@ -209,14 +210,13 @@ export default function SportsPage() {
           // No tabs for favorites view, just show the games
           <div className="mt-6">
             {currentLoading ? (
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-center">
-                    <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-                    <span>Loading favorites...</span>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="px-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <ScoreCardSkeleton key={i} />
+                  ))}
+                </div>
+              </div>
             ) : currentError ? (
               <Card>
                 <CardContent className="p-6">
@@ -269,14 +269,13 @@ export default function SportsPage() {
 
             <TabsContent value="scores" className="mt-6">
               {currentLoading ? (
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-center">
-                      <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-                      <span>Loading scores...</span>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="px-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <ScoreCardSkeleton key={i} />
+                    ))}
+                  </div>
+                </div>
               ) : currentError ? (
                 <Card>
                   <CardContent className="p-6">
@@ -314,14 +313,7 @@ export default function SportsPage() {
               <TabsContent value="performers" className="mt-6">
                 <div className="max-w-4xl mx-auto">
                   {performersLoading ? (
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-center">
-                          <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-                          <span>Loading top performers...</span>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <TopPerformersSkeleton />
                   ) : performersError ? (
                     <Card>
                       <CardContent className="p-6">
@@ -340,14 +332,13 @@ export default function SportsPage() {
             {showUpcoming && (
               <TabsContent value="upcoming" className="mt-6">
                 {scoresLoading ? (
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-center">
-                        <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-                        <span>Loading upcoming games...</span>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div className="px-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {Array.from({ length: 8 }).map((_, i) => (
+                        <ScoreCardSkeleton key={i} />
+                      ))}
+                    </div>
+                  </div>
                 ) : upcomingGames.length === 0 ? (
                   <Card>
                     <CardContent className="p-6">
