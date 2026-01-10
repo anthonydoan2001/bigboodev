@@ -12,6 +12,8 @@ import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { useWatchlistMutations } from '@/lib/hooks/useWatchlistMutations';
 import { useGridCardWidth } from '@/lib/hooks/useGridCardWidth';
 
+export const dynamic = 'force-dynamic';
+
 function WatchingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();

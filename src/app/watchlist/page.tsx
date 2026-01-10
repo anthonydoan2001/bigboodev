@@ -20,6 +20,8 @@ import { WatchlistItem } from '@prisma/client';
 
 const ITEMS_PER_PAGE = 22;
 
+export const dynamic = 'force-dynamic';
+
 function WatchlistContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
