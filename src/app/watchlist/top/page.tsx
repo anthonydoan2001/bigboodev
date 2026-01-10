@@ -1,16 +1,16 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { TopItem } from '@/app/api/watchlist/top/route';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { WatchlistNav } from '@/components/watchlist/WatchlistNav';
+import { CardSkeleton } from '@/components/watchlist/CardSkeleton';
 import { Carousel } from '@/components/watchlist/Carousel';
 import { SearchResultCard } from '@/components/watchlist/SearchResultCard';
-import { CardSkeleton } from '@/components/watchlist/CardSkeleton';
-import { TopItem } from '@/app/api/watchlist/top/route';
-import { ListVideo } from 'lucide-react';
+import { WatchlistNav } from '@/components/watchlist/WatchlistNav';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { useWatchlistMutations } from '@/lib/hooks/useWatchlistMutations';
+import { useQuery } from '@tanstack/react-query';
+import { ListVideo } from 'lucide-react';
 
 export default function TopPage() {
   const { watchlistItems, watchedItems, watchingItems, allItems } = useWatchlist();
@@ -119,7 +119,7 @@ export default function TopPage() {
                           alreadyInList={alreadyInList}
                           isWatched={itemWatched}
                           isWatching={itemWatching}
-                          onMarkWatched={() => markWatchedMutation.mutate({ 
+                          onMarkWatched={() => markWatchedMutation.mutate({
                             item: {
                               id: item.id,
                               type: item.type,
@@ -132,7 +132,7 @@ export default function TopPage() {
                             }
                           })}
                           isMarkingWatched={markWatchedMutation.isPending}
-                          onMarkWatching={() => markWatchingMutation.mutate({ 
+                          onMarkWatching={() => markWatchingMutation.mutate({
                             item: {
                               id: item.id,
                               type: item.type,
@@ -188,7 +188,7 @@ export default function TopPage() {
                           alreadyInList={alreadyInList}
                           isWatched={itemWatched}
                           isWatching={itemWatching}
-                          onMarkWatched={() => markWatchedMutation.mutate({ 
+                          onMarkWatched={() => markWatchedMutation.mutate({
                             item: {
                               id: item.id,
                               type: item.type,
@@ -201,7 +201,7 @@ export default function TopPage() {
                             }
                           })}
                           isMarkingWatched={markWatchedMutation.isPending}
-                          onMarkWatching={() => markWatchingMutation.mutate({ 
+                          onMarkWatching={() => markWatchingMutation.mutate({
                             item: {
                               id: item.id,
                               type: item.type,
@@ -257,7 +257,7 @@ export default function TopPage() {
                           alreadyInList={alreadyInList}
                           isWatched={itemWatched}
                           isWatching={itemWatching}
-                          onMarkWatched={() => markWatchedMutation.mutate({ 
+                          onMarkWatched={() => markWatchedMutation.mutate({
                             item: {
                               id: item.id,
                               type: item.type,
@@ -270,7 +270,7 @@ export default function TopPage() {
                             }
                           })}
                           isMarkingWatched={markWatchedMutation.isPending}
-                          onMarkWatching={() => markWatchingMutation.mutate({ 
+                          onMarkWatching={() => markWatchingMutation.mutate({
                             item: {
                               id: item.id,
                               type: item.type,

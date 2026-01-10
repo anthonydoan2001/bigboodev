@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
 import { WatchlistItem } from '@prisma/client';
+import { useQuery } from '@tanstack/react-query';
 
 export function useWatchlist() {
   const { data, isLoading, error } = useQuery<{ items: WatchlistItem[] }>({

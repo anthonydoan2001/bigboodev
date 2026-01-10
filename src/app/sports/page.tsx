@@ -58,7 +58,6 @@ export default function SportsPage() {
   }, []);
 
   const showPerformers = selectedSport === 'NBA' || selectedSport === 'NFL';
-  const showUpcoming = selectedSport === 'NCAAF';
   const isFavoritesView = selectedSport === 'FAVORITES';
 
   // For favorites view, we need to fetch all sports and filter by favorites
@@ -81,7 +80,7 @@ export default function SportsPage() {
   });
 
   // Fetch all sports for favorites view
-  const allSports: SportType[] = ['NBA', 'NFL', 'UFC', 'NCAAF'];
+  const allSports: SportType[] = ['NBA', 'NFL'];
 
   const favoriteQueries = useQuery({
     queryKey: ['all-scores', selectedDate.toDateString()],
@@ -157,25 +156,7 @@ export default function SportsPage() {
     ? currentScores?.filter(game => favorites.includes(game.id))
     : currentScores;
 
-  // Filter games for NCAAF - separate today's games from upcoming
-  const todayGames = filteredScores?.filter((game) => {
-    const today = selectedDate;
-    const gameDate = game.startTime;
-    return (
-      gameDate.getDate() === today.getDate() &&
-      gameDate.getMonth() === today.getMonth() &&
-      gameDate.getFullYear() === today.getFullYear()
-    );
-  }) || [];
-
-  const upcomingGames = filteredScores?.filter((game) => {
-    const today = selectedDate;
-    const gameDate = game.startTime;
-    return gameDate > today;
-  }) || [];
-
-  // For non-NCAAF sports, show all scores
-  const gamesToShow = showUpcoming ? todayGames : filteredScores || [];
+  const gamesToShow = filteredScores || [];
 
   return (
     <div className="container mx-auto py-8 px-8 min-h-screen max-w-full">
@@ -251,18 +232,13 @@ export default function SportsPage() {
           </div>
         ) : (
           <Tabs defaultValue="scores" className="w-full">
-            <TabsList className={`w-full max-w-md mx-auto grid ${showPerformers || showUpcoming ? 'grid-cols-2' : 'grid-cols-1'} bg-muted/50 p-1`}>
+            <TabsList className={`w-full max-w-md mx-auto grid ${showPerformers ? 'grid-cols-2' : 'grid-cols-1'} bg-muted/50 p-1`}>
               <TabsTrigger value="scores" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
                 Games
               </TabsTrigger>
               {showPerformers && (
                 <TabsTrigger value="performers" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
                   Top Performers
-                </TabsTrigger>
-              )}
-              {showUpcoming && (
-                <TabsTrigger value="upcoming" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                  Upcoming Games
                 </TabsTrigger>
               )}
             </TabsList>
@@ -311,7 +287,7 @@ export default function SportsPage() {
 
             {showPerformers && (
               <TabsContent value="performers" className="mt-6">
-                <div className="max-w-4xl mx-auto">
+                <div className="max-w-7xl mx-auto">
                   {performersLoading ? (
                     <TopPerformersSkeleton />
                   ) : performersError ? (
@@ -328,42 +304,6 @@ export default function SportsPage() {
                 </div>
               </TabsContent>
             )}
-
-            {showUpcoming && (
-              <TabsContent value="upcoming" className="mt-6">
-                {scoresLoading ? (
-                  <div className="px-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {Array.from({ length: 8 }).map((_, i) => (
-                        <ScoreCardSkeleton key={i} />
-                      ))}
-                    </div>
-                  </div>
-                ) : upcomingGames.length === 0 ? (
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="text-center text-muted-foreground">
-                        No upcoming playoff games
-                      </div>
-                    </CardContent>
-                  </Card>
-              ) : (
-                <div className="px-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {upcomingGames.map((game) => (
-                      <ScoreCard
-                        key={game.id}
-                        game={game}
-                        isFavorite={favorites.includes(game.id)}
-                        onToggleFavorite={handleToggleFavorite}
-                        isHoustonGame={isHoustonGame(game.homeTeam, game.awayTeam)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </TabsContent>
-          )}
           </Tabs>
         )}
       </div>

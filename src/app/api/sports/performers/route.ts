@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Validate sport type
-    const validSports: SportType[] = ['NBA', 'NFL', 'UFC', 'NCAAF'];
+    const validSports: SportType[] = ['NBA', 'NFL'];
     if (!validSports.includes(sport)) {
       return NextResponse.json(
         { error: 'Invalid sport type' },

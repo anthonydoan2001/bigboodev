@@ -6,38 +6,7 @@ const ESPN_BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports';
 const SPORT_LEAGUES: Record<SportType, { league: string; path: string }> = {
   NBA: { league: 'nba', path: 'basketball/nba' },
   NFL: { league: 'nfl', path: 'football/nfl' },
-  UFC: { league: 'ufc', path: 'mma/ufc' },
-  NCAAF: { league: 'college-football', path: 'football/college-football' },
 };
-
-// Keywords to identify NCAAF playoff games (CFP only - semifinals and championship)
-const NCAAF_PLAYOFF_KEYWORDS = [
-  'college football playoff',
-  'cfp',
-  'semifinal',
-  'national championship',
-];
-
-function isNCAAFPlayoffGame(game: ESPNGame): boolean {
-  const competition = game.competitions[0];
-  const notes = competition.notes?.[0]?.headline?.toLowerCase() || '';
-
-  // Check game date - Only show CFP games (Jan 8-20)
-  const gameDate = new Date(competition.date);
-  const month = gameDate.getMonth(); // 0 = January
-  const day = gameDate.getDate();
-
-  // Show games between Jan 8-20 (CFP semifinals and championship)
-  // Removed year check to be more flexible across years
-  const isInCFPWindow = month === 0 && day >= 8 && day <= 20;
-
-  if (!isInCFPWindow) {
-    return false;
-  }
-
-  // If in the date window, include it (CFP games are always in this specific window)
-  return true;
-}
 
 interface ESPNGame {
   id: string;
@@ -137,12 +106,7 @@ export async function fetchScores(sport: SportType, date?: Date): Promise<GameSc
       return [];
     }
 
-    // Filter NCAAF to only show playoff games
-    const filteredEvents = sport === 'NCAAF'
-      ? data.events.filter(isNCAAFPlayoffGame)
-      : data.events;
-
-    return filteredEvents.map((event) => {
+    return data.events.map((event) => {
       const competition = event.competitions[0];
       const homeTeam = competition.competitors.find((c) => c.homeAway === 'home');
       const awayTeam = competition.competitors.find((c) => c.homeAway === 'away');
@@ -195,9 +159,7 @@ export async function fetchScores(sport: SportType, date?: Date): Promise<GameSc
       // Get period label (Q1, Q2, etc.)
       let quarter: string | undefined;
       if (event.status.period) {
-        if (sport === 'NBA' || sport === 'NCAAF') {
-          quarter = `Q${event.status.period}`;
-        } else if (sport === 'NFL') {
+        if (sport === 'NBA' || sport === 'NFL') {
           quarter = `Q${event.status.period}`;
         } else {
           quarter = `Period ${event.status.period}`;
@@ -277,12 +239,7 @@ export async function fetchSchedule(sport: SportType, days: number = 7): Promise
     const now = new Date();
     const futureDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
 
-    // Filter NCAAF to only show playoff games
-    const filteredEvents = sport === 'NCAAF'
-      ? data.events.filter(isNCAAFPlayoffGame)
-      : data.events;
-
-    return filteredEvents
+    return data.events
       .filter((event) => {
         const gameDate = new Date(event.competitions[0].date);
         return gameDate >= now && gameDate <= futureDate && event.status.type.state === 'pre';
@@ -422,7 +379,7 @@ export async function fetchTopPerformers(sport: SportType, date?: Date): Promise
 }
 
 export async function fetchAllScores(): Promise<Record<SportType, GameScore[]>> {
-  const sports: SportType[] = ['NBA', 'NFL', 'UFC', 'NCAAF'];
+  const sports: SportType[] = ['NBA', 'NFL'];
 
   const results = await Promise.allSettled(
     sports.map(async (sport) => ({
@@ -434,8 +391,6 @@ export async function fetchAllScores(): Promise<Record<SportType, GameScore[]>> 
   const allScores: Record<SportType, GameScore[]> = {
     NBA: [],
     NFL: [],
-    UFC: [],
-    NCAAF: [],
   };
 
   results.forEach((result) => {

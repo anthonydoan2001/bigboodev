@@ -1,4 +1,4 @@
-export type SportType = 'NBA' | 'NFL' | 'UFC' | 'NCAAF';
+export type SportType = 'NBA' | 'NFL';
 
 export interface GameScore {
   id: string;

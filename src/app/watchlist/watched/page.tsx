@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,7 +12,6 @@ import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { useWatchlistMutations } from '@/lib/hooks/useWatchlistMutations';
 import { useGridCardWidth } from '@/lib/hooks/useGridCardWidth';
 
-const ITEMS_PER_PAGE = 24;
 
 export default function WatchedPage() {
   const router = useRouter();
@@ -23,7 +22,7 @@ export default function WatchedPage() {
   const { watchedItems, isLoading } = useWatchlist();
   const { deleteMutation } = useWatchlistMutations();
   
-  const { containerRef } = useGridCardWidth();
+  const { containerRef, columns } = useGridCardWidth();
 
   // Filter watched items based on selected filter
   const filteredWatchedItems = useMemo(() => {
@@ -32,22 +31,18 @@ export default function WatchedPage() {
     return watchedItems.filter(item => item.type === filterType);
   }, [watchedItems, filter]);
 
+  // Calculate items per page to show exactly 2 rows
+  const itemsPerPage = useMemo(() => {
+    return columns * 2;
+  }, [columns]);
+
   // Paginate filtered watched items
   const paginatedWatchedItems = useMemo(() => {
-    const startIndex = (page - 1) * ITEMS_PER_PAGE;
-    return filteredWatchedItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredWatchedItems, page]);
+    const startIndex = (page - 1) * itemsPerPage;
+    return filteredWatchedItems.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredWatchedItems, page, itemsPerPage]);
 
-  const totalPages = Math.ceil(filteredWatchedItems.length / ITEMS_PER_PAGE);
-
-  // Reset to page 1 when filter changes
-  useEffect(() => {
-    if (page > 1 && filter !== searchParams.get('filter')) {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('page', '1');
-      router.push(`/watchlist/watched?${params.toString()}`);
-    }
-  }, [filter, page, router, searchParams]);
+  const totalPages = Math.ceil(filteredWatchedItems.length / itemsPerPage);
 
   const handleFilterChange = (newFilter: 'all' | 'anime' | 'movie' | 'show') => {
     const params = new URLSearchParams();
@@ -112,7 +107,7 @@ export default function WatchedPage() {
             <div className="space-y-4">
               <Skeleton className="h-8 w-48 rounded-lg" />
               <div ref={containerRef} className="grid gap-x-4 gap-y-6">
-                {Array.from({ length: 24 }).map((_, i) => (
+                {Array.from({ length: columns * 2 || 24 }).map((_, i) => (
                   <div key={i} style={{ width: 'var(--item-width, 200px)' }}>
                     <CardSkeleton />
                   </div>
