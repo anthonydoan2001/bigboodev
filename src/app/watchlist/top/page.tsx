@@ -1,5 +1,8 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
 import { TopItem } from '@/app/api/watchlist/top/route';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,8 +14,9 @@ import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { useWatchlistMutations } from '@/lib/hooks/useWatchlistMutations';
 import { useQuery } from '@tanstack/react-query';
 import { ListVideo } from 'lucide-react';
+import { Suspense } from 'react';
 
-export default function TopPage() {
+function TopContent() {
   const { watchlistItems, watchedItems, watchingItems, allItems } = useWatchlist();
   const { addMutation, deleteMutation, markWatchedMutation, markWatchingMutation } = useWatchlistMutations();
 
@@ -66,7 +70,9 @@ export default function TopPage() {
   return (
     <div className="w-full py-8 px-4 md:px-6 lg:px-8 min-h-screen">
       <div className="w-full space-y-6">
-        <WatchlistNav />
+        <Suspense fallback={<div className="h-10 w-full bg-muted animate-pulse rounded" />}>
+          <WatchlistNav />
+        </Suspense>
 
         <div className="space-y-8">
           {topLoading ? (
@@ -301,5 +307,29 @@ export default function TopPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TopPage() {
+  return (
+    <Suspense fallback={
+      <div className="w-full py-8 px-4 md:px-6 lg:px-8 min-h-screen">
+        <div className="w-full space-y-6">
+          <div className="flex items-center justify-center">
+            <Skeleton className="h-10 w-64 rounded-lg" />
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-48 rounded-lg" />
+            <div className="flex gap-4 overflow-hidden">
+              {Array.from({ length: 8 }).map((_, j) => (
+                <CardSkeleton key={j} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <TopContent />
+    </Suspense>
   );
 }

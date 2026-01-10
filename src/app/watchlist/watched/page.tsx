@@ -13,7 +13,6 @@ import { useWatchlistMutations } from '@/lib/hooks/useWatchlistMutations';
 import { useGridCardWidth } from '@/lib/hooks/useGridCardWidth';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 export const dynamicParams = true;
 
 function WatchedContent() {
@@ -63,7 +62,9 @@ function WatchedContent() {
   return (
     <div className="w-full py-8 px-4 md:px-6 lg:px-8 min-h-screen">
       <div className="w-full space-y-6">
-        <WatchlistNav />
+        <Suspense fallback={<div className="h-10 w-full bg-muted animate-pulse rounded" />}>
+          <WatchlistNav />
+        </Suspense>
 
         <div className="space-y-8">
           {/* Watched Filters */}
@@ -184,7 +185,7 @@ export default function WatchedPage() {
     <Suspense fallback={
       <div className="w-full py-8 px-4 md:px-6 lg:px-8 min-h-screen">
         <div className="w-full space-y-6">
-          <WatchlistNav />
+          <div className="h-10 w-full bg-muted animate-pulse rounded" />
           <div className="space-y-4">
             <Skeleton className="h-8 w-48 rounded-lg" />
             <div className="grid gap-x-4 gap-y-6">
