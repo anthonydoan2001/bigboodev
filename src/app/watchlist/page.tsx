@@ -286,8 +286,8 @@ function WatchlistContent() {
   const showingSearch = searchQuery.length > 0;
 
   return (
-    <div className={`w-full py-8 px-4 md:px-6 lg:px-8 ${showingSearch ? 'h-screen flex flex-col overflow-hidden' : 'min-h-screen'}`}>
-      <div className={`w-full space-y-6 ${showingSearch ? 'flex flex-col h-full' : ''}`}>
+    <div className={`w-full py-4 sm:py-8 px-3 sm:px-4 md:px-6 lg:px-8 ${showingSearch ? 'h-screen flex flex-col overflow-hidden' : 'min-h-screen'}`}>
+      <div className={`w-full space-y-4 sm:space-y-6 ${showingSearch ? 'flex flex-col h-full' : ''}`}>
         <WatchlistNav />
 
         {/* Content */}
@@ -306,13 +306,14 @@ function WatchlistContent() {
             ) : (
               <div className="flex flex-col flex-1 min-h-0 space-y-4">
                 {/* Search Filters */}
-                <div className="flex items-center justify-between h-[36px] flex-shrink-0">
+                <div className="flex items-center justify-between min-h-[36px] flex-shrink-0">
                   {searchResults.length > 0 ? (
-                    <div className="flex gap-2 items-center">
+                    <div className="flex flex-wrap gap-2 items-center">
                       <Button
                         variant={searchFilter === 'all' ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => handleFilterChange('all')}
+                        className="text-xs sm:text-sm"
                       >
                         All ({searchResults.length})
                       </Button>
@@ -320,6 +321,7 @@ function WatchlistContent() {
                         variant={searchFilter === 'anime' ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => handleFilterChange('anime')}
+                        className="text-xs sm:text-sm"
                       >
                         Anime ({searchResults.filter(item => item.type.toLowerCase() === 'anime').length})
                       </Button>
@@ -327,6 +329,7 @@ function WatchlistContent() {
                         variant={searchFilter === 'movie' ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => handleFilterChange('movie')}
+                        className="text-xs sm:text-sm"
                       >
                         Movie ({searchResults.filter(item => item.type.toLowerCase() === 'movie').length})
                       </Button>
@@ -334,6 +337,7 @@ function WatchlistContent() {
                         variant={searchFilter === 'show' ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => handleFilterChange('show')}
+                        className="text-xs sm:text-sm"
                       >
                         TV Show ({searchResults.filter(item => item.type.toLowerCase() === 'show').length})
                       </Button>
@@ -377,16 +381,17 @@ function WatchlistContent() {
                     
                     {/* Pagination Controls */}
                     {totalSearchPages > 1 && (
-                      <div className="flex items-center justify-center gap-2 flex-shrink-0 pt-4">
+                      <div className="flex items-center justify-center gap-2 flex-shrink-0 pt-4 flex-wrap">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handlePageChange(Math.max(1, searchPage - 1))}
                           disabled={searchPage === 1}
+                          className="text-xs sm:text-sm"
                         >
                           Previous
                         </Button>
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
                           Page {searchPage} of {totalSearchPages}
                         </span>
                         <Button
@@ -394,6 +399,7 @@ function WatchlistContent() {
                           size="sm"
                           onClick={() => handlePageChange(Math.min(totalSearchPages, searchPage + 1))}
                           disabled={searchPage === totalSearchPages}
+                          className="text-xs sm:text-sm"
                         >
                           Next
                         </Button>

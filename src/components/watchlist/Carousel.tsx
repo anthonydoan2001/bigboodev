@@ -14,9 +14,10 @@ interface CarouselProps {
   icon?: ReactNode;
   showMoreLink?: string;
   totalCount?: number; // Total count including items not shown
+  showCount?: boolean; // Whether to show the count in the title
 }
 
-export function Carousel({ children, title, count, icon, showMoreLink, totalCount }: CarouselProps) {
+export function Carousel({ children, title, count, icon, showMoreLink, totalCount, showCount = true }: CarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -29,26 +30,28 @@ export function Carousel({ children, title, count, icon, showMoreLink, totalCoun
     const containerWidth = scrollRef.current.clientWidth;
     if (containerWidth === 0) return; // Not yet rendered
     
-    const gap = 16; // gap-4 = 16px
-    const minWidth = 120; // Minimum width for very small screens
-    const maxWidth = 280; // Maximum width - increased to fill more space
+    // Responsive gap based on screen size
+    const isMobile = containerWidth < 640; // sm breakpoint
+    const isTablet = containerWidth >= 640 && containerWidth < 1024; // md breakpoint
+    const gap = isMobile ? 12 : isTablet ? 14 : 16; // Responsive gap: 12px mobile, 14px tablet, 16px desktop
     
-    // Calculate how many items can fit with maximum width (prefer larger items)
+    // Responsive poster sizes - balanced for readability and title wrapping
+    const minWidth = isMobile ? 120 : isTablet ? 150 : 170;
+    const maxWidth = isMobile ? 160 : isTablet ? 200 : 230;
+    
+    // Calculate how many items can fit with maximum width
     const maxItemsWithMaxWidth = Math.floor((containerWidth + gap) / (maxWidth + gap));
     
     // Calculate how many items can fit with minimum width
     const maxItemsWithMinWidth = Math.floor((containerWidth + gap) / (minWidth + gap));
     
-    // Prefer showing fewer, larger items to fill the space better
-    // Start with maxWidth calculation and work down if needed
+    // Prefer larger posters - aim for good balance
     let targetItems = Math.max(1, maxItemsWithMaxWidth);
     
     // If we can fit more items, try to find a sweet spot
-    // But prioritize larger items over more items
     if (maxItemsWithMinWidth > maxItemsWithMaxWidth) {
-      // Try to find optimal number between min and max
-      // Aim for items around 180-220px width for good balance
-      const preferredWidth = 200;
+      // Aim for comfortable poster size that allows titles to wrap
+      const preferredWidth = isMobile ? 140 : isTablet ? 175 : 200;
       const preferredItems = Math.floor((containerWidth + gap) / (preferredWidth + gap));
       if (preferredItems > 0) {
         targetItems = preferredItems;
@@ -137,30 +140,33 @@ export function Carousel({ children, title, count, icon, showMoreLink, totalCoun
   };
 
   return (
-    <div className="flex flex-col h-full w-full">
+    <div className="flex flex-col w-full h-full min-h-0">
       {/* Header */}
-      <div className="flex items-center justify-between h-[36px] flex-shrink-0 mb-4">
-        <h2 className="text-xl font-bold flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 h-auto sm:h-[36px] flex-shrink-0 mb-3 sm:mb-4">
+        <h2 className="text-lg sm:text-xl font-bold flex items-center gap-1.5 sm:gap-2 flex-wrap">
           {icon && (
-            <span className="bg-primary/10 text-primary p-1.5 rounded-md">
+            <span className="bg-primary/10 text-primary p-1 sm:p-1.5 rounded-md">
               {icon}
             </span>
           )}
-          {title}
-          <span className="text-muted-foreground text-sm font-normal ml-1">
-            ({totalCount !== undefined ? totalCount : count})
-          </span>
+          <span className="whitespace-nowrap">{title}</span>
+          {showCount && (
+            <span className="text-muted-foreground text-xs sm:text-sm font-normal">
+              ({totalCount !== undefined ? totalCount : count})
+            </span>
+          )}
         </h2>
-        <div className="flex gap-2">
+        <div className="flex gap-1.5 sm:gap-2 items-center flex-shrink-0">
           {showMoreLink && (
             <Link href={showMoreLink}>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 gap-1.5"
+                className="h-7 sm:h-8 gap-1 text-xs sm:text-sm px-2 sm:px-3"
               >
-                Show More
-                <ArrowRight className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Show More</span>
+                <span className="sm:hidden">More</span>
+                <ArrowRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
               </Button>
             </Link>
           )}
@@ -170,11 +176,11 @@ export function Carousel({ children, title, count, icon, showMoreLink, totalCoun
             onClick={() => scroll('left')}
             disabled={!canScrollLeft}
             className={cn(
-              "h-8 w-8 transition-opacity",
+              "h-7 w-7 sm:h-8 sm:w-8 transition-opacity flex-shrink-0",
               !canScrollLeft && "opacity-30 cursor-not-allowed"
             )}
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </Button>
           <Button
             variant="outline"
@@ -182,11 +188,11 @@ export function Carousel({ children, title, count, icon, showMoreLink, totalCoun
             onClick={() => scroll('right')}
             disabled={!canScrollRight}
             className={cn(
-              "h-8 w-8 transition-opacity",
+              "h-7 w-7 sm:h-8 sm:w-8 transition-opacity flex-shrink-0",
               !canScrollRight && "opacity-30 cursor-not-allowed"
             )}
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </Button>
         </div>
       </div>
@@ -195,7 +201,7 @@ export function Carousel({ children, title, count, icon, showMoreLink, totalCoun
       <div
         ref={scrollRef}
         onScroll={checkScroll}
-        className="flex-1 flex gap-4 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory w-full min-h-0"
+        className="flex-1 flex gap-3 sm:gap-4 overflow-x-auto overflow-y-visible scrollbar-hide scroll-smooth snap-x snap-mandatory w-full min-h-0"
         style={{
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',

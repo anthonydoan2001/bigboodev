@@ -1,6 +1,6 @@
 'use client';
 
-import { UniversalSearchResult } from '@/app/api/watchlist/search/universal/route';
+import { TopItem } from '@/app/api/watchlist/top/route';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,8 +12,8 @@ import { Check, CheckCircle2, Eye, Plus, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 
-interface SearchResultCardProps {
-  result: UniversalSearchResult;
+interface TopItemCardProps {
+  item: TopItem;
   onAdd: () => void;
   isAdding: boolean;
   alreadyInList: boolean;
@@ -24,11 +24,10 @@ interface SearchResultCardProps {
   onMarkWatching?: () => void;
   isMarkingWatching?: boolean;
   onDelete?: () => void;
-  disableContextMenu?: boolean;
 }
 
-export function SearchResultCard({
-  result,
+export function TopItemCard({
+  item,
   onAdd,
   isAdding,
   alreadyInList,
@@ -39,12 +38,11 @@ export function SearchResultCard({
   onMarkWatching,
   isMarkingWatching,
   onDelete,
-  disableContextMenu = false,
-}: SearchResultCardProps) {
+}: TopItemCardProps) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
-  const menuIdRef = useRef(`menu-${result.id}-${Math.random().toString(36).substr(2, 9)}`);
+  const menuIdRef = useRef(`menu-${item.id}-${Math.random().toString(36).substr(2, 9)}`);
   
   useEffect(() => {
     if (open && position.x > 0 && position.y > 0) {
@@ -52,29 +50,24 @@ export function SearchResultCard({
         const menuElements = document.querySelectorAll('[data-slot="dropdown-menu-content"]');
         if (menuElements.length === 0) return;
         
-        // Get the last one (most recently opened)
         const menuElement = Array.from(menuElements)[menuElements.length - 1] as HTMLElement;
         
         if (menuElement) {
-          // Force position to mouse location
           menuElement.style.position = 'fixed';
           menuElement.style.left = `${position.x}px`;
           menuElement.style.top = `${position.y}px`;
           menuElement.style.transform = 'translate(10px, 0)';
           menuElement.style.margin = '0';
           menuElement.style.zIndex = '9999';
-          // Prevent Radix from repositioning
           menuElement.style.setProperty('--radix-dropdown-menu-content-transform-origin', 'var(--radix-popper-transform-origin)');
         }
       };
       
-      // Use multiple attempts to catch the menu when it appears
       const timeout1 = setTimeout(positionMenu, 0);
       const timeout2 = setTimeout(positionMenu, 10);
       const timeout3 = setTimeout(positionMenu, 50);
       const timeout4 = setTimeout(positionMenu, 100);
       
-      // Also use MutationObserver to catch when menu is added to DOM
       const observer = new MutationObserver(() => {
         positionMenu();
       });
@@ -90,19 +83,15 @@ export function SearchResultCard({
     }
   }, [open, position]);
 
-  // Close dropdown on scroll - don't interfere with scrolling
   useEffect(() => {
     if (open) {
       const handleScroll = () => {
-        // Close after scroll has happened
         setOpen(false);
-        // Clean up positioned flag
         const menuElements = document.querySelectorAll('[data-slot="dropdown-menu-content"]');
         menuElements.forEach(el => {
           delete (el as HTMLElement).dataset.positioned;
         });
       };
-      // Only listen to actual scroll events, not wheel (to not interfere)
       window.addEventListener('scroll', handleScroll, { passive: true });
       return () => {
         window.removeEventListener('scroll', handleScroll);
@@ -112,19 +101,17 @@ export function SearchResultCard({
   
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
-      <div className="group relative space-y-2 w-full flex flex-col" style={{ width: 'var(--item-width, 100%)', maxWidth: 'var(--item-width, 100%)', minWidth: 0 }}>
+      <div className="group relative w-full flex flex-col" style={{ width: 'var(--item-width, 100%)', maxWidth: 'var(--item-width, 100%)', minWidth: 0, overflow: 'visible' }}>
         <div 
           ref={cardRef}
-          className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20 cursor-context-menu"
+          className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20 cursor-context-menu w-full"
           onContextMenu={(e) => {
-            if (disableContextMenu) return;
             e.preventDefault();
             e.stopPropagation();
             setPosition({ x: e.clientX, y: e.clientY });
             setOpen(true);
           }}
           onMouseDown={(e) => {
-            // Prevent middle mouse button (button 1) from scrolling
             if (e.button === 1) {
               e.preventDefault();
               e.stopPropagation();
@@ -134,20 +121,22 @@ export function SearchResultCard({
           <DropdownMenuTrigger asChild className="hidden">
             <div />
           </DropdownMenuTrigger>
+          
           {/* Tooltip */}
           <div className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full mb-2 z-50 px-2.5 py-1.5 bg-black/90 text-white text-xs font-medium rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none max-w-[200px] break-words text-center">
-            {result.title}
+            {item.title}
             <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black/90"></div>
           </div>
 
-          <div className="relative aspect-[2/3] overflow-hidden rounded-xl">
-            {result.image ? (
+          <div className="relative aspect-[2/3] overflow-hidden rounded-xl w-full">
+            {item.image ? (
               <Image
-                src={result.image}
-                alt={result.title}
+                src={item.image}
+                alt={item.title}
                 fill
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
                 sizes="(max-width: 768px) 33vw, (max-width: 1024px) 20vw, var(--item-width, 200px)"
+                style={{ objectFit: 'cover' }}
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-secondary text-muted-foreground">
@@ -157,9 +146,9 @@ export function SearchResultCard({
           </div>
 
           {/* Rating Badge - Top Left */}
-          {result.rating && (
+          {item.rating && (
             <div className="absolute left-1.5 top-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md flex items-center gap-0.5 z-10">
-              <span className="text-yellow-400">★</span> {result.rating.toFixed(1)}
+              <span className="text-yellow-400">★</span> {item.rating.toFixed(1)}
             </div>
           )}
 
@@ -185,7 +174,7 @@ export function SearchResultCard({
 
           {/* Type Badge - Top Right */}
           <div className="absolute right-1.5 top-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-md z-10">
-            {result.type === 'anime' ? 'Anime' : result.type === 'movie' ? 'Movie' : result.type === 'show' ? 'TV Show' : result.type}
+            {item.type === 'anime' ? 'Anime' : item.type === 'movie' ? 'Movie' : item.type === 'show' ? 'TV Show' : item.type}
           </div>
 
           {/* Hover Overlay - Add Button */}
@@ -227,35 +216,36 @@ export function SearchResultCard({
         </div>
         
         {/* Title and Metadata - Under the poster */}
-        <div className="space-y-1 w-full min-w-0 flex-shrink-0 overflow-visible">
-          {(result.year || result.episodes) && (
+        <div className="space-y-1 w-full min-w-0 mt-2 flex-shrink-0">
+          {/* Year and Episodes - Above Title */}
+          {(item.year || item.episodes) && (
             <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-              {result.year && <span>{result.year}</span>}
-              {result.episodes && (
+              {item.year && <span>{item.year}</span>}
+              {item.episodes && (
                 <>
                   <span className="text-muted-foreground/30">•</span>
-                  <span>{result.episodes} eps</span>
+                  <span>{item.episodes} eps</span>
                 </>
               )}
             </div>
           )}
+          
+          {/* Title - Full wrapping, no truncation */}
           <h3 
-            className="text-sm font-semibold leading-snug text-foreground/90" 
+            className="text-sm font-semibold leading-snug text-foreground/90 w-full" 
             style={{ 
-              width: '100%',
-              minWidth: 0,
               wordBreak: 'break-word',
               overflowWrap: 'anywhere',
               whiteSpace: 'normal',
               overflow: 'visible',
               textOverflow: 'clip',
               display: 'block',
-              maxWidth: '100%',
-              hyphens: 'auto'
+              hyphens: 'auto',
+              lineHeight: '1.4'
             }} 
-            title={result.title}
+            title={item.title}
           >
-            {result.title}
+            {item.title}
           </h3>
         </div>
         
