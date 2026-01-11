@@ -62,7 +62,12 @@ export default function Home() {
     <div className="container mx-auto py-8 px-8 min-h-screen max-w-full">
       <div className="w-full space-y-8">
         {/* Welcome Section with Weather Inline */}
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 md:gap-6">
+        <div className="flex flex-col md:flex-row md:items-start gap-4 md:gap-6">
+          {/* Weather Widget Inline */}
+          <div className="flex-shrink-0">
+            <WeatherWidget />
+          </div>
+          
           <div className="flex-1 text-center md:text-left space-y-2">
             <h1 className="text-4xl font-bold tracking-tight">{greeting}</h1>
             {quoteLoading ? (
@@ -79,15 +84,10 @@ export default function Home() {
               </p>
             )}
           </div>
-          
-          {/* Weather Widget Inline */}
-          <div className="flex-shrink-0">
-            <WeatherWidget />
-          </div>
         </div>
 
         {/* Dashboard Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-w-xl">
           {/* Stocks Widget */}
           <StocksWidget />
 
