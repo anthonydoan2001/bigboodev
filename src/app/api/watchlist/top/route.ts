@@ -30,31 +30,32 @@ export async function GET() {
     const results: TopItem[] = [];
 
     // Parse anime results from multiple pages
-    const parseAnimeResponse = async (response: Response) => {
+    const parseAnimeResponse = async (response: Response): Promise<TopItem[]> => {
       if (response.ok) {
         try {
           const animeData = await response.json();
           // Check if data exists and is an array
           const animeList = animeData?.data || animeData || [];
           if (Array.isArray(animeList)) {
-            return animeList.map((anime: any) => {
+            const validItems: TopItem[] = [];
+            animeList.forEach((anime: any) => {
               const imageUrl = anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url;
               const rating = anime.score;
               // Only add if image exists and has a valid rating
               if (imageUrl && rating && rating > 0) {
-                return {
+                validItems.push({
                   id: `anime-${anime.mal_id}`,
-                  type: 'anime',
+                  type: 'anime' as const,
                   title: anime.title,
                   image: imageUrl,
                   year: anime.year,
                   rating: rating,
                   episodes: anime.episodes,
                   externalId: anime.mal_id,
-                };
+                });
               }
-              return null;
-            }).filter((item: any) => item !== null);
+            });
+            return validItems;
           }
         } catch (error) {
           console.error('Error parsing anime response:', error);
