@@ -23,6 +23,26 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'image.tmdb.org',
       },
+      {
+        protocol: 'https',
+        hostname: 'static.finnhub.io',
+      },
+      {
+        protocol: 'https',
+        hostname: 'static2.finnhub.io',
+      },
+      {
+        protocol: 'https',
+        hostname: 'logo.clearbit.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 's2.coinmarketcap.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 's3.coinmarketcap.com',
+      },
     ],
   },
 };

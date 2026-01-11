@@ -1,0 +1,146 @@
+'use client';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { fetchStockQuotes } from '@/lib/api/stocks';
+import { cn } from '@/lib/utils';
+import { StockQuote } from '@/types/stocks';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowUp, ArrowDown, TrendingUp } from 'lucide-react';
+import { useEffect } from 'react';
+import Image from 'next/image';
+
+function formatPrice(price: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(price);
+}
+
+function formatPercentChange(percent: number): string {
+  const sign = percent >= 0 ? '+' : '';
+  return `${sign}${percent.toFixed(2)}%`;
+}
+
+function formatTimeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  
+  if (diffMins < 1) return 'Just now';
+  if (diffMins === 1) return '1 minute ago';
+  if (diffMins < 60) return `${diffMins} minutes ago`;
+  
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours === 1) return '1 hour ago';
+  if (diffHours < 24) return `${diffHours} hours ago`;
+  
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays === 1) return '1 day ago';
+  return `${diffDays} days ago`;
+}
+
+function StockCard({ quote }: { quote: StockQuote }) {
+  const isPositive = quote.change >= 0;
+  const changeColor = isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+  const arrowIcon = isPositive ? ArrowUp : ArrowDown;
+
+  return (
+    <div className="flex items-center py-1.5 px-2 hover:bg-muted/50 transition-colors rounded-md gap-0">
+      {/* Left side: Logo, Ticker, Company Name */}
+      <div className="flex items-center gap-2.5 flex-1 min-w-0">
+        {/* Logo */}
+        <div className="relative w-10 h-10 flex-shrink-0 rounded-full bg-muted flex items-center justify-center overflow-hidden ring-1 ring-border/50">
+          {quote.logoUrl ? (
+            <Image
+              src={quote.logoUrl}
+              alt={quote.symbol}
+              fill
+              className="object-cover rounded-full"
+              unoptimized
+            />
+          ) : (
+            <span className="text-xs font-semibold text-muted-foreground">{quote.symbol.charAt(0)}</span>
+          )}
+        </div>
+        
+        {/* Ticker and Company Name */}
+        <div className="flex flex-col min-w-0">
+          <span className="font-bold text-xl leading-none mb-0.5">{quote.symbol}</span>
+          {quote.companyName && (
+            <span className="text-sm text-muted-foreground truncate leading-none opacity-80">
+              {quote.companyName}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Right side: Price and Change */}
+      <div className="flex flex-col items-end flex-shrink-0 gap-0.5">
+        <span className="font-bold text-xl leading-none">{formatPrice(quote.currentPrice)}</span>
+        <span className={cn("text-sm font-semibold flex items-center gap-0.5 leading-none", changeColor)}>
+          {isPositive ? (
+            <ArrowUp className="h-4 w-4" />
+          ) : (
+            <ArrowDown className="h-4 w-4" />
+          )}
+          {formatPercentChange(quote.percentChange)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export function StocksWidget() {
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['stockQuotes'],
+    queryFn: fetchStockQuotes,
+    staleTime: 60000, // Consider stale after 1 minute
+    refetchInterval: 60000, // Auto-refresh every 1 minute
+  });
+
+  // Refetch on mount and window focus
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
+  if (isLoading) {
+    return (
+      <Card className="col-span-1">
+        <CardContent className="p-3">
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-20 bg-muted/50 animate-pulse rounded-lg" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error || !data || data.quotes.length === 0) {
+    return (
+      <Card className="col-span-1">
+        <CardContent className="p-3">
+          <p className="text-sm text-muted-foreground text-center py-4">
+            {error ? 'Failed to load stock quotes' : 'No stock data available'}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="col-span-1">
+      <CardContent className="p-3">
+        <div className="space-y-0.5">
+          {data.quotes.map((quote) => (
+            <StockCard key={quote.symbol} quote={quote} />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

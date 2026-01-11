@@ -7,13 +7,12 @@ export interface WatchlistItem {
   type: WatchlistType;
   title: string;
   status: WatchlistStatus;
-  externalId?: string;
-  coverImage?: string;
-  description?: string;
+  externalId: string;
+  imageUrl?: string;
   rating?: number; // 1-10
-  progress?: string;
-  notes?: string;
-  addedAt: Date;
+  year?: number;
+  episodes?: number;
+  createdAt: Date;
   updatedAt: Date;
 }
 

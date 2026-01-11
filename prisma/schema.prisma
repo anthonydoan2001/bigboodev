@@ -10,60 +10,58 @@ datasource db {
 
 model WatchlistItem {
   id          String   @id @default(cuid())
-  type        String   // ANIME, MOVIE, SHOW
+  type        String
   title       String
   status      String   @default("PLAN_TO_WATCH")
-  externalId  String
-  imageUrl    String?
-  description String?  @db.Text
+  externalId  String   @map("external_id")
+  imageUrl    String?  @map("image_url")
   rating      Float?
   year        Int?
   episodes    Int?
-  progress    String?
-  notes       String?  @db.Text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@unique([externalId, type])
   @@index([type])
   @@index([status])
   @@index([createdAt])
+  @@map("watchlist_items")
 }
 
-model GameListItem {
-  id                String   @id @default(cuid())
-  title             String
-  status            String
-  platform          String?
-  externalId        String?
-  coverImage        String?
-  description       String?  @db.Text
-  rating            Int?
-  hoursPlayed       Int?
-  completionPercent Int?
-  notes             String?  @db.Text
-  addedAt           DateTime @default(now())
-  updatedAt         DateTime @updatedAt
 
-  @@index([status])
-  @@index([platform])
-  @@index([addedAt])
+model StockQuote {
+  symbol        String   @id
+  companyName   String?  @map("company_name")
+  logoUrl       String?  @map("logo_url")
+  currentPrice  Float    @map("current_price")
+  change        Float
+  percentChange Float    @map("percent_change")
+  lastUpdated   DateTime @default(now()) @map("last_updated")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([lastUpdated])
+  @@map("stock_quotes")
 }
 
-model SportPreference {
-  id        String   @id @default(cuid())
-  sport     String
-  teams     String[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model DailyQuote {
+  date      String   @id
+  content   String   @db.Text
+  author    String
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@unique([sport])
+  @@map("daily_quotes")
 }
 
-model UserSettings {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  value     String   @db.Text
-  updatedAt DateTime @updatedAt
-}
+model CryptoQuote {
+  symbol           String   @id
+  name             String
+  logoUrl          String?  @map("logo_url")
+  price            Float
+  percentChange24h Float?   @map("percent_change_24h")
+  lastUpdated      DateTime @default(now()) @map("last_updated")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
 
+  @@index([lastUpdated])
+  @@map("crypto_quotes")
+}
