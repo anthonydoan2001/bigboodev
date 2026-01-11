@@ -14,10 +14,10 @@ import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { useWatchlistMutations } from '@/lib/hooks/useWatchlistMutations';
 import { useQuery } from '@tanstack/react-query';
 import { ListVideo } from 'lucide-react';
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
 
 function TopContent() {
-  const { watchlistItems, watchedItems, watchingItems, allItems } = useWatchlist();
+  const { watchlistItems, watchedItems, watchingItems, allItems, isLoading: watchlistLoading } = useWatchlist();
   const { addMutation, deleteMutation, markWatchedMutation, markWatchingMutation } = useWatchlistMutations();
 
   const { data: topData, isLoading: topLoading } = useQuery<{ results: TopItem[] }>({
@@ -29,15 +29,6 @@ function TopContent() {
     },
     staleTime: 30 * 60 * 1000, // Cache for 30 minutes
   });
-
-  // Filter out items without images or ratings from top items
-  const topItems: TopItem[] = (topData?.results || []).filter(
-    (item: TopItem) => 
-      item.image && 
-      item.image.trim() !== '' && 
-      item.rating && 
-      item.rating > 0
-  );
 
   // Helper to check if item is in watchlist
   const isInWatchlist = (externalId: number, type: string) => {
@@ -60,6 +51,32 @@ function TopContent() {
     );
   };
 
+  // Filter out items without images or ratings, and exclude items in watchlist/watched/watching
+  // Use useMemo to recalculate when watchlist data loads
+  const topItems: TopItem[] = useMemo(() => {
+    if (!topData?.results) return [];
+    
+    return topData.results.filter(
+      (item: TopItem) => {
+        // Basic filters
+        if (!item.image || item.image.trim() === '' || !item.rating || item.rating <= 0) {
+          return false;
+        }
+        
+        // Only filter out watchlist/watched/watching items if watchlist data has loaded
+        if (!watchlistLoading) {
+          if (isInWatchlist(item.externalId, item.type) || 
+              isWatched(item.externalId, item.type) || 
+              isWatching(item.externalId, item.type)) {
+            return false;
+          }
+        }
+        
+        return true;
+      }
+    );
+  }, [topData, watchlistLoading, watchlistItems, watchedItems, watchingItems]);
+
   // Helper to get watchlist item ID by externalId and type
   const getWatchlistItemId = (externalId: number, type: string): string | null => {
     const item = allItems.find(
@@ -68,23 +85,30 @@ function TopContent() {
     return item?.id || null;
   };
 
-  // Group top items by type
-  const topAnime = topItems.filter(item => item.type === 'anime');
-  const topMovies = topItems.filter(item => item.type === 'movie');
-  const topShows = topItems.filter(item => item.type === 'show');
+  // Group top items by type and limit to 20 per category
+  const topAnime = topItems.filter(item => item.type === 'anime').slice(0, 20);
+  const topMovies = topItems.filter(item => item.type === 'movie').slice(0, 20);
+  const topShows = topItems.filter(item => item.type === 'show').slice(0, 20);
+
+  // Calculate available sections
+  const sections = [
+    { title: 'Top Anime', items: topAnime, key: 'anime' },
+    { title: 'Top Movies', items: topMovies, key: 'movies' },
+    { title: 'Top TV Shows', items: topShows, key: 'shows' },
+  ].filter(section => section.items.length > 0);
 
   return (
-    <div className="w-full py-8 px-4 md:px-6 lg:px-8 min-h-screen">
-      <div className="w-full space-y-6">
-        <Suspense fallback={<div className="h-10 w-full bg-muted animate-pulse rounded" />}>
+    <div className="w-full h-screen flex flex-col py-8 px-4 md:px-6 lg:px-8 overflow-hidden">
+      <div className="w-full flex flex-col h-full space-y-4">
+        <Suspense fallback={<div className="h-10 w-full bg-muted animate-pulse rounded flex-shrink-0" />}>
           <WatchlistNav />
         </Suspense>
 
-        <div className="space-y-8">
-          {topLoading ? (
-            <div className="space-y-8">
+        <div className="flex-1 min-h-0 overflow-hidden">
+          {topLoading || watchlistLoading ? (
+            <div className="h-full flex flex-col gap-4">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="space-y-4">
+                <div key={i} className="flex-shrink-0 space-y-4">
                   <Skeleton className="h-8 w-48 rounded-lg" />
                   <div className="flex gap-4 overflow-hidden">
                     {Array.from({ length: 8 }).map((_, j) => (
@@ -94,217 +118,219 @@ function TopContent() {
                 </div>
               ))}
             </div>
-          ) : topItems.length > 0 ? (
-            <>
-              {/* Top Anime Section */}
-              {topAnime.length > 0 && (
-                <Carousel title="Top Anime" count={topAnime.length} icon={<ListVideo className="h-4 w-4" />}>
-                  {topAnime.map((item) => {
-                    const alreadyInList = isInWatchlist(item.externalId, item.type);
-                    const itemWatched = isWatched(item.externalId, item.type);
-                    const itemWatching = isWatching(item.externalId, item.type);
-                    const itemId = getWatchlistItemId(item.externalId, item.type);
-                    return (
-                      <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 200px)' }}>
-                        <SearchResultCard
-                          result={{
-                            id: item.id,
-                            type: item.type,
-                            title: item.title,
-                            image: item.image ?? '',
-                            year: item.year ?? null,
-                            rating: item.rating ?? null,
-                            episodes: item.episodes ?? null,
-                            externalId: item.externalId,
-                          }}
-                          onAdd={() => addMutation.mutate({
-                            id: item.id,
-                            type: item.type,
-                            title: item.title,
-                            image: item.image ?? '',
-                            year: item.year ?? null,
-                            rating: item.rating ?? null,
-                            episodes: item.episodes ?? null,
-                            externalId: item.externalId,
-                          })}
-                          isAdding={addMutation.isPending}
-                          alreadyInList={alreadyInList}
-                          isWatched={itemWatched}
-                          isWatching={itemWatching}
-                          onMarkWatched={() => markWatchedMutation.mutate({
-                            item: {
-                              id: item.id,
-                              type: item.type,
-                              title: item.title,
-                              image: item.image ?? '',
-                              year: item.year ?? null,
-                              rating: item.rating ?? null,
-                              episodes: item.episodes ?? null,
-                              externalId: item.externalId,
-                            }
-                          })}
-                          isMarkingWatched={markWatchedMutation.isPending}
-                          onMarkWatching={() => markWatchingMutation.mutate({
-                            item: {
-                              id: item.id,
-                              type: item.type,
-                              title: item.title,
-                              image: item.image ?? '',
-                              year: item.year ?? null,
-                              rating: item.rating ?? null,
-                              episodes: item.episodes ?? null,
-                              externalId: item.externalId,
-                            }
-                          })}
-                          isMarkingWatching={markWatchingMutation.isPending}
-                          onDelete={itemId ? () => deleteMutation.mutate(itemId) : undefined}
-                        />
-                      </div>
-                    );
-                  })}
-                </Carousel>
-              )}
-
-              {/* Top Movies Section */}
-              {topMovies.length > 0 && (
-                <Carousel title="Top Movies" count={topMovies.length} icon={<ListVideo className="h-4 w-4" />}>
-                  {topMovies.map((item) => {
-                    const alreadyInList = isInWatchlist(item.externalId, item.type);
-                    const itemWatched = isWatched(item.externalId, item.type);
-                    const itemWatching = isWatching(item.externalId, item.type);
-                    const itemId = getWatchlistItemId(item.externalId, item.type);
-                    return (
-                      <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 200px)' }}>
-                        <SearchResultCard
-                          result={{
-                            id: item.id,
-                            type: item.type,
-                            title: item.title,
-                            image: item.image ?? '',
-                            year: item.year ?? null,
-                            rating: item.rating ?? null,
-                            episodes: item.episodes ?? null,
-                            externalId: item.externalId,
-                          }}
-                          onAdd={() => addMutation.mutate({
-                            id: item.id,
-                            type: item.type,
-                            title: item.title,
-                            image: item.image ?? '',
-                            year: item.year ?? null,
-                            rating: item.rating ?? null,
-                            episodes: item.episodes ?? null,
-                            externalId: item.externalId,
-                          })}
-                          isAdding={addMutation.isPending}
-                          alreadyInList={alreadyInList}
-                          isWatched={itemWatched}
-                          isWatching={itemWatching}
-                          onMarkWatched={() => markWatchedMutation.mutate({
-                            item: {
-                              id: item.id,
-                              type: item.type,
-                              title: item.title,
-                              image: item.image ?? '',
-                              year: item.year ?? null,
-                              rating: item.rating ?? null,
-                              episodes: item.episodes ?? null,
-                              externalId: item.externalId,
-                            }
-                          })}
-                          isMarkingWatched={markWatchedMutation.isPending}
-                          onMarkWatching={() => markWatchingMutation.mutate({
-                            item: {
-                              id: item.id,
-                              type: item.type,
-                              title: item.title,
-                              image: item.image ?? '',
-                              year: item.year ?? null,
-                              rating: item.rating ?? null,
-                              episodes: item.episodes ?? null,
-                              externalId: item.externalId,
-                            }
-                          })}
-                          isMarkingWatching={markWatchingMutation.isPending}
-                          onDelete={itemId ? () => deleteMutation.mutate(itemId) : undefined}
-                        />
-                      </div>
-                    );
-                  })}
-                </Carousel>
-              )}
-
-              {/* Top TV Shows Section */}
-              {topShows.length > 0 && (
-                <Carousel title="Top TV Shows" count={topShows.length} icon={<ListVideo className="h-4 w-4" />}>
-                  {topShows.map((item) => {
-                    const alreadyInList = isInWatchlist(item.externalId, item.type);
-                    const itemWatched = isWatched(item.externalId, item.type);
-                    const itemWatching = isWatching(item.externalId, item.type);
-                    const itemId = getWatchlistItemId(item.externalId, item.type);
-                    return (
-                      <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 200px)' }}>
-                        <SearchResultCard
-                          result={{
-                            id: item.id,
-                            type: item.type,
-                            title: item.title,
-                            image: item.image ?? '',
-                            year: item.year ?? null,
-                            rating: item.rating ?? null,
-                            episodes: item.episodes ?? null,
-                            externalId: item.externalId,
-                          }}
-                          onAdd={() => addMutation.mutate({
-                            id: item.id,
-                            type: item.type,
-                            title: item.title,
-                            image: item.image ?? '',
-                            year: item.year ?? null,
-                            rating: item.rating ?? null,
-                            episodes: item.episodes ?? null,
-                            externalId: item.externalId,
-                          })}
-                          isAdding={addMutation.isPending}
-                          alreadyInList={alreadyInList}
-                          isWatched={itemWatched}
-                          isWatching={itemWatching}
-                          onMarkWatched={() => markWatchedMutation.mutate({
-                            item: {
-                              id: item.id,
-                              type: item.type,
-                              title: item.title,
-                              image: item.image ?? '',
-                              year: item.year ?? null,
-                              rating: item.rating ?? null,
-                              episodes: item.episodes ?? null,
-                              externalId: item.externalId,
-                            }
-                          })}
-                          isMarkingWatched={markWatchedMutation.isPending}
-                          onMarkWatching={() => markWatchingMutation.mutate({
-                            item: {
-                              id: item.id,
-                              type: item.type,
-                              title: item.title,
-                              image: item.image ?? '',
-                              year: item.year ?? null,
-                              rating: item.rating ?? null,
-                              episodes: item.episodes ?? null,
-                              externalId: item.externalId,
-                            }
-                          })}
-                          isMarkingWatching={markWatchingMutation.isPending}
-                          onDelete={itemId ? () => deleteMutation.mutate(itemId) : undefined}
-                        />
-                      </div>
-                    );
-                  })}
-                </Carousel>
-              )}
-            </>
+          ) : topItems.length > 0 && sections.length > 0 ? (
+            <div className="h-full flex flex-col gap-3 md:gap-4 overflow-hidden">
+              {sections.map((section, index) => (
+                <div 
+                  key={section.key} 
+                  className="flex-1 min-h-0 flex flex-col"
+                >
+                  {section.key === 'anime' && (
+                    <Carousel title={section.title} count={section.items.length} icon={<ListVideo className="h-4 w-4" />}>
+                      {section.items.map((item) => {
+                        const alreadyInList = isInWatchlist(item.externalId, item.type);
+                        const itemWatched = isWatched(item.externalId, item.type);
+                        const itemWatching = isWatching(item.externalId, item.type);
+                        const itemId = getWatchlistItemId(item.externalId, item.type);
+                        return (
+                          <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 200px)' }}>
+                            <SearchResultCard
+                              result={{
+                                id: item.id,
+                                type: item.type,
+                                title: item.title,
+                                image: item.image ?? '',
+                                year: item.year ?? null,
+                                rating: item.rating ?? null,
+                                episodes: item.episodes ?? null,
+                                externalId: item.externalId,
+                              }}
+                              onAdd={() => addMutation.mutate({
+                                id: item.id,
+                                type: item.type,
+                                title: item.title,
+                                image: item.image ?? '',
+                                year: item.year ?? null,
+                                rating: item.rating ?? null,
+                                episodes: item.episodes ?? null,
+                                externalId: item.externalId,
+                              })}
+                              isAdding={addMutation.isPending}
+                              alreadyInList={alreadyInList}
+                              isWatched={itemWatched}
+                              isWatching={itemWatching}
+                              onMarkWatched={() => markWatchedMutation.mutate({
+                                item: {
+                                  id: item.id,
+                                  type: item.type,
+                                  title: item.title,
+                                  image: item.image ?? '',
+                                  year: item.year ?? null,
+                                  rating: item.rating ?? null,
+                                  episodes: item.episodes ?? null,
+                                  externalId: item.externalId,
+                                }
+                              })}
+                              isMarkingWatched={markWatchedMutation.isPending}
+                              onMarkWatching={() => markWatchingMutation.mutate({
+                                item: {
+                                  id: item.id,
+                                  type: item.type,
+                                  title: item.title,
+                                  image: item.image ?? '',
+                                  year: item.year ?? null,
+                                  rating: item.rating ?? null,
+                                  episodes: item.episodes ?? null,
+                                  externalId: item.externalId,
+                                }
+                              })}
+                              isMarkingWatching={markWatchingMutation.isPending}
+                              onDelete={itemId ? () => deleteMutation.mutate(itemId) : undefined}
+                            />
+                          </div>
+                        );
+                      })}
+                    </Carousel>
+                  )}
+                  {section.key === 'movies' && (
+                    <Carousel title={section.title} count={section.items.length} icon={<ListVideo className="h-4 w-4" />}>
+                      {section.items.map((item) => {
+                        const alreadyInList = isInWatchlist(item.externalId, item.type);
+                        const itemWatched = isWatched(item.externalId, item.type);
+                        const itemWatching = isWatching(item.externalId, item.type);
+                        const itemId = getWatchlistItemId(item.externalId, item.type);
+                        return (
+                          <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 200px)' }}>
+                            <SearchResultCard
+                              result={{
+                                id: item.id,
+                                type: item.type,
+                                title: item.title,
+                                image: item.image ?? '',
+                                year: item.year ?? null,
+                                rating: item.rating ?? null,
+                                episodes: item.episodes ?? null,
+                                externalId: item.externalId,
+                              }}
+                              onAdd={() => addMutation.mutate({
+                                id: item.id,
+                                type: item.type,
+                                title: item.title,
+                                image: item.image ?? '',
+                                year: item.year ?? null,
+                                rating: item.rating ?? null,
+                                episodes: item.episodes ?? null,
+                                externalId: item.externalId,
+                              })}
+                              isAdding={addMutation.isPending}
+                              alreadyInList={alreadyInList}
+                              isWatched={itemWatched}
+                              isWatching={itemWatching}
+                              onMarkWatched={() => markWatchedMutation.mutate({
+                                item: {
+                                  id: item.id,
+                                  type: item.type,
+                                  title: item.title,
+                                  image: item.image ?? '',
+                                  year: item.year ?? null,
+                                  rating: item.rating ?? null,
+                                  episodes: item.episodes ?? null,
+                                  externalId: item.externalId,
+                                }
+                              })}
+                              isMarkingWatched={markWatchedMutation.isPending}
+                              onMarkWatching={() => markWatchingMutation.mutate({
+                                item: {
+                                  id: item.id,
+                                  type: item.type,
+                                  title: item.title,
+                                  image: item.image ?? '',
+                                  year: item.year ?? null,
+                                  rating: item.rating ?? null,
+                                  episodes: item.episodes ?? null,
+                                  externalId: item.externalId,
+                                }
+                              })}
+                              isMarkingWatching={markWatchingMutation.isPending}
+                              onDelete={itemId ? () => deleteMutation.mutate(itemId) : undefined}
+                            />
+                          </div>
+                        );
+                      })}
+                    </Carousel>
+                  )}
+                  {section.key === 'shows' && (
+                    <Carousel title={section.title} count={section.items.length} icon={<ListVideo className="h-4 w-4" />}>
+                      {section.items.map((item) => {
+                        const alreadyInList = isInWatchlist(item.externalId, item.type);
+                        const itemWatched = isWatched(item.externalId, item.type);
+                        const itemWatching = isWatching(item.externalId, item.type);
+                        const itemId = getWatchlistItemId(item.externalId, item.type);
+                        return (
+                          <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 200px)' }}>
+                            <SearchResultCard
+                              result={{
+                                id: item.id,
+                                type: item.type,
+                                title: item.title,
+                                image: item.image ?? '',
+                                year: item.year ?? null,
+                                rating: item.rating ?? null,
+                                episodes: item.episodes ?? null,
+                                externalId: item.externalId,
+                              }}
+                              onAdd={() => addMutation.mutate({
+                                id: item.id,
+                                type: item.type,
+                                title: item.title,
+                                image: item.image ?? '',
+                                year: item.year ?? null,
+                                rating: item.rating ?? null,
+                                episodes: item.episodes ?? null,
+                                externalId: item.externalId,
+                              })}
+                              isAdding={addMutation.isPending}
+                              alreadyInList={alreadyInList}
+                              isWatched={itemWatched}
+                              isWatching={itemWatching}
+                              onMarkWatched={() => markWatchedMutation.mutate({
+                                item: {
+                                  id: item.id,
+                                  type: item.type,
+                                  title: item.title,
+                                  image: item.image ?? '',
+                                  year: item.year ?? null,
+                                  rating: item.rating ?? null,
+                                  episodes: item.episodes ?? null,
+                                  externalId: item.externalId,
+                                }
+                              })}
+                              isMarkingWatched={markWatchedMutation.isPending}
+                              onMarkWatching={() => markWatchingMutation.mutate({
+                                item: {
+                                  id: item.id,
+                                  type: item.type,
+                                  title: item.title,
+                                  image: item.image ?? '',
+                                  year: item.year ?? null,
+                                  rating: item.rating ?? null,
+                                  episodes: item.episodes ?? null,
+                                  externalId: item.externalId,
+                                }
+                              })}
+                              isMarkingWatching={markWatchingMutation.isPending}
+                              onDelete={itemId ? () => deleteMutation.mutate(itemId) : undefined}
+                            />
+                          </div>
+                        );
+                      })}
+                    </Carousel>
+                  )}
+                </div>
+              ))}
+            </div>
           ) : (
-            <Card>
+            <Card className="h-full flex items-center justify-center">
               <CardContent className="p-12 text-center text-muted-foreground">
                 <p>Failed to load top items</p>
               </CardContent>
@@ -319,18 +345,20 @@ function TopContent() {
 export default function TopPage() {
   return (
     <Suspense fallback={
-      <div className="w-full py-8 px-4 md:px-6 lg:px-8 min-h-screen">
-        <div className="w-full space-y-6">
-          <div className="flex items-center justify-center">
-            <Skeleton className="h-10 w-64 rounded-lg" />
-          </div>
-          <div className="space-y-4">
-            <Skeleton className="h-8 w-48 rounded-lg" />
-            <div className="flex gap-4 overflow-hidden">
-              {Array.from({ length: 8 }).map((_, j) => (
-                <CardSkeleton key={j} />
-              ))}
-            </div>
+      <div className="w-full h-screen flex flex-col py-8 px-4 md:px-6 lg:px-8 overflow-hidden">
+        <div className="w-full flex flex-col h-full space-y-4">
+          <div className="h-10 w-full bg-muted animate-pulse rounded flex-shrink-0" />
+          <div className="flex-1 min-h-0 flex flex-col gap-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex-shrink-0 space-y-4">
+                <Skeleton className="h-8 w-48 rounded-lg" />
+                <div className="flex gap-4 overflow-hidden">
+                  {Array.from({ length: 8 }).map((_, j) => (
+                    <CardSkeleton key={j} />
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

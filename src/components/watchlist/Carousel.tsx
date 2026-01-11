@@ -1,8 +1,9 @@
 'use client';
 
 import { useRef, useState, useEffect, ReactNode } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/lib/providers/SidebarProvider';
 
@@ -11,9 +12,11 @@ interface CarouselProps {
   title: string;
   count: number;
   icon?: ReactNode;
+  showMoreLink?: string;
+  totalCount?: number; // Total count including items not shown
 }
 
-export function Carousel({ children, title, count, icon }: CarouselProps) {
+export function Carousel({ children, title, count, icon, showMoreLink, totalCount }: CarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -134,9 +137,9 @@ export function Carousel({ children, title, count, icon }: CarouselProps) {
   };
 
   return (
-    <div className="space-y-4 w-full">
+    <div className="flex flex-col h-full w-full">
       {/* Header */}
-      <div className="flex items-center justify-between h-[36px]">
+      <div className="flex items-center justify-between h-[36px] flex-shrink-0 mb-4">
         <h2 className="text-xl font-bold flex items-center gap-2">
           {icon && (
             <span className="bg-primary/10 text-primary p-1.5 rounded-md">
@@ -144,9 +147,23 @@ export function Carousel({ children, title, count, icon }: CarouselProps) {
             </span>
           )}
           {title}
-          <span className="text-muted-foreground text-sm font-normal ml-1">({count})</span>
+          <span className="text-muted-foreground text-sm font-normal ml-1">
+            ({totalCount !== undefined ? totalCount : count})
+          </span>
         </h2>
         <div className="flex gap-2">
+          {showMoreLink && (
+            <Link href={showMoreLink}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5"
+              >
+                Show More
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          )}
           <Button
             variant="outline"
             size="icon"
@@ -178,7 +195,7 @@ export function Carousel({ children, title, count, icon }: CarouselProps) {
       <div
         ref={scrollRef}
         onScroll={checkScroll}
-        className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory w-full"
+        className="flex-1 flex gap-4 overflow-x-auto overflow-y-hidden scrollbar-hide scroll-smooth snap-x snap-mandatory w-full min-h-0"
         style={{
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',

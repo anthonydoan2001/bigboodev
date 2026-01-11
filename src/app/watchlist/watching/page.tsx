@@ -10,7 +10,7 @@ import { WatchlistCard } from '@/components/watchlist/WatchlistCard';
 import { CardSkeleton } from '@/components/watchlist/CardSkeleton';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { useWatchlistMutations } from '@/lib/hooks/useWatchlistMutations';
-import { useGridCardWidth } from '@/lib/hooks/useGridCardWidth';
+import { useViewportGrid } from '@/lib/hooks/useViewportGrid';
 
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
@@ -24,7 +24,10 @@ function WatchingContent() {
   const { watchingItems, isLoading } = useWatchlist();
   const { deleteMutation, markWatchedMutation } = useWatchlistMutations();
   
-  const { containerRef, columns } = useGridCardWidth();
+  const { containerRef, itemsPerPage } = useViewportGrid({
+    headerHeight: 180, // Nav + filters + spacing
+    footerHeight: 80, // Pagination + spacing
+  });
 
   // Filter watching items based on selected filter
   const filteredWatchingItems = useMemo(() => {
@@ -32,11 +35,6 @@ function WatchingContent() {
     const filterType = filter.toUpperCase();
     return watchingItems.filter(item => item.type === filterType);
   }, [watchingItems, filter]);
-
-  // Calculate items per page to show exactly 2 rows
-  const itemsPerPage = useMemo(() => {
-    return columns * 2;
-  }, [columns]);
 
   // Paginate filtered watching items
   const paginatedWatchingItems = useMemo(() => {
@@ -63,15 +61,15 @@ function WatchingContent() {
   };
 
   return (
-    <div className="w-full py-8 px-4 md:px-6 lg:px-8 min-h-screen">
-      <div className="w-full space-y-6">
-        <Suspense fallback={<div className="h-10 w-full bg-muted animate-pulse rounded" />}>
+    <div className="w-full h-screen flex flex-col py-8 px-4 md:px-6 lg:px-8 overflow-hidden">
+      <div className="w-full flex flex-col h-full space-y-6">
+        <Suspense fallback={<div className="h-10 w-full bg-muted animate-pulse rounded flex-shrink-0" />}>
           <WatchlistNav />
         </Suspense>
 
-        <div className="space-y-8">
+        <div className="flex flex-col flex-1 min-h-0 space-y-4">
           {/* Watching Filters */}
-          <div className="flex items-center justify-between h-[36px]">
+          <div className="flex items-center justify-between h-[36px] flex-shrink-0">
             {watchingItems.length > 0 ? (
               <div className="flex gap-2 items-center">
                 <Button
@@ -111,10 +109,9 @@ function WatchingContent() {
 
           {/* Watching Results - Grid Layout */}
           {isLoading ? (
-            <div className="space-y-4">
-              <Skeleton className="h-8 w-48 rounded-lg" />
-              <div ref={containerRef} className="grid gap-x-4 gap-y-6">
-                {Array.from({ length: columns * 2 || 12 }).map((_, i) => (
+            <div className="h-full flex-1 overflow-hidden">
+              <div ref={containerRef} className="grid gap-4 h-full" style={{ gridAutoRows: 'min-content' }}>
+                {Array.from({ length: itemsPerPage || 18 }).map((_, i) => (
                   <div key={i} style={{ width: 'var(--item-width, 200px)' }}>
                     <CardSkeleton />
                   </div>
@@ -123,8 +120,8 @@ function WatchingContent() {
             </div>
           ) : paginatedWatchingItems.length > 0 ? (
             <>
-              <div className="space-y-4">
-                <div ref={containerRef} className="grid gap-x-4 gap-y-6">
+              <div className="h-full flex-1 overflow-hidden">
+                <div ref={containerRef} className="grid gap-4 h-full" style={{ gridAutoRows: 'min-content' }}>
                   {paginatedWatchingItems.map((item) => (
                     <div key={item.id} style={{ width: 'var(--item-width, 200px)' }}>
                       <WatchlistCard 
@@ -140,7 +137,7 @@ function WatchingContent() {
               
               {/* Pagination Controls */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center gap-2 flex-shrink-0 pt-4">
                   <Button
                     variant="outline"
                     size="sm"

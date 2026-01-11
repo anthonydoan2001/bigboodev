@@ -18,40 +18,73 @@ export interface TopItem {
 export async function GET() {
   try {
     // Fetch top items from all sources in parallel
-    const [animeResponse, moviesResponse, tvResponse] = await Promise.all([
-      fetch(`${JIKAN_BASE_URL}/top/anime?limit=20`),
+    // Fetch more items to account for filtering out watched/watching/watchlist items
+    // Jikan API has a max limit of 25 per request, so we'll fetch multiple pages
+    const [animeResponse1, animeResponse2, moviesResponse, tvResponse] = await Promise.all([
+      fetch(`${JIKAN_BASE_URL}/top/anime?limit=25&page=1`),
+      fetch(`${JIKAN_BASE_URL}/top/anime?limit=25&page=2`),
       TMDB_API_KEY ? fetch(`${TMDB_BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}&page=1`) : Promise.resolve(null),
       TMDB_API_KEY ? fetch(`${TMDB_BASE_URL}/tv/popular?api_key=${TMDB_API_KEY}&page=1`) : Promise.resolve(null),
     ]);
 
     const results: TopItem[] = [];
 
-    // Parse anime results
-    if (animeResponse.ok) {
-      const animeData = await animeResponse.json();
-      animeData.data.slice(0, 20).forEach((anime: any) => {
-        const imageUrl = anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url;
-        const rating = anime.score;
-        // Only add if image exists and has a valid rating
-        if (imageUrl && rating && rating > 0) {
-          results.push({
-            id: `anime-${anime.mal_id}`,
-            type: 'anime',
-            title: anime.title,
-            image: imageUrl,
-            year: anime.year,
-            rating: rating,
-            episodes: anime.episodes,
-            externalId: anime.mal_id,
-          });
+    // Parse anime results from multiple pages
+    const parseAnimeResponse = async (response: Response) => {
+      if (response.ok) {
+        try {
+          const animeData = await response.json();
+          // Check if data exists and is an array
+          const animeList = animeData?.data || animeData || [];
+          if (Array.isArray(animeList)) {
+            return animeList.map((anime: any) => {
+              const imageUrl = anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url;
+              const rating = anime.score;
+              // Only add if image exists and has a valid rating
+              if (imageUrl && rating && rating > 0) {
+                return {
+                  id: `anime-${anime.mal_id}`,
+                  type: 'anime',
+                  title: anime.title,
+                  image: imageUrl,
+                  year: anime.year,
+                  rating: rating,
+                  episodes: anime.episodes,
+                  externalId: anime.mal_id,
+                };
+              }
+              return null;
+            }).filter((item: any) => item !== null);
+          }
+        } catch (error) {
+          console.error('Error parsing anime response:', error);
         }
-      });
-    }
+      }
+      return [];
+    };
 
-    // Parse movie results
+    const [animePage1, animePage2] = await Promise.all([
+      parseAnimeResponse(animeResponse1),
+      parseAnimeResponse(animeResponse2),
+    ]);
+
+    results.push(...animePage1, ...animePage2);
+
+    // Parse movie results - fetch multiple pages to get more items
     if (moviesResponse && moviesResponse.ok) {
       const moviesData = await moviesResponse.json();
-      moviesData.results.slice(0, 20).forEach((movie: any) => {
+      // Fetch additional pages for more movies
+      const additionalPages = TMDB_API_KEY ? await Promise.all([
+        fetch(`${TMDB_BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}&page=2`).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch(`${TMDB_BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}&page=3`).then(r => r.ok ? r.json() : null).catch(() => null),
+      ]) : [];
+      
+      const allMovies = [
+        ...moviesData.results,
+        ...additionalPages.flatMap((page: any) => page?.results || [])
+      ];
+      
+      allMovies.slice(0, 50).forEach((movie: any) => {
         const rating = movie.vote_average;
         // Only add if poster_path exists and has a valid rating
         if (movie.poster_path && rating && rating > 0) {
@@ -68,10 +101,21 @@ export async function GET() {
       });
     }
 
-    // Parse TV results
+    // Parse TV results - fetch multiple pages to get more items
     if (tvResponse && tvResponse.ok) {
       const tvData = await tvResponse.json();
-      tvData.results.slice(0, 20).forEach((show: any) => {
+      // Fetch additional pages for more TV shows
+      const additionalPages = TMDB_API_KEY ? await Promise.all([
+        fetch(`${TMDB_BASE_URL}/tv/popular?api_key=${TMDB_API_KEY}&page=2`).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch(`${TMDB_BASE_URL}/tv/popular?api_key=${TMDB_API_KEY}&page=3`).then(r => r.ok ? r.json() : null).catch(() => null),
+      ]) : [];
+      
+      const allShows = [
+        ...tvData.results,
+        ...additionalPages.flatMap((page: any) => page?.results || [])
+      ];
+      
+      allShows.slice(0, 50).forEach((show: any) => {
         const rating = show.vote_average;
         // Only add if poster_path exists and has a valid rating
         if (show.poster_path && rating && rating > 0) {

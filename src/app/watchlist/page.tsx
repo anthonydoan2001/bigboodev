@@ -18,10 +18,8 @@ import { UniversalSearchResult } from '@/app/api/watchlist/search/universal/rout
 import { ListVideo } from 'lucide-react';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { useWatchlistMutations } from '@/lib/hooks/useWatchlistMutations';
-import { useGridCardWidth } from '@/lib/hooks/useGridCardWidth';
+import { useViewportGrid } from '@/lib/hooks/useViewportGrid';
 import { WatchlistItem } from '@prisma/client';
-
-const ITEMS_PER_PAGE = 22;
 
 function WatchlistContent() {
   const router = useRouter();
@@ -36,6 +34,14 @@ function WatchlistContent() {
   // Stable randomized order - only created once per page load
   const randomizedOrderRef = useRef<Map<string, number>>(new Map());
   const hasInitializedRef = useRef(false);
+  
+  // Separate refs for anime, movies, and shows randomization
+  const animeOrderRef = useRef<Map<string, number>>(new Map());
+  const moviesOrderRef = useRef<Map<string, number>>(new Map());
+  const showsOrderRef = useRef<Map<string, number>>(new Map());
+  const hasInitializedAnimeRef = useRef(false);
+  const hasInitializedMoviesRef = useRef(false);
+  const hasInitializedShowsRef = useRef(false);
 
   // Search query
   const { data: searchData, isLoading: searchLoading } = useQuery<{ results: UniversalSearchResult[] }>({
@@ -94,13 +100,107 @@ function WatchlistContent() {
       })
       .sort((a, b) => a.order - b.order);
     
-    return itemsWithOrder.map(({ item }) => item);
+    // Limit to 21 items for the main watchlist section
+    return itemsWithOrder.map(({ item }) => item).slice(0, 21);
   }, [watchlistItems]);
 
   // Group watchlist by type (excluding watched)
-  const animeList = watchlistItems.filter(item => item.type === 'ANIME');
-  const moviesList = watchlistItems.filter(item => item.type === 'MOVIE');
-  const showsList = watchlistItems.filter(item => item.type === 'SHOW');
+  const allAnime = watchlistItems.filter(item => item.type === 'ANIME');
+  const allMovies = watchlistItems.filter(item => item.type === 'MOVIE');
+  const allShows = watchlistItems.filter(item => item.type === 'SHOW');
+
+  // Get randomized anime list - limit to 21 items
+  const animeList = useMemo(() => {
+    if (!hasInitializedAnimeRef.current && !listLoading && allAnime.length > 0) {
+      const animeOrder = allAnime.map((_: WatchlistItem, index: number) => index);
+      for (let i = animeOrder.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [animeOrder[i], animeOrder[j]] = [animeOrder[j], animeOrder[i]];
+      }
+      allAnime.forEach((item: WatchlistItem, originalIndex: number) => {
+        animeOrderRef.current.set(item.id, animeOrder[originalIndex]);
+      });
+      hasInitializedAnimeRef.current = true;
+    }
+    
+    if (!hasInitializedAnimeRef.current || allAnime.length === 0) return allAnime.slice(0, 21);
+    
+    const itemsWithOrder = allAnime
+      .map(item => {
+        let order = animeOrderRef.current.get(item.id);
+        if (order === undefined) {
+          const maxOrder = Math.max(...Array.from(animeOrderRef.current.values()).filter(v => v < 10000), -1);
+          order = Math.random() * 1000 + maxOrder + 1000;
+          animeOrderRef.current.set(item.id, order);
+        }
+        return { item, order };
+      })
+      .sort((a, b) => a.order - b.order);
+    
+    return itemsWithOrder.map(({ item }) => item).slice(0, 21);
+  }, [allAnime, listLoading]);
+
+  // Get randomized movies list - limit to 21 items
+  const moviesList = useMemo(() => {
+    if (!hasInitializedMoviesRef.current && !listLoading && allMovies.length > 0) {
+      const moviesOrder = allMovies.map((_: WatchlistItem, index: number) => index);
+      for (let i = moviesOrder.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [moviesOrder[i], moviesOrder[j]] = [moviesOrder[j], moviesOrder[i]];
+      }
+      allMovies.forEach((item: WatchlistItem, originalIndex: number) => {
+        moviesOrderRef.current.set(item.id, moviesOrder[originalIndex]);
+      });
+      hasInitializedMoviesRef.current = true;
+    }
+    
+    if (!hasInitializedMoviesRef.current || allMovies.length === 0) return allMovies.slice(0, 21);
+    
+    const itemsWithOrder = allMovies
+      .map(item => {
+        let order = moviesOrderRef.current.get(item.id);
+        if (order === undefined) {
+          const maxOrder = Math.max(...Array.from(moviesOrderRef.current.values()).filter(v => v < 10000), -1);
+          order = Math.random() * 1000 + maxOrder + 1000;
+          moviesOrderRef.current.set(item.id, order);
+        }
+        return { item, order };
+      })
+      .sort((a, b) => a.order - b.order);
+    
+    return itemsWithOrder.map(({ item }) => item).slice(0, 21);
+  }, [allMovies, listLoading]);
+
+  // Get randomized shows list - limit to 21 items
+  const showsList = useMemo(() => {
+    if (!hasInitializedShowsRef.current && !listLoading && allShows.length > 0) {
+      const showsOrder = allShows.map((_: WatchlistItem, index: number) => index);
+      for (let i = showsOrder.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [showsOrder[i], showsOrder[j]] = [showsOrder[j], showsOrder[i]];
+      }
+      allShows.forEach((item: WatchlistItem, originalIndex: number) => {
+        showsOrderRef.current.set(item.id, showsOrder[originalIndex]);
+      });
+      hasInitializedShowsRef.current = true;
+    }
+    
+    if (!hasInitializedShowsRef.current || allShows.length === 0) return allShows.slice(0, 21);
+    
+    const itemsWithOrder = allShows
+      .map(item => {
+        let order = showsOrderRef.current.get(item.id);
+        if (order === undefined) {
+          const maxOrder = Math.max(...Array.from(showsOrderRef.current.values()).filter(v => v < 10000), -1);
+          order = Math.random() * 1000 + maxOrder + 1000;
+          showsOrderRef.current.set(item.id, order);
+        }
+        return { item, order };
+      })
+      .sort((a, b) => a.order - b.order);
+    
+    return itemsWithOrder.map(({ item }) => item).slice(0, 21);
+  }, [allShows, listLoading]);
 
   // Filter out items without images or ratings from search results
   const searchResults: UniversalSearchResult[] = (searchData?.results || []).filter(
@@ -146,25 +246,20 @@ function WatchlistContent() {
     return searchResults.filter(item => item.type.toLowerCase() === searchFilter);
   }, [searchResults, searchFilter]);
 
-  // Paginate filtered search results
-  const paginatedSearchResults = useMemo(() => {
-    const startIndex = (searchPage - 1) * ITEMS_PER_PAGE;
-    return filteredSearchResults.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredSearchResults, searchPage]);
 
-  const totalSearchPages = Math.ceil(filteredSearchResults.length / ITEMS_PER_PAGE);
-
-  // Grid card width hook - recalculate when search results change
-  const { containerRef: searchContainerRef } = useGridCardWidth({
-    recalculateTrigger: `${paginatedSearchResults.length}-${searchPage}-${searchData?.results?.length || 0}`
+  // Grid card width hook - viewport aware
+  const { containerRef: searchContainerRef, itemsPerPage: searchItemsPerPage } = useViewportGrid({
+    headerHeight: 180, // Nav + filters + spacing
+    footerHeight: 80, // Pagination + spacing
   });
 
-  // Scroll to top when page changes
-  useEffect(() => {
-    if (searchQuery && searchPage > 1) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [searchPage, searchQuery]);
+  // Paginate filtered search results using viewport-aware items per page
+  const paginatedSearchResults = useMemo(() => {
+    const startIndex = (searchPage - 1) * searchItemsPerPage;
+    return filteredSearchResults.slice(startIndex, startIndex + searchItemsPerPage);
+  }, [filteredSearchResults, searchPage, searchItemsPerPage]);
+
+  const totalSearchPages = Math.ceil(filteredSearchResults.length / searchItemsPerPage);
 
   const handleFilterChange = (newFilter: 'all' | 'anime' | 'movie' | 'show') => {
     const params = new URLSearchParams(searchParams.toString());
@@ -191,18 +286,17 @@ function WatchlistContent() {
   const showingSearch = searchQuery.length > 0;
 
   return (
-    <div className="w-full py-8 px-4 md:px-6 lg:px-8 min-h-screen">
-      <div className="w-full space-y-6">
+    <div className={`w-full py-8 px-4 md:px-6 lg:px-8 ${showingSearch ? 'h-screen flex flex-col overflow-hidden' : 'min-h-screen'}`}>
+      <div className={`w-full space-y-6 ${showingSearch ? 'flex flex-col h-full' : ''}`}>
         <WatchlistNav />
 
         {/* Content */}
         {showingSearch ? (
-          <div className="space-y-8">
+          <div className="flex flex-col flex-1 min-h-0 space-y-4">
             {searchLoading ? (
-              <div className="space-y-4">
-                <Skeleton className="h-8 w-48 rounded-lg" />
-                <div ref={searchContainerRef} className="grid gap-x-4 gap-y-6">
-                  {Array.from({ length: 22 }).map((_, i) => (
+              <div className="h-full flex-1 overflow-hidden">
+                <div ref={searchContainerRef} className="grid gap-4 h-full" style={{ gridAutoRows: 'min-content' }}>
+                  {Array.from({ length: searchItemsPerPage || 18 }).map((_, i) => (
                     <div key={i} style={{ width: 'var(--item-width, 200px)' }}>
                       <CardSkeleton />
                     </div>
@@ -210,9 +304,9 @@ function WatchlistContent() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="flex flex-col flex-1 min-h-0 space-y-4">
                 {/* Search Filters */}
-                <div className="flex items-center justify-between h-[36px]">
+                <div className="flex items-center justify-between h-[36px] flex-shrink-0">
                   {searchResults.length > 0 ? (
                     <div className="flex gap-2 items-center">
                       <Button
@@ -253,9 +347,8 @@ function WatchlistContent() {
                 {/* Search Results - Grid Layout */}
                 {paginatedSearchResults.length > 0 ? (
                   <>
-                    {/* Min height for 2 rows: ~340px per row (280px image + 60px text) */}
-                    <div className="min-h-[700px]">
-                      <div ref={searchContainerRef} className="grid gap-x-4 gap-y-6">
+                    <div className="h-full flex-1 overflow-hidden">
+                      <div ref={searchContainerRef} className="grid gap-4 h-full" style={{ gridAutoRows: 'min-content' }}>
                         {paginatedSearchResults.map((result) => {
                           const alreadyInList = isInWatchlist(result.externalId, result.type);
                           const itemWatched = isWatched(result.externalId, result.type);
@@ -284,7 +377,7 @@ function WatchlistContent() {
                     
                     {/* Pagination Controls */}
                     {totalSearchPages > 1 && (
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex items-center justify-center gap-2 flex-shrink-0 pt-4">
                         <Button
                           variant="outline"
                           size="sm"
@@ -358,7 +451,13 @@ function WatchlistContent() {
 
                 {/* Anime Section */}
                 {animeList.length > 0 && (
-                  <Carousel title="Anime" count={animeList.length} icon={<ListVideo className="h-4 w-4" />}>
+                  <Carousel 
+                    title="Anime" 
+                    count={animeList.length} 
+                    totalCount={allAnime.length}
+                    icon={<ListVideo className="h-4 w-4" />}
+                    showMoreLink={allAnime.length > 21 ? '/watchlist/anime' : undefined}
+                  >
                     {animeList.map((item) => (
                       <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 200px)' }}>
                         <WatchlistCard
@@ -374,7 +473,13 @@ function WatchlistContent() {
 
                 {/* Movies Section */}
                 {moviesList.length > 0 && (
-                  <Carousel title="Movies" count={moviesList.length} icon={<ListVideo className="h-4 w-4" />}>
+                  <Carousel 
+                    title="Movies" 
+                    count={moviesList.length} 
+                    totalCount={allMovies.length}
+                    icon={<ListVideo className="h-4 w-4" />}
+                    showMoreLink={allMovies.length > 21 ? '/watchlist/movie' : undefined}
+                  >
                     {moviesList.map((item) => (
                       <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 200px)' }}>
                         <WatchlistCard
@@ -390,7 +495,13 @@ function WatchlistContent() {
 
                 {/* TV Shows Section */}
                 {showsList.length > 0 && (
-                  <Carousel title="TV Shows" count={showsList.length} icon={<ListVideo className="h-4 w-4" />}>
+                  <Carousel 
+                    title="TV Shows" 
+                    count={showsList.length} 
+                    totalCount={allShows.length}
+                    icon={<ListVideo className="h-4 w-4" />}
+                    showMoreLink={allShows.length > 21 ? '/watchlist/show' : undefined}
+                  >
                     {showsList.map((item) => (
                       <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 200px)' }}>
                         <WatchlistCard
@@ -422,17 +533,17 @@ function WatchlistContent() {
 export default function WatchlistPage() {
   return (
     <Suspense fallback={
-      <div className="w-full py-8 px-4 md:px-6 lg:px-8 min-h-screen">
-        <div className="w-full space-y-6">
-          <div className="flex items-center justify-center">
-            <Skeleton className="h-10 w-64 rounded-lg" />
-          </div>
-          <div className="space-y-4">
-            <Skeleton className="h-8 w-48 rounded-lg" />
-            <div className="grid gap-x-4 gap-y-6 grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
-              {Array.from({ length: 16 }).map((_, i) => (
-                <CardSkeleton key={i} />
-              ))}
+      <div className="w-full h-screen flex flex-col py-8 px-4 md:px-6 lg:px-8 overflow-hidden">
+        <div className="w-full flex flex-col h-full space-y-6">
+          <div className="h-10 w-full bg-muted animate-pulse rounded flex-shrink-0" />
+          <div className="flex flex-col flex-1 min-h-0 space-y-4">
+            <div className="h-8 w-48 bg-muted animate-pulse rounded flex-shrink-0" />
+            <div className="h-full flex-1 overflow-hidden">
+              <div className="grid gap-4 h-full grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
+                {Array.from({ length: 16 }).map((_, i) => (
+                  <CardSkeleton key={i} />
+                ))}
+              </div>
             </div>
           </div>
         </div>
