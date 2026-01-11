@@ -102,9 +102,13 @@ function WatchlistContent() {
   const moviesList = watchlistItems.filter(item => item.type === 'MOVIE');
   const showsList = watchlistItems.filter(item => item.type === 'SHOW');
 
-  // Filter out items without images from search results
+  // Filter out items without images or ratings from search results
   const searchResults: UniversalSearchResult[] = (searchData?.results || []).filter(
-    (result: UniversalSearchResult) => result.image && result.image.trim() !== ''
+    (result: UniversalSearchResult) => 
+      result.image && 
+      result.image.trim() !== '' && 
+      result.rating && 
+      result.rating > 0
   );
 
   // Helper to check if item is in watchlist

@@ -31,15 +31,16 @@ export async function GET() {
       const animeData = await animeResponse.json();
       animeData.data.slice(0, 20).forEach((anime: any) => {
         const imageUrl = anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url;
-        // Only add if image exists
-        if (imageUrl) {
+        const rating = anime.score;
+        // Only add if image exists and has a valid rating
+        if (imageUrl && rating && rating > 0) {
           results.push({
             id: `anime-${anime.mal_id}`,
             type: 'anime',
             title: anime.title,
             image: imageUrl,
             year: anime.year,
-            rating: anime.score,
+            rating: rating,
             episodes: anime.episodes,
             externalId: anime.mal_id,
           });
@@ -51,15 +52,16 @@ export async function GET() {
     if (moviesResponse && moviesResponse.ok) {
       const moviesData = await moviesResponse.json();
       moviesData.results.slice(0, 20).forEach((movie: any) => {
-        // Only add if poster_path exists
-        if (movie.poster_path) {
+        const rating = movie.vote_average;
+        // Only add if poster_path exists and has a valid rating
+        if (movie.poster_path && rating && rating > 0) {
           results.push({
             id: `movie-${movie.id}`,
             type: 'movie',
             title: movie.title,
             image: `https://image.tmdb.org/t/p/w342${movie.poster_path}`,
             year: movie.release_date ? new Date(movie.release_date).getFullYear() : null,
-            rating: movie.vote_average || null,
+            rating: rating,
             externalId: movie.id,
           });
         }
@@ -70,15 +72,16 @@ export async function GET() {
     if (tvResponse && tvResponse.ok) {
       const tvData = await tvResponse.json();
       tvData.results.slice(0, 20).forEach((show: any) => {
-        // Only add if poster_path exists
-        if (show.poster_path) {
+        const rating = show.vote_average;
+        // Only add if poster_path exists and has a valid rating
+        if (show.poster_path && rating && rating > 0) {
           results.push({
             id: `show-${show.id}`,
             type: 'show',
             title: show.name,
             image: `https://image.tmdb.org/t/p/w342${show.poster_path}`,
             year: show.first_air_date ? new Date(show.first_air_date).getFullYear() : null,
-            rating: show.vote_average || null,
+            rating: rating,
             externalId: show.id,
           });
         }

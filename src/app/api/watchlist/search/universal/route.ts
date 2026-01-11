@@ -55,14 +55,16 @@ export async function GET(request: Request) {
     if (moviesResponse && moviesResponse.ok) {
       const moviesData = await moviesResponse.json();
       moviesData.results.slice(0, 20).forEach((movie: any) => {
-        if (movie.poster_path) {
+        const rating = movie.vote_average;
+        // Only include movies with a valid rating (not null, undefined, or 0)
+        if (movie.poster_path && rating && rating > 0) {
           results.push({
             id: `movie-${movie.id}`,
             type: 'movie',
             title: movie.title,
             image: `https://image.tmdb.org/t/p/w342${movie.poster_path}`,
             year: movie.release_date ? new Date(movie.release_date).getFullYear() : null,
-            rating: movie.vote_average || null,
+            rating: rating,
             externalId: movie.id,
           });
         }
@@ -73,14 +75,16 @@ export async function GET(request: Request) {
     if (tvResponse && tvResponse.ok) {
       const tvData = await tvResponse.json();
       tvData.results.slice(0, 20).forEach((show: any) => {
-        if (show.poster_path) {
+        const rating = show.vote_average;
+        // Only include shows with a valid rating (not null, undefined, or 0)
+        if (show.poster_path && rating && rating > 0) {
           results.push({
             id: `show-${show.id}`,
             type: 'show',
             title: show.name,
             image: `https://image.tmdb.org/t/p/w342${show.poster_path}`,
             year: show.first_air_date ? new Date(show.first_air_date).getFullYear() : null,
-            rating: show.vote_average || null,
+            rating: rating,
             externalId: show.id,
           });
         }
@@ -100,14 +104,16 @@ export async function GET(request: Request) {
         if (animeData.data) {
           animeData.data.slice(0, 20).forEach((anime: any) => {
             const imageUrl = anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url;
-            if (imageUrl) {
+            const rating = anime.score;
+            // Only include anime with a valid rating (not null, undefined, or 0)
+            if (imageUrl && rating && rating > 0) {
               results.push({
                 id: `anime-${anime.mal_id}`,
                 type: 'anime',
                 title: anime.title,
                 image: imageUrl,
                 year: anime.year,
-                rating: anime.score,
+                rating: rating,
                 episodes: anime.episodes,
                 externalId: anime.mal_id,
               });

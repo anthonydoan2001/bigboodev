@@ -30,8 +30,14 @@ function TopContent() {
     staleTime: 30 * 60 * 1000, // Cache for 30 minutes
   });
 
-  // Filter out items without images from top items
-  const topItems: TopItem[] = (topData?.results || []).filter((item: TopItem) => item.image && item.image.trim() !== '');
+  // Filter out items without images or ratings from top items
+  const topItems: TopItem[] = (topData?.results || []).filter(
+    (item: TopItem) => 
+      item.image && 
+      item.image.trim() !== '' && 
+      item.rating && 
+      item.rating > 0
+  );
 
   // Helper to check if item is in watchlist
   const isInWatchlist = (externalId: number, type: string) => {
