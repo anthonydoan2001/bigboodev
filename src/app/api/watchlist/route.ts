@@ -47,6 +47,11 @@ export async function POST(request: Request) {
           where: { id: existing.id },
           data: { status: status.toUpperCase() }
         });
+        
+        // Trigger top items refresh in background (fire and forget, no await)
+        // Only refresh if it's been more than 5 minutes since last refresh
+        triggerTopItemsRefreshIfNeeded(request);
+        
         return NextResponse.json({ item: updated });
       }
       console.log('Item already exists:', existing);
@@ -68,6 +73,12 @@ export async function POST(request: Request) {
     });
 
     console.log('Successfully created item:', item);
+    
+    // Trigger top items refresh in background (fire and forget, no await)
+    // Only refresh if it's been more than 5 minutes since last refresh
+    // This ensures the top page filters out newly added items without blocking the response
+    triggerTopItemsRefreshIfNeeded(request);
+    
     return NextResponse.json({ item });
   } catch (error) {
     console.error('Error adding to watchlist:', error);
@@ -76,6 +87,30 @@ export async function POST(request: Request) {
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
+}
+
+/**
+ * Trigger top items refresh in the background (fire and forget)
+ * The refresh endpoint will check if it needs to refresh (5 minute cooldown)
+ * Uses the request URL to determine the base URL
+ */
+function triggerTopItemsRefreshIfNeeded(request: Request): void {
+  // Trigger refresh without await - truly fire and forget
+  // The refresh endpoint will check if it needs to refresh based on last update time
+  const url = new URL(request.url);
+  const baseUrl = `${url.protocol}//${url.host}`;
+  const refreshUrl = `${baseUrl}/api/watchlist/top/refresh`;
+  
+  // Fire and forget - don't wait for response
+  fetch(refreshUrl, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${process.env.CRON_SECRET || ''}`,
+    },
+  }).catch(err => {
+    // Silently fail - this is background work
+    console.error('Top items refresh fetch failed:', err);
+  });
 }
 
 export async function PATCH(request: Request) {

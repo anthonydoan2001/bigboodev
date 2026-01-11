@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CardSkeleton } from '@/components/watchlist/CardSkeleton';
 import { Carousel } from '@/components/watchlist/Carousel';
-import { SearchResultCard } from '@/components/watchlist/SearchResultCard';
+import { TopItemCard } from '@/components/watchlist/TopItemCard';
 import { WatchlistNav } from '@/components/watchlist/WatchlistNav';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { useWatchlistMutations } from '@/lib/hooks/useWatchlistMutations';
@@ -98,53 +98,38 @@ function TopContent() {
   ].filter(section => section.items.length > 0);
 
   return (
-    <div className="w-full h-screen flex flex-col py-8 px-4 md:px-6 lg:px-8 overflow-hidden">
-      <div className="w-full flex flex-col h-full space-y-4">
-        <Suspense fallback={<div className="h-10 w-full bg-muted animate-pulse rounded flex-shrink-0" />}>
-          <WatchlistNav />
-        </Suspense>
+    <div className="w-full py-4 sm:py-8 px-3 sm:px-4 md:px-6 lg:px-8 min-h-screen">
+      <div className="w-full space-y-4 sm:space-y-6">
+        <WatchlistNav />
 
-        <div className="flex-1 min-h-0 overflow-hidden">
-          {topLoading || watchlistLoading ? (
-            <div className="h-full flex flex-col gap-4">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex-shrink-0 space-y-4">
-                  <Skeleton className="h-8 w-48 rounded-lg" />
-                  <div className="flex gap-4 overflow-hidden">
-                    {Array.from({ length: 8 }).map((_, j) => (
-                      <CardSkeleton key={j} />
-                    ))}
-                  </div>
+        {topLoading || watchlistLoading ? (
+          <div className="space-y-8">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="space-y-4">
+                <Skeleton className="h-8 w-48 rounded-lg" />
+                <div className="flex gap-4 overflow-hidden">
+                  {Array.from({ length: 8 }).map((_, j) => (
+                    <CardSkeleton key={j} />
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : topItems.length > 0 && sections.length > 0 ? (
-            <div className="h-full flex flex-col gap-3 md:gap-4 overflow-hidden">
-              {sections.map((section, index) => (
-                <div 
-                  key={section.key} 
-                  className="flex-1 min-h-0 flex flex-col"
-                >
+              </div>
+            ))}
+          </div>
+        ) : topItems.length > 0 && sections.length > 0 ? (
+          <div className="space-y-8">
+            {sections.map((section, index) => (
+              <div key={section.key}>
                   {section.key === 'anime' && (
-                    <Carousel title={section.title} count={section.items.length} icon={<ListVideo className="h-4 w-4" />}>
+                    <Carousel title={section.title} count={section.items.length} icon={<ListVideo className="h-4 w-4" />} showCount={false}>
                       {section.items.map((item) => {
                         const alreadyInList = isInWatchlist(item.externalId, item.type);
                         const itemWatched = isWatched(item.externalId, item.type);
                         const itemWatching = isWatching(item.externalId, item.type);
                         const itemId = getWatchlistItemId(item.externalId, item.type);
                         return (
-                          <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 200px)' }}>
-                            <SearchResultCard
-                              result={{
-                                id: item.id,
-                                type: item.type,
-                                title: item.title,
-                                image: item.image ?? '',
-                                year: item.year ?? null,
-                                rating: item.rating ?? null,
-                                episodes: item.episodes ?? null,
-                                externalId: item.externalId,
-                              }}
+                          <div key={item.id} className="flex-shrink-0 snap-start overflow-visible" style={{ width: 'var(--item-width, 200px)', minWidth: 0 }}>
+                            <TopItemCard
+                              item={item}
                               onAdd={() => addMutation.mutate({
                                 id: item.id,
                                 type: item.type,
@@ -200,18 +185,9 @@ function TopContent() {
                         const itemWatching = isWatching(item.externalId, item.type);
                         const itemId = getWatchlistItemId(item.externalId, item.type);
                         return (
-                          <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 200px)' }}>
-                            <SearchResultCard
-                              result={{
-                                id: item.id,
-                                type: item.type,
-                                title: item.title,
-                                image: item.image ?? '',
-                                year: item.year ?? null,
-                                rating: item.rating ?? null,
-                                episodes: item.episodes ?? null,
-                                externalId: item.externalId,
-                              }}
+                          <div key={item.id} className="flex-shrink-0 snap-start overflow-visible" style={{ width: 'var(--item-width, 200px)', minWidth: 0 }}>
+                            <TopItemCard
+                              item={item}
                               onAdd={() => addMutation.mutate({
                                 id: item.id,
                                 type: item.type,
@@ -260,25 +236,16 @@ function TopContent() {
                     </Carousel>
                   )}
                   {section.key === 'shows' && (
-                    <Carousel title={section.title} count={section.items.length} icon={<ListVideo className="h-4 w-4" />}>
+                    <Carousel title={section.title} count={section.items.length} icon={<ListVideo className="h-4 w-4" />} showCount={false}>
                       {section.items.map((item) => {
                         const alreadyInList = isInWatchlist(item.externalId, item.type);
                         const itemWatched = isWatched(item.externalId, item.type);
                         const itemWatching = isWatching(item.externalId, item.type);
                         const itemId = getWatchlistItemId(item.externalId, item.type);
                         return (
-                          <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 200px)' }}>
-                            <SearchResultCard
-                              result={{
-                                id: item.id,
-                                type: item.type,
-                                title: item.title,
-                                image: item.image ?? '',
-                                year: item.year ?? null,
-                                rating: item.rating ?? null,
-                                episodes: item.episodes ?? null,
-                                externalId: item.externalId,
-                              }}
+                          <div key={item.id} className="flex-shrink-0 snap-start overflow-visible" style={{ width: 'var(--item-width, 200px)', minWidth: 0 }}>
+                            <TopItemCard
+                              item={item}
                               onAdd={() => addMutation.mutate({
                                 id: item.id,
                                 type: item.type,
@@ -326,17 +293,16 @@ function TopContent() {
                       })}
                     </Carousel>
                   )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <Card className="h-full flex items-center justify-center">
-              <CardContent className="p-12 text-center text-muted-foreground">
-                <p>Failed to load top items</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="p-12 text-center text-muted-foreground">
+              <p>Failed to load top items</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
@@ -345,12 +311,12 @@ function TopContent() {
 export default function TopPage() {
   return (
     <Suspense fallback={
-      <div className="w-full h-screen flex flex-col py-8 px-4 md:px-6 lg:px-8 overflow-hidden">
-        <div className="w-full flex flex-col h-full space-y-4">
-          <div className="h-10 w-full bg-muted animate-pulse rounded flex-shrink-0" />
-          <div className="flex-1 min-h-0 flex flex-col gap-4">
+      <div className="w-full py-4 sm:py-8 px-3 sm:px-4 md:px-6 lg:px-8 min-h-screen">
+        <div className="w-full space-y-4 sm:space-y-6">
+          <div className="h-10 w-full bg-muted animate-pulse rounded" />
+          <div className="space-y-8">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="flex-shrink-0 space-y-4">
+              <div key={i} className="space-y-4">
                 <Skeleton className="h-8 w-48 rounded-lg" />
                 <div className="flex gap-4 overflow-hidden">
                   {Array.from({ length: 8 }).map((_, j) => (

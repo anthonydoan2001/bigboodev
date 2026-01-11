@@ -101,7 +101,7 @@ export function WatchlistCard({
   
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
-      <div className="group relative space-y-2" style={{ width: 'var(--item-width, 100%)', maxWidth: 'var(--item-width, 100%)' }}>
+      <div className="group relative space-y-2 w-full flex flex-col" style={{ width: 'var(--item-width, 100%)', maxWidth: 'var(--item-width, 100%)', minWidth: 0 }}>
         <div 
           className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20 cursor-context-menu"
           onContextMenu={(e) => {
@@ -144,21 +144,33 @@ export function WatchlistCard({
               )}
             </div>
 
-            {/* Watched Badge */}
+            {/* Rating Badge - Top Left */}
+            {item.rating && (
+              <div className="absolute left-1.5 top-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md flex items-center gap-0.5 z-10">
+                <span className="text-yellow-400">★</span> {item.rating.toFixed(1)}
+              </div>
+            )}
+
+            {/* Watched Badge - Below Rating */}
             {!hideStatusBadge && isWatched && (
-              <div className="absolute left-1.5 top-1.5 flex items-center gap-0.5 rounded-md bg-emerald-500/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md shadow-sm z-10">
+              <div className="absolute left-1.5 top-8 flex items-center gap-0.5 rounded-md bg-emerald-500/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md shadow-sm z-10">
                 <CheckCircle2 className="h-2.5 w-2.5" />
                 Watched
               </div>
             )}
 
-            {/* Watching Badge */}
+            {/* Watching Badge - Below Rating */}
             {!hideStatusBadge && isWatching && (
-              <div className="absolute left-1.5 top-1.5 flex items-center gap-0.5 rounded-md bg-blue-500/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md shadow-sm z-10">
+              <div className="absolute left-1.5 top-8 flex items-center gap-0.5 rounded-md bg-blue-500/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md shadow-sm z-10">
                 <Eye className="h-2.5 w-2.5" />
                 Watching
               </div>
             )}
+
+            {/* Media Type Badge - Top Right */}
+            <div className="absolute right-1.5 top-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-md z-10">
+              {item.type === 'ANIME' ? 'Anime' : item.type === 'MOVIE' ? 'Movie' : item.type === 'SHOW' ? 'TV Show' : item.type}
+            </div>
 
             {/* Hover Overlay - Remove Button Icon */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-end p-2 pointer-events-none gap-1.5">
@@ -176,13 +188,6 @@ export function WatchlistCard({
                 </Button>
               </div>
             </div>
-
-            {/* Rating Badge */}
-            {item.rating && (
-              <div className="absolute right-1.5 top-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md flex items-center gap-0.5 z-10">
-                <span className="text-yellow-400">★</span> {item.rating.toFixed(1)}
-              </div>
-            )}
           </div>
         <DropdownMenuContent 
           align="end" 
@@ -203,19 +208,36 @@ export function WatchlistCard({
           )}
         </DropdownMenuContent>
         
-        <div className="space-y-1">
-          <h3 className="line-clamp-2 text-sm font-semibold leading-tight text-foreground/90 min-h-[2.2rem]" title={item.title}>
+        <div className="space-y-1 w-full min-w-0 flex-shrink-0 overflow-visible">
+          {(item.year || item.episodes) && (
+            <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+              {item.year && <span>{item.year}</span>}
+              {item.episodes && (
+                <>
+                  <span className="text-muted-foreground/30">•</span>
+                  <span>{item.episodes} eps</span>
+                </>
+              )}
+            </div>
+          )}
+          <h3 
+            className="text-sm font-semibold leading-snug text-foreground/90" 
+            style={{ 
+              width: '100%',
+              minWidth: 0,
+              wordBreak: 'break-word',
+              overflowWrap: 'anywhere',
+              whiteSpace: 'normal',
+              overflow: 'visible',
+              textOverflow: 'clip',
+              display: 'block',
+              maxWidth: '100%',
+              hyphens: 'auto'
+            }} 
+            title={item.title}
+          >
             {item.title}
           </h3>
-          <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
-            {item.year && <span>{item.year}</span>}
-            {item.episodes && (
-              <>
-                <span className="text-muted-foreground/30">•</span>
-                <span>{item.episodes} eps</span>
-              </>
-            )}
-          </div>
         </div>
       </div>
     </DropdownMenu>

@@ -26,7 +26,19 @@ export function useWatchlistMutations() {
       }
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Optimistically update the cache immediately
+      queryClient.setQueryData<{ items: WatchlistItem[] }>(['watchlist'], (old) => {
+        if (!old) return { items: [data.item] };
+        // Check if item already exists
+        const exists = old.items.some(
+          (i) => i.externalId === data.item.externalId && i.type === data.item.type
+        );
+        if (exists) return old;
+        // Add new item to the beginning
+        return { items: [data.item, ...old.items] };
+      });
+      // Refetch in background to ensure consistency (non-blocking)
       queryClient.invalidateQueries({ queryKey: ['watchlist'] });
     },
     onError: (error: Error) => {
@@ -81,7 +93,22 @@ export function useWatchlistMutations() {
       }
       throw new Error('Invalid parameters');
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Optimistically update the cache immediately
+      queryClient.setQueryData<{ items: WatchlistItem[] }>(['watchlist'], (old) => {
+        if (!old) return { items: [data.item] };
+        // Update existing item or add new one
+        const existingIndex = old.items.findIndex((i) => i.id === data.item.id);
+        if (existingIndex >= 0) {
+          // Update existing item
+          const updated = [...old.items];
+          updated[existingIndex] = data.item;
+          return { items: updated };
+        }
+        // Add new item to the beginning
+        return { items: [data.item, ...old.items] };
+      });
+      // Refetch in background to ensure consistency (non-blocking)
       queryClient.invalidateQueries({ queryKey: ['watchlist'] });
     },
     onError: (error: Error) => {
@@ -125,7 +152,22 @@ export function useWatchlistMutations() {
       }
       throw new Error('Invalid parameters');
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Optimistically update the cache immediately
+      queryClient.setQueryData<{ items: WatchlistItem[] }>(['watchlist'], (old) => {
+        if (!old) return { items: [data.item] };
+        // Update existing item or add new one
+        const existingIndex = old.items.findIndex((i) => i.id === data.item.id);
+        if (existingIndex >= 0) {
+          // Update existing item
+          const updated = [...old.items];
+          updated[existingIndex] = data.item;
+          return { items: updated };
+        }
+        // Add new item to the beginning
+        return { items: [data.item, ...old.items] };
+      });
+      // Refetch in background to ensure consistency (non-blocking)
       queryClient.invalidateQueries({ queryKey: ['watchlist'] });
     },
     onError: (error: Error) => {

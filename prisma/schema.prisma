@@ -65,3 +65,22 @@ model CryptoQuote {
   @@index([lastUpdated])
   @@map("crypto_quotes")
 }
+
+model TopItem {
+  id          String   @id
+  type        String   // 'anime' | 'movie' | 'show'
+  title       String
+  imageUrl    String   @map("image_url")
+  year        Int?
+  rating      Float
+  episodes    Int?
+  externalId  Int      @map("external_id")
+  lastUpdated DateTime @default(now()) @map("last_updated")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([externalId, type])
+  @@index([type])
+  @@index([lastUpdated])
+  @@map("top_items")
+}
