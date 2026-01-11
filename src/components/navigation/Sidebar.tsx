@@ -1,12 +1,12 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
+import { useSidebar } from '@/lib/providers/SidebarProvider';
+import { cn } from '@/lib/utils';
+import { ChevronLeft, ChevronRight, Film, Gamepad2, Home, Settings, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Trophy, Film, Gamepad2, Settings, ChevronLeft, ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { ThemeToggle } from './ThemeToggle';
-import { useSidebar } from '@/lib/providers/SidebarProvider';
-import { Button } from '@/components/ui/button';
 
 const navItems = [
   {
@@ -66,7 +66,7 @@ export function Sidebar() {
           <nav className="flex-1 space-y-2 p-3">
             {navItems.map((item) => {
               // Special handling for watchlist to match sub-routes
-              const isActive = item.href === '/watchlist' 
+              const isActive = item.href === '/watchlist'
                 ? pathname.startsWith('/watchlist')
                 : pathname === item.href;
               const Icon = item.icon;

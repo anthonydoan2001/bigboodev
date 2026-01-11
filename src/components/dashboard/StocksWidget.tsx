@@ -23,6 +23,18 @@ function formatPercentChange(percent: number): string {
   return `${sign}${percent.toFixed(2)}%`;
 }
 
+function cleanCompanyName(name: string): string {
+  // Remove common suffixes: Inc, Inc., Corporation, Corp, Corp., Platforms, Platform, etc.
+  return name
+    .replace(/\s+Inc\.?$/i, '')
+    .replace(/\s+Corporation$/i, '')
+    .replace(/\s+Corp\.?$/i, '')
+    .replace(/\s+Platforms?$/i, '')
+    .replace(/\s+LLC\.?$/i, '')
+    .replace(/\s+Ltd\.?$/i, '')
+    .trim();
+}
+
 function formatTimeAgo(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
@@ -48,11 +60,11 @@ function StockCard({ quote }: { quote: StockQuote }) {
   const arrowIcon = isPositive ? ArrowUp : ArrowDown;
 
   return (
-    <div className="flex items-center py-1.5 px-2 hover:bg-muted/50 transition-colors rounded-md gap-0">
+    <div className="flex items-center justify-between py-1.5 px-1.5 md:px-2 hover:bg-white/5 dark:hover:bg-white/10 transition-colors rounded-md gap-2 md:gap-3">
       {/* Left side: Logo, Ticker, Company Name */}
-      <div className="flex items-center gap-2.5 flex-1 min-w-0">
+      <div className="flex items-center gap-2 md:gap-2.5 min-w-0 flex-shrink">
         {/* Logo */}
-        <div className="relative w-10 h-10 flex-shrink-0 rounded-full bg-muted flex items-center justify-center overflow-hidden ring-1 ring-border/50">
+        <div className="relative w-8 h-8 md:w-10 md:h-10 flex-shrink-0 rounded-full bg-background/50 flex items-center justify-center overflow-hidden ring-1 ring-border/20">
           {quote.logoUrl ? (
             <Image
               src={quote.logoUrl}
@@ -68,10 +80,10 @@ function StockCard({ quote }: { quote: StockQuote }) {
         
         {/* Ticker and Company Name */}
         <div className="flex flex-col min-w-0">
-          <span className="font-bold text-xl leading-none mb-0.5">{quote.symbol}</span>
+          <span className="font-bold font-mono text-lg md:text-xl leading-none mb-0.5">{quote.symbol}</span>
           {quote.companyName && (
-            <span className="text-sm text-muted-foreground truncate leading-none opacity-80">
-              {quote.companyName}
+            <span className="text-xs md:text-sm text-muted-foreground truncate leading-none opacity-80">
+              {cleanCompanyName(quote.companyName)}
             </span>
           )}
         </div>
@@ -79,12 +91,12 @@ function StockCard({ quote }: { quote: StockQuote }) {
 
       {/* Right side: Price and Change */}
       <div className="flex flex-col items-end flex-shrink-0 gap-0.5">
-        <span className="font-bold text-xl leading-none">{formatPrice(quote.currentPrice)}</span>
-        <span className={cn("text-sm font-semibold flex items-center gap-0.5 leading-none", changeColor)}>
+        <span className="font-bold font-mono text-lg md:text-xl leading-none whitespace-nowrap">{formatPrice(quote.currentPrice)}</span>
+        <span className={cn("text-xs md:text-sm font-mono font-medium flex items-center gap-0.5 leading-none whitespace-nowrap", changeColor)}>
           {isPositive ? (
-            <ArrowUp className="h-4 w-4" />
+            <ArrowUp className="h-3 w-3 md:h-4 md:w-4" />
           ) : (
-            <ArrowDown className="h-4 w-4" />
+            <ArrowDown className="h-3 w-3 md:h-4 md:w-4" />
           )}
           {formatPercentChange(quote.percentChange)}
         </span>
@@ -108,8 +120,8 @@ export function StocksWidget() {
 
   if (isLoading) {
     return (
-      <Card className="col-span-1">
-        <CardContent className="p-3">
+      <Card className="col-span-1 !py-0">
+        <CardContent className="!px-3 !py-3">
           <div className="space-y-2">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-20 bg-muted/50 animate-pulse rounded-lg" />
@@ -122,8 +134,8 @@ export function StocksWidget() {
 
   if (error || !data || data.quotes.length === 0) {
     return (
-      <Card className="col-span-1">
-        <CardContent className="p-3">
+      <Card className="col-span-1 !py-0">
+        <CardContent className="!px-3 !py-3">
           <p className="text-sm text-muted-foreground text-center py-4">
             {error ? 'Failed to load stock quotes' : 'No stock data available'}
           </p>
@@ -133,8 +145,8 @@ export function StocksWidget() {
   }
 
   return (
-    <Card className="col-span-1">
-      <CardContent className="p-3">
+    <Card className="col-span-1 w-full max-w-full !py-0 bg-background/40 backdrop-blur-md border-white/10 shadow-none">
+      <CardContent className="!px-3 !py-3">
         <div className="space-y-0.5">
           {data.quotes.map((quote) => (
             <StockCard key={quote.symbol} quote={quote} />
