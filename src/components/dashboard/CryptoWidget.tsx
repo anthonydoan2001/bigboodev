@@ -3,7 +3,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { fetchCryptoQuotesFromDB } from '@/lib/api/crypto';
 import { cn } from '@/lib/utils';
-import { CryptoWithMetadata } from '@/types/crypto';
+import { CryptoQuote } from '@/types/crypto';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowUp, ArrowDown } from 'lucide-react';
 import { useEffect } from 'react';
@@ -135,7 +135,7 @@ export function CryptoWidget() {
     <Card className="col-span-1">
       <CardContent className="p-3">
         <div className="space-y-0.5">
-          {data.quotes.map((crypto) => (
+          {data.quotes.map((crypto: CryptoQuote) => (
             <CryptoCard key={crypto.symbol} crypto={crypto} />
           ))}
         </div>

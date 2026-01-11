@@ -2,6 +2,7 @@ import {
   CoinMarketCapMapResponse,
   CoinMarketCapInfoResponse,
   CoinMarketCapQuoteResponse,
+  CryptoQuotesResponse,
 } from '@/types/crypto';
 
 const CMC_API_KEY = process.env.COINMARKETCAP_API_KEY || '';
