@@ -151,17 +151,17 @@ export function WatchlistCard({
               </div>
             )}
 
-            {/* Watched Badge - Below Rating */}
+            {/* Watched Badge - Below Category */}
             {!hideStatusBadge && isWatched && (
-              <div className="absolute left-1.5 top-8 flex items-center gap-0.5 rounded-md bg-emerald-500/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md shadow-sm z-10">
+              <div className="absolute right-1.5 top-7 flex items-center gap-0.5 rounded-md bg-emerald-500/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md shadow-sm z-10">
                 <CheckCircle2 className="h-2.5 w-2.5" />
                 Watched
               </div>
             )}
 
-            {/* Watching Badge - Below Rating */}
+            {/* Watching Badge - Below Category */}
             {!hideStatusBadge && isWatching && (
-              <div className="absolute left-1.5 top-8 flex items-center gap-0.5 rounded-md bg-blue-500/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md shadow-sm z-10">
+              <div className="absolute right-1.5 top-7 flex items-center gap-0.5 rounded-md bg-blue-500/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md shadow-sm z-10">
                 <Eye className="h-2.5 w-2.5" />
                 Watching
               </div>
