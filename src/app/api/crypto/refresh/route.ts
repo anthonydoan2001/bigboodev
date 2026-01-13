@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { fetchCryptoMap, fetchCryptoInfo, fetchCryptoQuotes, retryWithBackoff, CRYPTO_SYMBOLS_TO_TRACK } from '@/lib/api/crypto';
 import { NextResponse } from 'next/server';
+import { withAuthOrCron } from '@/lib/api-auth';
 
 /**
  * Single refresh endpoint that updates everything:
@@ -10,7 +11,7 @@ import { NextResponse } from 'next/server';
  * 
  * Should be run every 5 minutes
  */
-export async function GET() {
+export const GET = withAuthOrCron(async () => {
   try {
     // Step 1: Get or create ID mappings
     const existingIds = await db.cryptoQuote.findMany({

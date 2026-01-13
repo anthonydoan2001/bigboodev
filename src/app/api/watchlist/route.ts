@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { withAuth } from '@/lib/api-auth';
 
-export async function GET() {
+export const GET = withAuth(async () => {
   try {
     const items = await db.watchlistItem.findMany({
       orderBy: [
@@ -87,7 +88,7 @@ export const POST = withAuth(async (request: Request) => {
       details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
-}
+});
 
 /**
  * Trigger top items refresh in the background (fire and forget)
@@ -132,9 +133,9 @@ export const PATCH = withAuth(async (request: Request) => {
     console.error('Error updating watchlist item:', error);
     return NextResponse.json({ error: 'Failed to update item' }, { status: 500 });
   }
-}
+});
 
-export async function DELETE(request: Request) {
+export const DELETE = withAuth(async (request: Request) => {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

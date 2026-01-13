@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { withAuth } from '@/lib/api-auth';
 
 export interface TopItem {
   id: string;
@@ -16,7 +17,7 @@ export interface TopItem {
  * API route to fetch top items from database
  * Data is refreshed daily via cron job at /api/watchlist/top/refresh
  */
-export async function GET() {
+export const GET = withAuth(async () => {
   try {
     // Check if topItem model exists (for debugging)
     if (!('topItem' in db)) {

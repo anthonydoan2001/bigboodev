@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { withAuthOrCron } from '@/lib/api-auth';
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';

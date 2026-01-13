@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { fetchStockQuote, fetchCompanyProfile, retryWithBackoff, STOCK_SYMBOLS, isMarketHours } from '@/lib/api/stocks';
 import { NextResponse } from 'next/server';
+import { withAuthOrCron } from '@/lib/api-auth';
 
 /**
  * API route to refresh stock quotes from Finnhub API
@@ -10,7 +11,7 @@ import { NextResponse } from 'next/server';
  * - During market hours (9:30 AM - 4:00 PM ET, Mon-Fri): Every 5 minutes
  * - Outside market hours: Every hour
  */
-export async function GET(request: Request) {
+export const GET = withAuthOrCron(async (request: Request) => {
   try {
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;

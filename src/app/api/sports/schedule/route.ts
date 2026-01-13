@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fetchSchedule } from '@/lib/api/sports';
 import { SportType } from '@/types/sports';
+import { withAuth } from '@/lib/api-auth';
 
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: NextRequest) => {
   try {
     const searchParams = request.nextUrl.searchParams;
     const sport = searchParams.get('sport') as SportType | null;

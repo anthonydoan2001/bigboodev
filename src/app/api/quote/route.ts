@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { withAuth } from '@/lib/api-auth';
 
 const QUOTABLE_API = 'https://api.quotable.io';
 
@@ -48,7 +49,7 @@ function getDailyQuoteIndex(dateString: string): number {
   return Math.abs(hash) % FALLBACK_QUOTES.length;
 }
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: Request) => {
   try {
     // Get date parameter or use today's date
     const url = new URL(request.url);

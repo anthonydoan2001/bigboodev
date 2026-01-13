@@ -1,11 +1,12 @@
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { withAuth } from '@/lib/api-auth';
 
 /**
  * API route to fetch crypto quotes from the database
  * Frontend should use this instead of calling CoinMarketCap directly
  */
-export async function GET() {
+export const GET = withAuth(async () => {
   try {
     const quotes = await db.cryptoQuote.findMany({
       orderBy: { symbol: 'asc' },

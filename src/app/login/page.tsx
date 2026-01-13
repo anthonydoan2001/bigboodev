@@ -5,9 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createSession } from '@/lib/auth';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, Suspense } from 'react';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [password, setPassword] = useState('');
@@ -92,5 +92,22 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="w-full max-w-md space-y-8">
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-bold">Welcome</h1>
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

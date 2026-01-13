@@ -1,4 +1,4 @@
-import { getAuthHeaders } from './api-client';
+import { getAuthHeaders } from '@/lib/api-client';
 
 // TMDB API Client for Movies and Shows
 export interface TMDBSearchResult {
