@@ -439,7 +439,7 @@ function WatchlistContent() {
               <>
                 {/* Main Watchlist Section */}
                 {randomizedWatchlist.length > 0 && (
-                  <Carousel title="Watchlist" count={randomizedWatchlist.length} icon={<ListVideo className="h-4 w-4" />}>
+                  <Carousel title="Watchlist" icon={<ListVideo className="h-4 w-4" />}>
                     {randomizedWatchlist.map((item) => (
                       <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 200px)' }}>
                         <WatchlistCard
