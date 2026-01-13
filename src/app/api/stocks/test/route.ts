@@ -1,11 +1,12 @@
 import { fetchStockQuote } from '@/lib/api/stocks';
 import { NextResponse } from 'next/server';
+import { withAuth } from '@/lib/api-auth';
 
 /**
  * Test endpoint to debug Finnhub API issues
  * Call this to see detailed error information
  */
-export async function GET() {
+export const GET = withAuth(async () => {
   const testSymbol = 'AAPL'; // Test with Apple stock
   
   try {

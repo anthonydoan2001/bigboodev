@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
+import { withAuth } from '@/lib/api-auth';
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('query');
 

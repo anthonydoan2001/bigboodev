@@ -96,9 +96,9 @@ export function requireAuthOrCron(request: Request): { type: 'session' | 'cron';
  * Usage: export const GET = withAuth(async (request) => { ... })
  */
 export function withAuth(
-  handler: (request: Request, sessionToken: string) => Promise<NextResponse>
+  handler: (request: Request | any, sessionToken: string) => Promise<NextResponse>
 ) {
-  return async (request: Request): Promise<NextResponse> => {
+  return async (request: Request | any): Promise<NextResponse> => {
     try {
       const token = requireAuth(request);
       return await handler(request, token);
@@ -116,9 +116,9 @@ export function withAuth(
  * Usage: export const GET = withAuthOrCronWrapper(async (request, auth) => { ... })
  */
 export function withAuthOrCron(
-  handler: (request: Request, auth: { type: 'session' | 'cron'; token: string }) => Promise<NextResponse>
+  handler: (request: Request | any, auth: { type: 'session' | 'cron'; token: string }) => Promise<NextResponse>
 ) {
-  return async (request: Request): Promise<NextResponse> => {
+  return async (request: Request | any): Promise<NextResponse> => {
     try {
       const auth = requireAuthOrCron(request);
       return await handler(request, auth);

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { WatchlistItem } from '@prisma/client';
 import { UniversalSearchResult } from '@/app/api/watchlist/search/universal/route';
+import { getAuthHeaders } from '@/lib/api-client';
 
 export function useWatchlistMutations() {
   const queryClient = useQueryClient();

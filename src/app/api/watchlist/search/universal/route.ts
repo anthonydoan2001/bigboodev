@@ -35,7 +35,7 @@ async function fetchWithRetry(url: string, retries = 2, delay = 1000): Promise<R
   return fetch(url);
 }
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('query');
 

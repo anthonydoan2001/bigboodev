@@ -1,12 +1,42 @@
 import { NextResponse } from 'next/server';
 import { WeatherResponse } from '@/types/weather';
+import { withAuth } from '@/lib/api-auth';
 
 const API_KEY = process.env.OPENWEATHER_API_KEY;
 const BASE_URL = 'https://api.openweathermap.org/data/2.5';
 const LAT = '29.9717'; // Cypress, TX Latitude
 const LON = '-95.6938'; // Cypress, TX Longitude
 
-export async function GET() {
+function processDailyForecast(list: any[]): any[] {
+  const dailyMap = new Map();
+
+  list.forEach((item: any) => {
+    const date = new Date(item.dt * 1000).toLocaleDateString('en-US', { weekday: 'short' });
+    if (!dailyMap.has(date)) {
+      dailyMap.set(date, {
+        date,
+        high: item.main.temp_max,
+        low: item.main.temp_min,
+        condition: item.weather[0].main,
+        icon: item.weather[0].icon,
+        precipitation: item.pop * 100
+      });
+    } else {
+      const existing = dailyMap.get(date);
+      existing.high = Math.max(existing.high, item.main.temp_max);
+      existing.low = Math.min(existing.low, item.main.temp_min);
+    }
+  });
+
+  return Array.from(dailyMap.values()).slice(0, 10).map(day => ({
+    ...day,
+    high: Math.round(day.high),
+    low: Math.round(day.low),
+    precipitation: Math.round(day.precipitation)
+  }));
+}
+
+export const GET = withAuth(async () => {
   if (!API_KEY) {
     return NextResponse.json(
       { error: 'OpenWeather API key is missing' },
@@ -82,34 +112,5 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
-
-function processDailyForecast(list: any[]): any[] {
-  const dailyMap = new Map();
-
-  list.forEach((item: any) => {
-    const date = new Date(item.dt * 1000).toLocaleDateString('en-US', { weekday: 'short' });
-    if (!dailyMap.has(date)) {
-      dailyMap.set(date, {
-        date,
-        high: item.main.temp_max,
-        low: item.main.temp_min,
-        condition: item.weather[0].main,
-        icon: item.weather[0].icon,
-        precipitation: item.pop * 100
-      });
-    } else {
-      const existing = dailyMap.get(date);
-      existing.high = Math.max(existing.high, item.main.temp_max);
-      existing.low = Math.min(existing.low, item.main.temp_min);
-    }
-  });
-
-  return Array.from(dailyMap.values()).slice(0, 10).map(day => ({
-    ...day,
-    high: Math.round(day.high),
-    low: Math.round(day.low),
-    precipitation: Math.round(day.precipitation)
-  }));
 });
 
