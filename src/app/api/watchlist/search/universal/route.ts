@@ -105,8 +105,22 @@ export async function GET(request: Request) {
           animeData.data.slice(0, 20).forEach((anime: any) => {
             const imageUrl = anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url;
             const rating = anime.score;
-            // Only include anime with a valid rating (not null, undefined, or 0)
-            if (imageUrl && rating && rating > 0) {
+            
+            // Filter out hentai content
+            const isHentai = 
+              anime.rating === 'Rx' || 
+              anime.rating === 'R+ - Mild Nudity' ||
+              (anime.genres && anime.genres.some((g: any) => 
+                g.name?.toLowerCase().includes('hentai') || 
+                g.name?.toLowerCase() === 'hentai'
+              )) ||
+              (anime.explicit_genres && anime.explicit_genres.some((g: any) => 
+                g.name?.toLowerCase().includes('hentai') || 
+                g.name?.toLowerCase() === 'hentai'
+              ));
+            
+            // Only include anime with a valid rating (not null, undefined, or 0) and exclude hentai
+            if (imageUrl && rating && rating > 0 && !isHentai) {
               results.push({
                 id: `anime-${anime.mal_id}`,
                 type: 'anime',
