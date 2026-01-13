@@ -116,7 +116,21 @@ export async function GET(request: Request) {
           animeList.forEach((anime: any) => {
             const imageUrl = anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url;
             const rating = anime.score;
-            if (imageUrl && rating && rating > 0) {
+            
+            // Filter out hentai content
+            const isHentai = 
+              anime.rating === 'Rx' || 
+              anime.rating === 'R+ - Mild Nudity' ||
+              (anime.genres && anime.genres.some((g: any) => 
+                g.name?.toLowerCase().includes('hentai') || 
+                g.name?.toLowerCase() === 'hentai'
+              )) ||
+              (anime.explicit_genres && anime.explicit_genres.some((g: any) => 
+                g.name?.toLowerCase().includes('hentai') || 
+                g.name?.toLowerCase() === 'hentai'
+              ));
+            
+            if (imageUrl && rating && rating > 0 && !isHentai) {
               validItems.push({
                 id: `anime-${anime.mal_id}`,
                 type: 'anime' as const,
