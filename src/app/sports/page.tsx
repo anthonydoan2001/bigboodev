@@ -6,6 +6,7 @@ import { ScoreCardSkeleton } from '@/components/sports/ScoreCardSkeleton';
 import { SportFilter } from '@/components/sports/SportFilter';
 import { TopPerformersView } from '@/components/sports/TopPerformersView';
 import { TopPerformersSkeleton } from '@/components/sports/TopPerformersSkeleton';
+import { ScheduleView } from '@/components/sports/ScheduleView';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { autoFavoriteHoustonGames, getFavorites, isHoustonGame, toggleFavorite as toggleFavoriteInStorage } from '@/lib/favorites';
@@ -54,6 +55,18 @@ async function fetchTopPerformers(sport: SportType, date: Date) {
   return data.performers as TopPerformer[];
 }
 
+async function fetchUpcomingPlayoffGames(sport: SportType) {
+  const response = await fetch(`/api/sports/playoffs?sport=${sport}`, {
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch upcoming playoff games');
+  }
+  const data = await response.json();
+  return data.games as GameScore[];
+}
+
 export default function SportsPage() {
   const [selectedSport, setSelectedSport] = useState<SportType | 'FAVORITES'>('NBA');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -64,7 +77,8 @@ export default function SportsPage() {
     setFavorites(getFavorites());
   }, []);
 
-  const showPerformers = selectedSport === 'NBA' || selectedSport === 'NFL';
+  const showPerformers = selectedSport === 'NBA'; // Only show performers for NBA
+  const showUpcomingGames = selectedSport === 'NFL'; // Show upcoming games for NFL
   const isFavoritesView = selectedSport === 'FAVORITES';
 
   // For favorites view, we need to fetch all sports and filter by favorites
@@ -141,12 +155,29 @@ export default function SportsPage() {
     },
     staleTime: 0, // Always consider data stale so refetchInterval works properly
     refetchOnWindowFocus: false,
-    enabled: selectedSport === 'NBA' || selectedSport === 'NFL', // Only for NBA and NFL
+    enabled: selectedSport === 'NBA', // Only for NBA
     refetchInterval: (data) => {
       // Also refresh performers for live games
       const hasLiveGames = Array.isArray(scores) && scores.some(game => game.status === 'live');
       return hasLiveGames ? 60000 : false;
     },
+  });
+
+  const {
+    data: upcomingGames,
+    isLoading: upcomingGamesLoading,
+    error: upcomingGamesError,
+  } = useQuery({
+    queryKey: ['upcoming-playoff-games', selectedSport],
+    queryFn: () => {
+      if (selectedSport === 'FAVORITES') {
+        throw new Error('Cannot fetch playoff games for FAVORITES');
+      }
+      return fetchUpcomingPlayoffGames(selectedSport);
+    },
+    staleTime: 3600000, // Cache for 1 hour
+    refetchOnWindowFocus: false,
+    enabled: selectedSport === 'NFL', // Only for NFL
   });
 
   // Determine which games to show
@@ -239,13 +270,18 @@ export default function SportsPage() {
           </div>
         ) : (
           <Tabs defaultValue="scores" className="w-full">
-            <TabsList className={`w-full max-w-md mx-auto grid ${showPerformers ? 'grid-cols-2' : 'grid-cols-1'} bg-muted/50 p-1`}>
+            <TabsList className={`w-full max-w-md mx-auto grid ${showPerformers || showUpcomingGames ? 'grid-cols-2' : 'grid-cols-1'} bg-muted/50 p-1`}>
               <TabsTrigger value="scores" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
                 Games
               </TabsTrigger>
               {showPerformers && (
                 <TabsTrigger value="performers" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
                   Top Performers
+                </TabsTrigger>
+              )}
+              {showUpcomingGames && (
+                <TabsTrigger value="upcoming" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                  Upcoming Games
                 </TabsTrigger>
               )}
             </TabsList>
@@ -307,6 +343,37 @@ export default function SportsPage() {
                     </Card>
                   ) : (
                     <TopPerformersView performers={performers || []} sport={selectedSport} />
+                  )}
+                </div>
+              </TabsContent>
+            )}
+
+            {showUpcomingGames && (
+              <TabsContent value="upcoming" className="mt-6">
+                <div className="max-w-7xl mx-auto px-4">
+                  {upcomingGamesLoading ? (
+                    <div className="space-y-4">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <Card key={i}>
+                          <CardContent className="p-6">
+                            <div className="animate-pulse space-y-3">
+                              <div className="h-4 bg-muted rounded w-1/4"></div>
+                              <div className="h-20 bg-muted rounded"></div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : upcomingGamesError ? (
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="text-center text-destructive">
+                          Error loading upcoming playoff games. Please try again.
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <ScheduleView games={upcomingGames || []} />
                   )}
                 </div>
               </TabsContent>
