@@ -276,10 +276,11 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
     const { path } = SPORT_LEAGUES[sport];
     const now = new Date();
     
-    // Fetch upcoming games for the next 45 days to catch all playoff games
-    // NFL playoffs typically run from mid-January to early February
+    // Fetch games from 7 days ago to 60 days ahead to catch all playoff games
+    // NFL playoffs typically run from early January to early February
+    // Looking back helps catch games that might have been scheduled earlier
     const dateStrings: string[] = [];
-    for (let i = 0; i < 45; i++) {
+    for (let i = -7; i < 60; i++) {
       const date = new Date(now.getTime() + i * 24 * 60 * 60 * 1000);
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -324,23 +325,34 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
       }
     }
 
-    // Filter for upcoming playoff games
+    // Filter for all remaining playoff games (scheduled or live)
     // Season type 3 = playoffs in ESPN API (1 = preseason, 2 = regular season, 3 = playoffs)
-    const nowTime = now.getTime();
+    // Show all playoff games that are not completed (pre = scheduled, in = live)
     
     const playoffGames = allGames
       .filter((event) => {
         if (!event.competitions || event.competitions.length === 0) return false;
         const competition = event.competitions[0];
-        const gameDate = new Date(competition.date);
         const isPlayoff = competition.season?.type === 3;
-        const isUpcoming = event.status.type.state === 'pre' && gameDate.getTime() >= nowTime;
-        return isPlayoff && isUpcoming;
+        const statusState = event.status.type.state;
+        // Include scheduled (pre) and live (in) games, exclude completed (post) games
+        const isRemaining = statusState === 'pre' || statusState === 'in';
+        return isPlayoff && isRemaining;
       })
       .map((event) => {
         const competition = event.competitions[0];
         const homeTeam = competition.competitors.find((c) => c.homeAway === 'home');
         const awayTeam = competition.competitors.find((c) => c.homeAway === 'away');
+
+        const statusState = event.status.type.state;
+        let status: 'scheduled' | 'live' | 'final';
+        if (statusState === 'pre') {
+          status = 'scheduled';
+        } else if (statusState === 'in') {
+          status = 'live';
+        } else {
+          status = 'final';
+        }
 
         return {
           id: event.id,
@@ -349,9 +361,11 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
           awayTeam: awayTeam?.team.displayName || 'TBD',
           homeTeamLogo: homeTeam?.team.logo,
           awayTeamLogo: awayTeam?.team.logo,
-          homeScore: 0,
-          awayScore: 0,
-          status: 'scheduled' as const,
+          homeScore: parseInt(homeTeam?.score || '0'),
+          awayScore: parseInt(awayTeam?.score || '0'),
+          status,
+          quarter: event.status.period ? `Q${event.status.period}` : undefined,
+          timeRemaining: event.status.displayClock,
           startTime: new Date(competition.date),
         };
       })
