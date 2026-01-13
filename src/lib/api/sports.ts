@@ -416,7 +416,7 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
 
     // Remove duplicates by ID
     const uniqueGames = Array.from(
-      new Map(playoffGames.map(game => [game.id, game])).values()
+      new Map(mappedGames.map(game => [game.id, game])).values()
     );
 
     // Debug logging
