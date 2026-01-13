@@ -278,7 +278,6 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
     
     // Fetch games from 7 days ago to 60 days ahead to catch all playoff games
     // NFL playoffs typically run from early January to early February
-    // Looking back helps catch games that might have been scheduled earlier
     const dateStrings: string[] = [];
     for (let i = -7; i < 60; i++) {
       const date = new Date(now.getTime() + i * 24 * 60 * 60 * 1000);
@@ -327,54 +326,109 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
 
     // Filter for all remaining playoff games (scheduled or live)
     // Season type 3 = playoffs in ESPN API (1 = preseason, 2 = regular season, 3 = playoffs)
-    // Show all playoff games that are not completed (pre = scheduled, in = live)
+    // Also check notes for playoff indicators as a fallback
+    const nowTime = now.getTime();
     
-    const playoffGames = allGames
+    // First, try to identify playoff games
+    let playoffGames = allGames
       .filter((event) => {
         if (!event.competitions || event.competitions.length === 0) return false;
         const competition = event.competitions[0];
-        const isPlayoff = competition.season?.type === 3;
+        const gameDate = new Date(competition.date);
+        
+        // Check if it's a playoff game
+        // Season type 3 = playoffs, but also check notes for playoff keywords
+        const seasonType = competition.season?.type;
+        const isPlayoffByType = seasonType === 3;
+        
+        // Check notes for playoff indicators (Wild Card, Divisional, Conference, Super Bowl)
+        const notes = competition.notes || [];
+        const hasPlayoffNote = notes.some(note => {
+          const headline = note.headline?.toLowerCase() || '';
+          return headline.includes('wild card') || 
+                 headline.includes('divisional') || 
+                 headline.includes('conference') || 
+                 headline.includes('super bowl') ||
+                 headline.includes('playoff');
+        });
+        
+        const isPlayoff = isPlayoffByType || hasPlayoffNote;
+        
+        // Include scheduled (pre) and live (in) games
+        // Also include games that haven't happened yet (date >= now - 1 day to catch live games)
         const statusState = event.status.type.state;
-        // Include scheduled (pre) and live (in) games, exclude completed (post) games
-        const isRemaining = statusState === 'pre' || statusState === 'in';
+        const isRemaining = (statusState === 'pre' || statusState === 'in') && 
+                           (gameDate.getTime() >= nowTime - 24 * 60 * 60 * 1000);
+        
         return isPlayoff && isRemaining;
-      })
-      .map((event) => {
-        const competition = event.competitions[0];
-        const homeTeam = competition.competitors.find((c) => c.homeAway === 'home');
-        const awayTeam = competition.competitors.find((c) => c.homeAway === 'away');
+      });
 
-        const statusState = event.status.type.state;
-        let status: 'scheduled' | 'live' | 'final';
-        if (statusState === 'pre') {
-          status = 'scheduled';
-        } else if (statusState === 'in') {
-          status = 'live';
-        } else {
-          status = 'final';
-        }
+    // If no playoff games found by type/notes, try filtering by date range during playoff season
+    // NFL playoffs typically run from early January to early February
+    if (playoffGames.length === 0) {
+      const currentMonth = now.getMonth(); // 0-11, where 0 = January
+      const isPlayoffSeason = currentMonth === 0 || currentMonth === 1; // Jan or Feb
+      
+      if (isPlayoffSeason) {
+        // During playoff season, show all upcoming games
+        playoffGames = allGames.filter((event) => {
+          if (!event.competitions || event.competitions.length === 0) return false;
+          const competition = event.competitions[0];
+          const gameDate = new Date(competition.date);
+          const statusState = event.status.type.state;
+          const isRemaining = (statusState === 'pre' || statusState === 'in') && 
+                             (gameDate.getTime() >= nowTime - 24 * 60 * 60 * 1000);
+          return isRemaining;
+        });
+      }
+    }
+    
+    const mappedGames = playoffGames.map((event) => {
+      const competition = event.competitions[0];
+      const homeTeam = competition.competitors.find((c) => c.homeAway === 'home');
+      const awayTeam = competition.competitors.find((c) => c.homeAway === 'away');
 
-        return {
-          id: event.id,
-          sport,
-          homeTeam: homeTeam?.team.displayName || 'TBD',
-          awayTeam: awayTeam?.team.displayName || 'TBD',
-          homeTeamLogo: homeTeam?.team.logo,
-          awayTeamLogo: awayTeam?.team.logo,
-          homeScore: parseInt(homeTeam?.score || '0'),
-          awayScore: parseInt(awayTeam?.score || '0'),
-          status,
-          quarter: event.status.period ? `Q${event.status.period}` : undefined,
-          timeRemaining: event.status.displayClock,
-          startTime: new Date(competition.date),
-        };
-      })
-      .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+      const statusState = event.status.type.state;
+      let status: 'scheduled' | 'live' | 'final';
+      if (statusState === 'pre') {
+        status = 'scheduled';
+      } else if (statusState === 'in') {
+        status = 'live';
+      } else {
+        status = 'final';
+      }
+
+      return {
+        id: event.id,
+        sport,
+        homeTeam: homeTeam?.team.displayName || 'TBD',
+        awayTeam: awayTeam?.team.displayName || 'TBD',
+        homeTeamLogo: homeTeam?.team.logo,
+        awayTeamLogo: awayTeam?.team.logo,
+        homeScore: parseInt(homeTeam?.score || '0'),
+        awayScore: parseInt(awayTeam?.score || '0'),
+        status,
+        quarter: event.status.period ? `Q${event.status.period}` : undefined,
+        timeRemaining: event.status.displayClock,
+        startTime: new Date(competition.date),
+      };
+    }).sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 
     // Remove duplicates by ID
     const uniqueGames = Array.from(
       new Map(playoffGames.map(game => [game.id, game])).values()
     );
+
+    // Debug logging
+    if (uniqueGames.length === 0) {
+      console.log('No playoff games found. Total games fetched:', allGames.length);
+      console.log('Sample game season types:', allGames.slice(0, 5).map(e => ({
+        id: e.id,
+        seasonType: e.competitions[0]?.season?.type,
+        status: e.status.type.state,
+        notes: e.competitions[0]?.notes?.map(n => n.headline)
+      })));
+    }
 
     return uniqueGames;
   } catch (error) {
