@@ -1,7 +1,5 @@
-import { MainContent } from "@/components/navigation/MainContent";
-import { Sidebar } from "@/components/navigation/Sidebar";
+import { LayoutWrapper } from "@/components/navigation/LayoutWrapper";
 import { QueryProvider } from "@/lib/providers/QueryProvider";
-import { SidebarProvider } from "@/lib/providers/SidebarProvider";
 import { ThemeProvider } from "@/lib/providers/ThemeProvider";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -39,12 +37,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <QueryProvider>
-            <SidebarProvider>
-              <Sidebar />
-              <MainContent>
-                {children}
-              </MainContent>
-            </SidebarProvider>
+            <LayoutWrapper>
+              {children}
+            </LayoutWrapper>
           </QueryProvider>
         </ThemeProvider>
       </body>
