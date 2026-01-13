@@ -185,11 +185,23 @@ export async function fetchCryptoQuotes(cmcIds: number[]): Promise<CoinMarketCap
   return data;
 }
 
+import { getSession } from '@/lib/auth';
+
 /**
  * Fetches crypto quotes from the database (via API route)
  */
 export async function fetchCryptoQuotesFromDB(): Promise<CryptoQuotesResponse> {
-  const response = await fetch('/api/crypto');
+  const sessionToken = getSession();
+  
+  const headers: HeadersInit = {};
+  if (sessionToken) {
+    headers['x-session-token'] = sessionToken;
+  }
+  
+  const response = await fetch('/api/crypto', {
+    headers,
+    credentials: 'include',
+  });
   if (!response.ok) {
     throw new Error('Failed to fetch crypto quotes');
   }

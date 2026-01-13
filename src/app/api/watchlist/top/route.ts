@@ -57,5 +57,5 @@ export async function GET() {
       hint: errorMessage.includes('topItem') ? 'Please restart the dev server after running: npx prisma generate' : undefined
     }, { status: 500 });
   }
-}
+});
 

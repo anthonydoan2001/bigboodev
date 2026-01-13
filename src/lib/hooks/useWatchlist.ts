@@ -1,11 +1,15 @@
 import { WatchlistItem } from '@prisma/client';
 import { useQuery } from '@tanstack/react-query';
+import { getAuthHeaders } from '@/lib/api-client';
 
 export function useWatchlist() {
   const { data, isLoading, error } = useQuery<{ items: WatchlistItem[] }>({
     queryKey: ['watchlist'],
     queryFn: async () => {
-      const res = await fetch('/api/watchlist');
+      const res = await fetch('/api/watchlist', {
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error('Failed to fetch watchlist');
       return res.json();
     },

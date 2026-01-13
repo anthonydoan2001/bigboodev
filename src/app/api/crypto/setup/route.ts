@@ -10,4 +10,4 @@ export async function GET() {
     message: 'This endpoint is deprecated. Use /api/crypto/refresh instead.',
     redirect: '/api/crypto/refresh',
   }, { status: 410 });
-}
+});

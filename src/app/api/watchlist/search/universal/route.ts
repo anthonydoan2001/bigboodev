@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { withAuth } from '@/lib/api-auth';
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
@@ -147,5 +148,5 @@ export async function GET(request: Request) {
     console.error('Universal search error:', error);
     return NextResponse.json({ error: 'Search failed' }, { status: 500 });
   }
-}
+});
 

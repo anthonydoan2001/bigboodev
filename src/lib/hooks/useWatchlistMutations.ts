@@ -9,7 +9,8 @@ export function useWatchlistMutations() {
     mutationFn: async (item: UniversalSearchResult) => {
       const res = await fetch('/api/watchlist', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'include',
         body: JSON.stringify({
           externalId: String(item.externalId),
           type: item.type.toUpperCase(),
@@ -49,7 +50,11 @@ export function useWatchlistMutations() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/watchlist?id=${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/watchlist?id=${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error('Failed to delete');
       return res.json();
     },
@@ -73,7 +78,8 @@ export function useWatchlistMutations() {
         // Add new item as watched
         const res = await fetch('/api/watchlist', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+          credentials: 'include',
           body: JSON.stringify({
             externalId: String(item.externalId || (item as WatchlistItem).externalId),
             type: ((item as UniversalSearchResult).type || (item as WatchlistItem).type).toUpperCase(),
@@ -123,7 +129,8 @@ export function useWatchlistMutations() {
         // Update existing item
         const res = await fetch('/api/watchlist', {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+          credentials: 'include',
           body: JSON.stringify({ id, status: 'WATCHING' }),
         });
         if (!res.ok) throw new Error('Failed to mark as watching');
@@ -132,7 +139,8 @@ export function useWatchlistMutations() {
         // Add new item as watching
         const res = await fetch('/api/watchlist', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+          credentials: 'include',
           body: JSON.stringify({
             externalId: String(item.externalId || (item as WatchlistItem).externalId),
             type: ((item as UniversalSearchResult).type || (item as WatchlistItem).type).toUpperCase(),

@@ -120,7 +120,7 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-}
+});
 
 /**
  * Check if we should refresh outside market hours

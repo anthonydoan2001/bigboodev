@@ -23,7 +23,11 @@ function TopContent() {
   const { data: topData, isLoading: topLoading } = useQuery<{ results: TopItem[] }>({
     queryKey: ['top-items'],
     queryFn: async () => {
-      const res = await fetch('/api/watchlist/top');
+      const { getAuthHeaders } = await import('@/lib/api-client');
+      const res = await fetch('/api/watchlist/top', {
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error('Failed to fetch top items');
       return res.json();
     },

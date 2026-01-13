@@ -111,5 +111,5 @@ function processDailyForecast(list: any[]): any[] {
     low: Math.round(day.low),
     precipitation: Math.round(day.precipitation)
   }));
-}
+});
 
