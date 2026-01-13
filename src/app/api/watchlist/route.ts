@@ -15,9 +15,9 @@ export async function GET() {
     console.error('Error fetching watchlist:', error);
     return NextResponse.json({ error: 'Failed to fetch watchlist' }, { status: 500 });
   }
-}
+});
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: Request) => {
   try {
     const body = await request.json();
     console.log('Received POST body:', body);
@@ -113,7 +113,7 @@ function triggerTopItemsRefreshIfNeeded(request: Request): void {
   });
 }
 
-export async function PATCH(request: Request) {
+export const PATCH = withAuth(async (request: Request) => {
   try {
     const body = await request.json();
     const { id, status } = body;
@@ -152,5 +152,5 @@ export async function DELETE(request: Request) {
     console.error('Error deleting from watchlist:', error);
     return NextResponse.json({ error: 'Failed to delete from watchlist' }, { status: 500 });
   }
-}
+});
 

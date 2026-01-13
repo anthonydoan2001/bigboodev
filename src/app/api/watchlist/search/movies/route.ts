@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     console.error('TMDB API Error:', error);
     return NextResponse.json({ error: 'Failed to search movies' }, { status: 500 });
   }
-}
+});
 
 
 

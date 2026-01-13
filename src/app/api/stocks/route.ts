@@ -1,11 +1,12 @@
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { withAuth } from '@/lib/api-auth';
 
 /**
  * API route to fetch stock quotes from the database
  * Frontend should use this instead of calling Finnhub directly
  */
-export async function GET() {
+export const GET = withAuth(async () => {
   try {
     const quotes = await db.stockQuote.findMany({
       orderBy: { symbol: 'asc' },
@@ -32,4 +33,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+});

@@ -173,4 +173,4 @@ export async function GET(request: Request) {
       tags: ['inspirational', 'daily'],
     });
   }
-}
+});

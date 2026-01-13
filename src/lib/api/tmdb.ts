@@ -1,3 +1,5 @@
+import { getAuthHeaders } from './api-client';
+
 // TMDB API Client for Movies and Shows
 export interface TMDBSearchResult {
   id: number;
@@ -25,7 +27,10 @@ export interface TMDBSearchResponse {
 
 export async function searchMovies(query: string): Promise<TMDBSearchResult[]> {
   try {
-    const response = await fetch(`/api/watchlist/search/movies?query=${encodeURIComponent(query)}`);
+    const response = await fetch(`/api/watchlist/search/movies?query=${encodeURIComponent(query)}`, {
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
 
     if (!response.ok) {
       throw new Error('Failed to search movies');
@@ -41,7 +46,10 @@ export async function searchMovies(query: string): Promise<TMDBSearchResult[]> {
 
 export async function searchTVShows(query: string): Promise<TMDBSearchResult[]> {
   try {
-    const response = await fetch(`/api/watchlist/search/tv?query=${encodeURIComponent(query)}`);
+    const response = await fetch(`/api/watchlist/search/tv?query=${encodeURIComponent(query)}`, {
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
 
     if (!response.ok) {
       throw new Error('Failed to search TV shows');

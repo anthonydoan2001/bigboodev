@@ -22,15 +22,8 @@ interface TopItemData {
  * 
  * Refresh frequency: Daily (via cron)
  */
-export async function GET(request: Request) {
+export const GET = withAuthOrCron(async (request: Request) => {
   try {
-    const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-    
-    // Verify cron secret if set (for Vercel Cron)
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     // Check for force parameter (for manual testing or cron)
     const url = new URL(request.url);
@@ -340,7 +333,7 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-}
+});
 
 /**
  * Check if we should refresh based on daily schedule

@@ -47,7 +47,11 @@ function WatchlistContent() {
   const { data: searchData, isLoading: searchLoading } = useQuery<{ results: UniversalSearchResult[] }>({
     queryKey: ['universal-search', searchQuery],
     queryFn: async () => {
-      const res = await fetch(`/api/watchlist/search/universal?query=${encodeURIComponent(searchQuery)}`);
+      const { getAuthHeaders } = await import('@/lib/api-client');
+      const res = await fetch(`/api/watchlist/search/universal?query=${encodeURIComponent(searchQuery)}`, {
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error('Failed to search');
       return res.json();
     },

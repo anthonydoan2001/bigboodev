@@ -12,6 +12,7 @@ import { autoFavoriteHoustonGames, getFavorites, isHoustonGame, toggleFavorite a
 import { GameScore, SportType, TopPerformer } from '@/types/sports';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { getAuthHeaders } from '@/lib/api-client';
 
 async function fetchScores(sport: SportType, date: Date) {
   // Format date in local timezone as YYYY-MM-DD
@@ -20,7 +21,10 @@ async function fetchScores(sport: SportType, date: Date) {
   const day = String(date.getDate()).padStart(2, '0');
   const dateStr = `${year}-${month}-${day}`;
 
-  const response = await fetch(`/api/sports/scores?sport=${sport}&date=${dateStr}`);
+  const response = await fetch(`/api/sports/scores?sport=${sport}&date=${dateStr}`, {
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
   if (!response.ok) {
     throw new Error('Failed to fetch scores');
   }
@@ -39,7 +43,10 @@ async function fetchTopPerformers(sport: SportType, date: Date) {
   const day = String(date.getDate()).padStart(2, '0');
   const dateStr = `${year}-${month}-${day}`;
 
-  const response = await fetch(`/api/sports/performers?sport=${sport}&date=${dateStr}`);
+  const response = await fetch(`/api/sports/performers?sport=${sport}&date=${dateStr}`, {
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
   if (!response.ok) {
     throw new Error('Failed to fetch top performers');
   }
