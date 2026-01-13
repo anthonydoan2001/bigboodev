@@ -84,14 +84,17 @@ export default function SportsPage() {
   // For favorites view, we need to fetch all sports and filter by favorites
   const shouldFetchScores = selectedSport !== 'FAVORITES';
 
+  // For NFL, always use today's date; for other sports, use selectedDate
+  const dateForScores = selectedSport === 'NFL' ? new Date() : selectedDate;
+
   const {
     data: scores,
     isLoading: scoresLoading,
     error: scoresError,
     isFetching: scoresFetching,
   } = useQuery({
-    queryKey: ['scores', selectedSport, selectedDate.toDateString()],
-    queryFn: () => fetchScores(selectedSport as SportType, selectedDate),
+    queryKey: ['scores', selectedSport, dateForScores.toDateString()],
+    queryFn: () => fetchScores(selectedSport as SportType, dateForScores),
     staleTime: 0, // Always consider data stale so refetchInterval works properly
     refetchOnWindowFocus: false,
     enabled: shouldFetchScores,
@@ -107,7 +110,7 @@ export default function SportsPage() {
     queryKey: ['all-scores', selectedDate.toDateString()],
     queryFn: async () => {
       const results = await Promise.all(
-        allSports.map(sport => fetchScores(sport, selectedDate))
+        allSports.map(sport => fetchScores(sport, sport === 'NFL' ? new Date() : selectedDate))
       );
       return results.flat();
     },
@@ -206,10 +209,12 @@ export default function SportsPage() {
               selectedSport={selectedSport}
               onSportChange={setSelectedSport}
             />
-            <DateNavigator
-              selectedDate={selectedDate}
-              onDateChange={setSelectedDate}
-            />
+            {selectedSport !== 'NFL' && (
+              <DateNavigator
+                selectedDate={selectedDate}
+                onDateChange={setSelectedDate}
+              />
+            )}
           </div>
 
           {/* Live Update Indicator */}
