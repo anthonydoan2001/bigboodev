@@ -26,7 +26,7 @@ function WatchedContent() {
   
   const { containerRef, itemsPerPage } = useViewportGrid({
     headerHeight: 180, // Nav + filters + spacing
-    footerHeight: 80, // Pagination + spacing
+    footerHeight: 0, // No footer - pagination is in header
   });
 
   // Filter watched items based on selected filter
@@ -101,12 +101,37 @@ function WatchedContent() {
             ) : (
               <div></div>
             )}
-            <div></div>
+            {/* Pagination Controls */}
+            {totalPages > 1 ? (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(Math.max(1, page - 1))}
+                  disabled={page === 1}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Page {page} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(Math.min(totalPages, page + 1))}
+                  disabled={page === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            ) : (
+              <div></div>
+            )}
           </div>
 
           {/* Watched Results - Grid Layout */}
           {isLoading ? (
-            <div className="h-full flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden min-h-0">
               <div ref={containerRef} className="grid gap-4 h-full" style={{ gridAutoRows: 'min-content' }}>
                 {Array.from({ length: itemsPerPage || 18 }).map((_, i) => (
                   <div key={i} style={{ width: 'var(--item-width, 200px)' }}>
@@ -116,47 +141,20 @@ function WatchedContent() {
               </div>
             </div>
           ) : paginatedWatchedItems.length > 0 ? (
-            <>
-              <div className="h-full flex-1 overflow-hidden">
-                <div ref={containerRef} className="grid gap-4 h-full" style={{ gridAutoRows: 'min-content' }}>
-                  {paginatedWatchedItems.map((item) => (
-                    <div key={item.id} style={{ width: 'var(--item-width, 200px)' }}>
-                      <WatchlistCard
-                        item={item}
-                        onDelete={() => deleteMutation.mutate(item.id)}
-                        disableContextMenu={true}
-                        hideStatusBadge={true}
-                      />
-                    </div>
-                  ))}
-                </div>
+            <div className="flex-1 overflow-hidden min-h-0">
+              <div ref={containerRef} className="grid gap-4 h-full" style={{ gridAutoRows: 'min-content' }}>
+                {paginatedWatchedItems.map((item) => (
+                  <div key={item.id} style={{ width: 'var(--item-width, 200px)' }}>
+                    <WatchlistCard
+                      item={item}
+                      onDelete={() => deleteMutation.mutate(item.id)}
+                      disableContextMenu={true}
+                      hideStatusBadge={true}
+                    />
+                  </div>
+                ))}
               </div>
-              
-              {/* Pagination Controls */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 flex-shrink-0 pt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(Math.max(1, page - 1))}
-                    disabled={page === 1}
-                  >
-                    Previous
-                  </Button>
-                  <span className="text-sm text-muted-foreground">
-                    Page {page} of {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(Math.min(totalPages, page + 1))}
-                    disabled={page === totalPages}
-                  >
-                    Next
-                  </Button>
-                </div>
-              )}
-            </>
+            </div>
           ) : watchedItems.length > 0 ? (
             <Card>
               <CardContent className="p-12 text-center text-muted-foreground">

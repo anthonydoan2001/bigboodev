@@ -250,7 +250,7 @@ function WatchlistContent() {
   // Grid card width hook - viewport aware
   const { containerRef: searchContainerRef, itemsPerPage: searchItemsPerPage } = useViewportGrid({
     headerHeight: 180, // Nav + filters + spacing
-    footerHeight: 80, // Pagination + spacing
+    footerHeight: 0, // No footer - pagination is in header
   });
 
   // Paginate filtered search results using viewport-aware items per page
@@ -294,7 +294,7 @@ function WatchlistContent() {
         {showingSearch ? (
           <div className="flex flex-col flex-1 min-h-0 space-y-4">
             {searchLoading ? (
-              <div className="h-full flex-1 overflow-hidden">
+              <div className="flex-1 overflow-hidden min-h-0">
                 <div ref={searchContainerRef} className="grid gap-4 h-full" style={{ gridAutoRows: 'min-content' }}>
                   {Array.from({ length: searchItemsPerPage || 18 }).map((_, i) => (
                     <div key={i} style={{ width: 'var(--item-width, 200px)' }}>
@@ -345,67 +345,65 @@ function WatchlistContent() {
                   ) : (
                     <div></div>
                   )}
-                  <div></div>
+                  {/* Pagination Controls */}
+                  {totalSearchPages > 1 ? (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(Math.max(1, searchPage - 1))}
+                        disabled={searchPage === 1}
+                        className="text-xs sm:text-sm"
+                      >
+                        Previous
+                      </Button>
+                      <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+                        Page {searchPage} of {totalSearchPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePageChange(Math.min(totalSearchPages, searchPage + 1))}
+                        disabled={searchPage === totalSearchPages}
+                        className="text-xs sm:text-sm"
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  ) : (
+                    <div></div>
+                  )}
                 </div>
 
                 {/* Search Results - Grid Layout */}
                 {paginatedSearchResults.length > 0 ? (
-                  <>
-                    <div className="h-full flex-1 overflow-hidden">
-                      <div ref={searchContainerRef} className="grid gap-4 h-full" style={{ gridAutoRows: 'min-content' }}>
-                        {paginatedSearchResults.map((result) => {
-                          const alreadyInList = isInWatchlist(result.externalId, result.type);
-                          const itemWatched = isWatched(result.externalId, result.type);
-                          const itemWatching = isWatching(result.externalId, result.type);
-                          const itemId = getWatchlistItemId(result.externalId, result.type);
-                          return (
-                            <div key={result.id} style={{ width: 'var(--item-width, 200px)' }}>
-                              <SearchResultCard
-                                result={result}
-                                onAdd={() => addMutation.mutate(result)}
-                                isAdding={addMutation.isPending}
-                                alreadyInList={alreadyInList}
-                                isWatched={itemWatched}
-                                isWatching={itemWatching}
-                                onMarkWatched={() => markWatchedMutation.mutate({ item: result })}
-                                isMarkingWatched={markWatchedMutation.isPending}
-                                onMarkWatching={() => markWatchingMutation.mutate({ item: result })}
-                                isMarkingWatching={markWatchingMutation.isPending}
-                                onDelete={itemId ? () => deleteMutation.mutate(itemId) : undefined}
-                              />
-                            </div>
-                          );
-                        })}
-                      </div>
+                  <div className="flex-1 overflow-hidden min-h-0">
+                    <div ref={searchContainerRef} className="grid gap-4 h-full" style={{ gridAutoRows: 'min-content' }}>
+                      {paginatedSearchResults.map((result) => {
+                        const alreadyInList = isInWatchlist(result.externalId, result.type);
+                        const itemWatched = isWatched(result.externalId, result.type);
+                        const itemWatching = isWatching(result.externalId, result.type);
+                        const itemId = getWatchlistItemId(result.externalId, result.type);
+                        return (
+                          <div key={result.id} style={{ width: 'var(--item-width, 200px)' }}>
+                            <SearchResultCard
+                              result={result}
+                              onAdd={() => addMutation.mutate(result)}
+                              isAdding={addMutation.isPending}
+                              alreadyInList={alreadyInList}
+                              isWatched={itemWatched}
+                              isWatching={itemWatching}
+                              onMarkWatched={() => markWatchedMutation.mutate({ item: result })}
+                              isMarkingWatched={markWatchedMutation.isPending}
+                              onMarkWatching={() => markWatchingMutation.mutate({ item: result })}
+                              isMarkingWatching={markWatchingMutation.isPending}
+                              onDelete={itemId ? () => deleteMutation.mutate(itemId) : undefined}
+                            />
+                          </div>
+                        );
+                      })}
                     </div>
-                    
-                    {/* Pagination Controls */}
-                    {totalSearchPages > 1 && (
-                      <div className="flex items-center justify-center gap-2 flex-shrink-0 pt-4 flex-wrap">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handlePageChange(Math.max(1, searchPage - 1))}
-                          disabled={searchPage === 1}
-                          className="text-xs sm:text-sm"
-                        >
-                          Previous
-                        </Button>
-                        <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
-                          Page {searchPage} of {totalSearchPages}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handlePageChange(Math.min(totalSearchPages, searchPage + 1))}
-                          disabled={searchPage === totalSearchPages}
-                          className="text-xs sm:text-sm"
-                        >
-                          Next
-                        </Button>
-                      </div>
-                    )}
-                  </>
+                  </div>
                 ) : searchResults.length > 0 ? (
                   <Card>
                     <CardContent className="p-12 text-center text-muted-foreground">

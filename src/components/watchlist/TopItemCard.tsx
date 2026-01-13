@@ -147,8 +147,8 @@ export function TopItemCard({
 
           {/* Rating Badge - Top Left */}
           {item.rating && (
-            <div className="absolute left-1.5 top-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md flex items-center gap-0.5 z-10">
-              <span className="text-yellow-400">★</span> {item.rating.toFixed(1)}
+            <div className="absolute left-1.5 top-1.5 rounded-md bg-black/60 px-2 py-1 text-xs font-bold text-white backdrop-blur-md flex items-center gap-1 z-10">
+              <span className="text-yellow-400 text-sm">★</span> {item.rating.toFixed(1)}
             </div>
           )}
 
