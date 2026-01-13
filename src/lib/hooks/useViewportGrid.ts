@@ -7,6 +7,7 @@ interface UseViewportGridOptions {
   cardAspectRatio?: number; // height/width ratio (e.g., 1.5 for 2/3 aspect)
   headerHeight?: number; // Space for nav, filters, etc.
   footerHeight?: number; // Space for pagination
+  textHeightBelowCard?: number; // Height of text below card (title, year, etc.)
 }
 
 export function useViewportGrid({ 
@@ -16,6 +17,7 @@ export function useViewportGrid({
   cardAspectRatio = 1.5, // 2/3 aspect ratio
   headerHeight = 200, // Nav + filters + spacing
   footerHeight = 80, // Pagination + spacing
+  textHeightBelowCard = 60, // Text below card (year + title)
 }: UseViewportGridOptions = {}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [itemWidth, setItemWidth] = useState(200);
@@ -56,10 +58,12 @@ export function useViewportGrid({
       calculatedWidth = Math.max(minCardWidth, Math.min(maxCardWidth, calculatedWidth));
       
       // Calculate card height based on aspect ratio
-      const cardHeight = calculatedWidth * cardAspectRatio;
+      const cardImageHeight = calculatedWidth * cardAspectRatio;
+      // Total card height includes image + text below
+      const totalCardHeight = cardImageHeight + textHeightBelowCard;
       
       // Calculate how many rows fit in available height
-      const rowHeight = cardHeight + gap;
+      const rowHeight = totalCardHeight + gap;
       const maxRows = Math.floor((availableHeight + gap) / rowHeight);
       const targetRows = Math.max(1, maxRows);
       
@@ -96,7 +100,7 @@ export function useViewportGrid({
       resizeObserver.disconnect();
       window.removeEventListener('resize', calculateGrid);
     };
-  }, [gap, minCardWidth, maxCardWidth, cardAspectRatio, headerHeight, footerHeight]);
+  }, [gap, minCardWidth, maxCardWidth, cardAspectRatio, headerHeight, footerHeight, textHeightBelowCard]);
 
   return { containerRef, itemWidth, columns, rows, itemsPerPage };
 }
