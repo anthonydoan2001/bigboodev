@@ -10,7 +10,7 @@ import { useSidebar } from '@/lib/providers/SidebarProvider';
 interface CarouselProps {
   children: ReactNode;
   title: string;
-  count: number;
+  count?: number;
   icon?: ReactNode;
   showMoreLink?: string;
   totalCount?: number; // Total count including items not shown
@@ -150,7 +150,7 @@ export function Carousel({ children, title, count, icon, showMoreLink, totalCoun
             </span>
           )}
           <span className="whitespace-nowrap">{title}</span>
-          {showCount && (
+          {showCount && count !== undefined && (
             <span className="text-muted-foreground text-xs sm:text-sm font-normal">
               ({totalCount !== undefined ? totalCount : count})
             </span>
