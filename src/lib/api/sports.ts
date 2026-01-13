@@ -267,6 +267,108 @@ export async function fetchSchedule(sport: SportType, days: number = 7): Promise
   }
 }
 
+export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameScore[]> {
+  try {
+    if (sport !== 'NFL') {
+      throw new Error('Playoff games are only available for NFL');
+    }
+
+    const { path } = SPORT_LEAGUES[sport];
+    const now = new Date();
+    
+    // Fetch upcoming games for the next 45 days to catch all playoff games
+    // NFL playoffs typically run from mid-January to early February
+    const dateStrings: string[] = [];
+    for (let i = 0; i < 45; i++) {
+      const date = new Date(now.getTime() + i * 24 * 60 * 60 * 1000);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      dateStrings.push(`${year}${month}${day}`);
+    }
+    
+    // Split into chunks of 7 dates per request (to avoid URL length issues and rate limiting)
+    const chunkSize = 7;
+    const chunks: string[][] = [];
+    for (let i = 0; i < dateStrings.length; i += chunkSize) {
+      chunks.push(dateStrings.slice(i, i + chunkSize));
+    }
+    
+    // Fetch all chunks in parallel with error handling
+    const responses = await Promise.allSettled(
+      chunks.map(chunk => {
+        const datesParam = chunk.join(',');
+        return fetch(`${ESPN_BASE_URL}/${path}/scoreboard?dates=${datesParam}&limit=300`, {
+          cache: 'no-store',
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
+      })
+    );
+
+    const allGames: ESPNGame[] = [];
+    
+    for (const response of responses) {
+      if (response.status === 'fulfilled' && response.value.ok) {
+        try {
+          const data: ESPNScoreboardResponse = await response.value.json();
+          if (data.events && Array.isArray(data.events)) {
+            allGames.push(...data.events);
+          }
+        } catch (e) {
+          console.error('Error parsing playoff games response:', e);
+        }
+      } else if (response.status === 'rejected') {
+        console.error('Error fetching playoff games chunk:', response.reason);
+      }
+    }
+
+    // Filter for upcoming playoff games
+    // Season type 3 = playoffs in ESPN API (1 = preseason, 2 = regular season, 3 = playoffs)
+    const nowTime = now.getTime();
+    
+    const playoffGames = allGames
+      .filter((event) => {
+        if (!event.competitions || event.competitions.length === 0) return false;
+        const competition = event.competitions[0];
+        const gameDate = new Date(competition.date);
+        const isPlayoff = competition.season?.type === 3;
+        const isUpcoming = event.status.type.state === 'pre' && gameDate.getTime() >= nowTime;
+        return isPlayoff && isUpcoming;
+      })
+      .map((event) => {
+        const competition = event.competitions[0];
+        const homeTeam = competition.competitors.find((c) => c.homeAway === 'home');
+        const awayTeam = competition.competitors.find((c) => c.homeAway === 'away');
+
+        return {
+          id: event.id,
+          sport,
+          homeTeam: homeTeam?.team.displayName || 'TBD',
+          awayTeam: awayTeam?.team.displayName || 'TBD',
+          homeTeamLogo: homeTeam?.team.logo,
+          awayTeamLogo: awayTeam?.team.logo,
+          homeScore: 0,
+          awayScore: 0,
+          status: 'scheduled' as const,
+          startTime: new Date(competition.date),
+        };
+      })
+      .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+
+    // Remove duplicates by ID
+    const uniqueGames = Array.from(
+      new Map(playoffGames.map(game => [game.id, game])).values()
+    );
+
+    return uniqueGames;
+  } catch (error) {
+    console.error(`Error fetching ${sport} playoff games:`, error);
+    return []; // Return empty array instead of throwing
+  }
+}
+
 export async function fetchTopPerformers(sport: SportType, date?: Date): Promise<TopPerformer[]> {
   try {
     const { path } = SPORT_LEAGUES[sport];
