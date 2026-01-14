@@ -1,5 +1,6 @@
 'use client';
 
+import { Card, CardContent } from '@/components/ui/card';
 import { fetchWeather } from '@/lib/api/weather';
 import { useQuery } from '@tanstack/react-query';
 import { RefreshCw } from 'lucide-react';
@@ -16,47 +17,49 @@ export function WeatherWidget() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center">
-        <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
-      </div>
+      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm h-full flex items-center justify-center min-h-[140px]">
+        <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+      </Card>
     );
   }
 
   if (error || !weather) {
     return (
-      <div className="flex items-center justify-center">
-        <p className="text-xs text-muted-foreground">Failed to load weather</p>
-      </div>
+      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm h-full flex items-center justify-center min-h-[140px]">
+        <p className="text-sm text-muted-foreground">Failed to load weather</p>
+      </Card>
     );
   }
 
   const { current } = weather;
 
   return (
-    <div className="flex items-center gap-4 md:gap-5">
-      <div className="relative w-16 h-16 md:w-20 md:h-20 flex-shrink-0">
-        <Image
-          src={`https://openweathermap.org/img/wn/${current.icon}@2x.png`}
-          alt={current.condition}
-          fill
-          className="object-contain"
-          unoptimized
-        />
-      </div>
-      <div className="flex flex-col">
-        <div className="flex items-baseline gap-2">
-          <span className="text-4xl md:text-5xl font-light tracking-tight text-foreground">
-            {current.temperature}°
+    <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden">
+      <CardContent className="p-6 flex items-center justify-between gap-4">
+        <div className="flex flex-col">
+          <div className="flex items-baseline gap-2">
+            <span className="text-4xl md:text-5xl font-light tracking-tight text-foreground">
+              {current.temperature}°
+            </span>
+          </div>
+          <span className="text-base text-muted-foreground capitalize mt-1 font-medium">
+            {current.condition}
           </span>
+          <div className="flex gap-3 text-sm text-muted-foreground mt-2">
+            <span className="font-medium">H: {current.high}°</span>
+            <span className="font-medium">L: {current.low}°</span>
+          </div>
         </div>
-        <span className="text-sm md:text-base text-muted-foreground capitalize mt-0.5">
-          {current.condition}
-        </span>
-        <div className="flex gap-3 text-sm text-muted-foreground mt-1">
-          <span>H: {current.high}°</span>
-          <span>L: {current.low}°</span>
+        <div className="relative w-24 h-24 flex-shrink-0 -mr-2">
+          <Image
+            src={`https://openweathermap.org/img/wn/${current.icon}@4x.png`}
+            alt={current.condition}
+            fill
+            className="object-contain"
+            unoptimized
+          />
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

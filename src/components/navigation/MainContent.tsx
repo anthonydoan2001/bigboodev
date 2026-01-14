@@ -9,7 +9,7 @@ export function MainContent({ children }: { children: React.ReactNode }) {
   return (
     <main className={cn(
       "transition-all duration-300 ease-in-out",
-      isCollapsed ? "ml-[70px]" : "ml-64"
+      isCollapsed ? "ml-[70px]" : "ml-[70px] md:ml-64"
     )}>
       {children}
     </main>
