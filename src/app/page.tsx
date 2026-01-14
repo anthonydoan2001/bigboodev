@@ -1,7 +1,7 @@
 'use client';
 
-import { CryptoWidget } from "@/components/dashboard/CryptoWidget";
-import { StocksWidget } from "@/components/dashboard/StocksWidget";
+import { CalendarWidget } from "@/components/dashboard/CalendarWidget";
+import { StocksCryptoWidget } from "@/components/dashboard/StocksCryptoWidget";
 import { WeatherWidget } from "@/components/dashboard/WeatherWidget";
 import { fetchQuote } from "@/lib/api/quote";
 import { useQuery } from "@tanstack/react-query";
@@ -59,40 +59,38 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="container mx-auto py-8 px-8 min-h-screen max-w-full">
-      <div className="w-full space-y-8">
-        {/* Welcome Section with Weather Inline */}
-        <div className="flex flex-col md:flex-row md:items-start gap-4 md:gap-6">
-          {/* Weather Widget Inline */}
-          <div className="flex-shrink-0">
-            <WeatherWidget />
-          </div>
-          
-          <div className="flex-1 text-center md:text-left space-y-2">
-            <h1 className="text-4xl font-bold tracking-tight">{greeting}</h1>
+    <div className="w-full py-8 px-4 sm:px-6 lg:px-8 min-h-screen">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Main Content Area - Shows first on mobile */}
+        <div className="order-1 lg:order-2 lg:col-span-3 flex flex-col gap-6">
+          {/* Header Section */}
+          <div className="space-y-2 py-2">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">{greeting}</h1>
             {quoteLoading ? (
-              <p className="text-muted-foreground text-xl sm:text-2xl md:text-3xl animate-pulse">
+              <p className="text-muted-foreground text-xl md:text-2xl animate-pulse">
                 Loading quote...
               </p>
             ) : quote ? (
-              <p className="text-muted-foreground text-xl sm:text-2xl md:text-3xl italic">
+              <p className="text-muted-foreground text-xl md:text-2xl italic">
                 "{quote.content}" — {quote.author}
               </p>
             ) : (
-              <p className="text-muted-foreground text-xl sm:text-2xl md:text-3xl">
+              <p className="text-muted-foreground text-xl md:text-2xl">
                 Here's what's happening today
               </p>
             )}
           </div>
+
+          {/* Stocks & Crypto Widget */}
+          <div className="flex-1">
+            <StocksCryptoWidget />
+          </div>
         </div>
 
-        {/* Dashboard Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 max-w-xl">
-          {/* Stocks Widget */}
-          <StocksWidget />
-
-          {/* Crypto Widget */}
-          <CryptoWidget />
+        {/* Left Sidebar Column - Shows second on mobile */}
+        <div className="order-2 lg:order-1 lg:col-span-1 space-y-6">
+          <WeatherWidget />
+          <CalendarWidget />
         </div>
       </div>
     </div>

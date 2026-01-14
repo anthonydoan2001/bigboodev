@@ -12,10 +12,14 @@ const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Load collapsed state from localStorage on mount
+  // Load collapsed state from localStorage on mount and check mobile
   useEffect(() => {
     const saved = localStorage.getItem('sidebar-collapsed');
-    if (saved !== null) {
+    const isMobile = window.innerWidth < 768;
+
+    if (isMobile) {
+      setIsCollapsed(true);
+    } else if (saved !== null) {
       setIsCollapsed(JSON.parse(saved));
     }
   }, []);
