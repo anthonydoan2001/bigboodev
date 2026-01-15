@@ -1,4 +1,5 @@
 import { FinnhubQuoteResponse, StockQuotesResponse, FinnhubCompanyProfile } from '@/types/stocks';
+import { trackApiUsage } from '@/lib/api-usage';
 
 const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY || 'd5hhjthr01qqequ2hnigd5hhjthr01qqequ2hnj0';
 const FINNHUB_BASE_URL = 'https://finnhub.io/api/v1';
@@ -22,6 +23,13 @@ export async function fetchCompanyProfile(symbol: string): Promise<FinnhubCompan
   try {
     const response = await fetch(url, {
       cache: 'no-store',
+    });
+
+    const isSuccess = response.ok && response.status !== 429;
+    await trackApiUsage('finnhub', {
+      endpoint: '/stock/profile2',
+      success: isSuccess,
+      statusCode: response.status,
     });
 
     if (response.status === 429) {
@@ -62,6 +70,10 @@ export async function fetchCompanyProfile(symbol: string): Promise<FinnhubCompan
 
     return data;
   } catch (error) {
+    await trackApiUsage('finnhub', {
+      endpoint: '/stock/profile2',
+      success: false,
+    });
     console.error(`Error fetching company profile for ${symbol}:`, error);
     return null;
   }
@@ -76,6 +88,13 @@ export async function fetchStockQuote(symbol: string): Promise<FinnhubQuoteRespo
   try {
     const response = await fetch(url, {
       cache: 'no-store',
+    });
+
+    const isSuccess = response.ok && response.status !== 429;
+    await trackApiUsage('finnhub', {
+      endpoint: '/quote',
+      success: isSuccess,
+      statusCode: response.status,
     });
 
     if (response.status === 429) {
@@ -113,6 +132,13 @@ export async function fetchStockQuote(symbol: string): Promise<FinnhubQuoteRespo
 
     return data;
   } catch (error) {
+    // Track error if not already tracked
+    if (!(error instanceof Error && error.message === 'RATE_LIMIT_EXCEEDED')) {
+      await trackApiUsage('finnhub', {
+        endpoint: '/quote',
+        success: false,
+      });
+    }
     // Re-throw if it's already an Error with a message
     if (error instanceof Error) {
       throw error;

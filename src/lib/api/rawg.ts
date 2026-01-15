@@ -1,4 +1,6 @@
 // RAWG API Client for Games
+import { trackApiUsage } from '@/lib/api-usage';
+
 const RAWG_API_KEY = process.env.RAWG_API_KEY || '6699bbf61186434ab123c9cfbea8f294';
 const RAWG_BASE_URL = 'https://api.rawg.io/api';
 
@@ -39,6 +41,13 @@ export async function searchGames(query: string): Promise<GameSearchResult[]> {
     const url = `${RAWG_BASE_URL}/games?search=${encodeURIComponent(query)}&page_size=20&key=${RAWG_API_KEY}`;
     const response = await fetch(url);
 
+    const isSuccess = response.ok && response.status !== 429;
+    await trackApiUsage('rawg', {
+      endpoint: '/games (search)',
+      success: isSuccess,
+      statusCode: response.status,
+    });
+
     if (!response.ok) {
       throw new Error(`RAWG API error: ${response.status} ${response.statusText}`);
     }
@@ -69,6 +78,13 @@ export async function getTopGames(limit: number = 50): Promise<GameSearchResult[
   try {
     const url = `${RAWG_BASE_URL}/games?ordering=-rating&page_size=${limit}&key=${RAWG_API_KEY}`;
     const response = await fetch(url);
+
+    const isSuccess = response.ok && response.status !== 429;
+    await trackApiUsage('rawg', {
+      endpoint: '/games (top)',
+      success: isSuccess,
+      statusCode: response.status,
+    });
 
     if (!response.ok) {
       throw new Error(`RAWG API error: ${response.status} ${response.statusText}`);

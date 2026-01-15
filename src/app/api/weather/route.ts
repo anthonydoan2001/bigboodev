@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { WeatherResponse } from '@/types/weather';
 import { withAuth } from '@/lib/api-auth';
+import { trackApiUsage } from '@/lib/api-usage';
 
 const API_KEY = process.env.OPENWEATHER_API_KEY;
 const BASE_URL = 'https://api.openweathermap.org/data/2.5';
@@ -51,6 +52,13 @@ export const GET = withAuth(async () => {
       { cache: 'no-store' }
     );
 
+    const isCurrentSuccess = currentRes.ok && currentRes.status !== 429;
+    await trackApiUsage('openweather', {
+      endpoint: '/weather',
+      success: isCurrentSuccess,
+      statusCode: currentRes.status,
+    });
+
     if (!currentRes.ok) {
       throw new Error('Failed to fetch weather data');
     }
@@ -63,6 +71,13 @@ export const GET = withAuth(async () => {
       `${BASE_URL}/forecast?lat=${LAT}&lon=${LON}&units=imperial&appid=${API_KEY}`,
       { cache: 'no-store' }
     );
+
+    const isForecastSuccess = forecastRes.ok && forecastRes.status !== 429;
+    await trackApiUsage('openweather', {
+      endpoint: '/forecast',
+      success: isForecastSuccess,
+      statusCode: forecastRes.status,
+    });
 
     const forecastData = await forecastRes.ok ? await forecastRes.json() : null;
 

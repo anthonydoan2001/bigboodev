@@ -4,6 +4,7 @@ import {
   CoinMarketCapQuoteResponse,
   CryptoQuotesResponse,
 } from '@/types/crypto';
+import { trackApiUsage } from '@/lib/api-usage';
 
 const CMC_API_KEY = process.env.COINMARKETCAP_API_KEY || '';
 const CMC_BASE_URL = 'https://pro-api.coinmarketcap.com';
@@ -70,6 +71,13 @@ export async function fetchCryptoMap(): Promise<CoinMarketCapMapResponse> {
     cache: 'no-store',
   });
 
+  const isSuccess = response.ok && response.status !== 429;
+  await trackApiUsage('coinmarketcap', {
+    endpoint: '/v1/cryptocurrency/map',
+    success: isSuccess,
+    statusCode: response.status,
+  });
+
   if (response.status === 429) {
     throw new Error('RATE_LIMIT_EXCEEDED');
   }
@@ -131,6 +139,13 @@ export async function fetchCryptoInfo(cmcIds: number[]): Promise<CoinMarketCapIn
     cache: 'no-store',
   });
 
+  const isSuccess = response.ok && response.status !== 429;
+  await trackApiUsage('coinmarketcap', {
+    endpoint: '/v2/cryptocurrency/info',
+    success: isSuccess,
+    statusCode: response.status,
+  });
+
   if (response.status === 429) {
     throw new Error('RATE_LIMIT_EXCEEDED');
   }
@@ -165,6 +180,13 @@ export async function fetchCryptoQuotes(cmcIds: number[]): Promise<CoinMarketCap
       'X-CMC_PRO_API_KEY': CMC_API_KEY,
     },
     cache: 'no-store',
+  });
+
+  const isSuccess = response.ok && response.status !== 429;
+  await trackApiUsage('coinmarketcap', {
+    endpoint: '/v2/cryptocurrency/quotes/latest',
+    success: isSuccess,
+    statusCode: response.status,
   });
 
   if (response.status === 429) {
