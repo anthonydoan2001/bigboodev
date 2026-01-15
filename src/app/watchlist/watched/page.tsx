@@ -134,11 +134,11 @@ function WatchedContent() {
             <div className="flex-1 overflow-hidden min-h-0 w-full">
               <div 
                 ref={containerRef} 
-                className="grid gap-4 h-full w-full" 
+                className="grid watchlist-grid gap-4 h-full w-full" 
                 style={{ 
                   gridAutoRows: 'min-content',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-                  width: '100%'
+                  width: '100%',
+                  gap: '16px'
                 }}
               >
                 {Array.from({ length: itemsPerPage || 18 }).map((_, i) => (
@@ -152,11 +152,11 @@ function WatchedContent() {
             <div className="flex-1 overflow-hidden min-h-0 w-full">
               <div 
                 ref={containerRef} 
-                className="grid gap-4 h-full w-full" 
+                className="grid watchlist-grid gap-4 h-full w-full" 
                 style={{ 
                   gridAutoRows: 'min-content',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-                  width: '100%'
+                  width: '100%',
+                  gap: '16px'
                 }}
               >
                 {paginatedWatchedItems.map((item) => (

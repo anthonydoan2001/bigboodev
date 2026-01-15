@@ -29,24 +29,48 @@ export function useViewportGrid({
   const hasInitializedRef = useRef(false);
 
   useEffect(() => {
+    // Calculate a better initial estimate based on viewport
+    const getInitialEstimate = () => {
+      if (typeof window === 'undefined') return { minWidth: 200, maxWidth: 280, gap: 16 };
+      
+      const windowWidth = window.innerWidth;
+      const isMobile = windowWidth < 640;
+      const isTablet = windowWidth >= 640 && windowWidth < 1024;
+      
+      // Estimate card width based on viewport - try to match what calculateGrid will produce
+      const estimatedGap = isMobile ? 12 : isTablet ? 14 : gap;
+      const estimatedMinWidth = isMobile ? Math.min(minCardWidth, 140) : isTablet ? Math.min(minCardWidth, 200) : minCardWidth;
+      const estimatedMaxWidth = isMobile ? Math.min(maxCardWidth, 220) : isTablet ? Math.min(maxCardWidth, 400) : maxCardWidth;
+      
+      // Estimate how many columns would fit - aim for a reasonable size
+      const preferredWidth = isMobile ? 160 : isTablet ? 250 : 300;
+      const estimatedColumns = Math.max(1, Math.floor((windowWidth - 64) / (preferredWidth + estimatedGap))); // 64px for padding
+      const estimatedCardWidth = Math.floor(((windowWidth - 64) - (estimatedGap * (estimatedColumns - 1))) / estimatedColumns);
+      const clampedWidth = Math.max(estimatedMinWidth, Math.min(estimatedMaxWidth, estimatedCardWidth));
+      
+      return {
+        minWidth: estimatedMinWidth,
+        maxWidth: estimatedMaxWidth,
+        preferredWidth: clampedWidth,
+        gap: estimatedGap
+      };
+    };
+
     // Set CSS Grid fallback immediately for initial layout
     const setCSSFallback = () => {
       if (!containerRef.current) return;
       
-      // Get responsive min width for fallback
-      const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
-      const isMobile = windowWidth < 640;
-      const isTablet = windowWidth >= 640 && windowWidth < 1024;
-      const fallbackMinWidth = isMobile ? 140 : isTablet ? 200 : Math.min(minCardWidth, 280);
-      const fallbackMaxWidth = isMobile ? 220 : isTablet ? 400 : maxCardWidth;
+      const estimate = getInitialEstimate();
       
-      // Set CSS Grid fallback that will work immediately - use auto-fit to fill width
+      // Set CSS Grid fallback that will work immediately - use the estimated preferred width
+      // This prevents the flash of small cards
       containerRef.current.style.setProperty(
         'grid-template-columns',
-        `repeat(auto-fit, minmax(${fallbackMinWidth}px, 1fr))`
+        `repeat(auto-fit, minmax(${estimate.preferredWidth}px, 1fr))`
       );
-      containerRef.current.style.setProperty('--item-max-width', `${fallbackMaxWidth}px`);
-      containerRef.current.style.setProperty('gap', `${isMobile ? 12 : isTablet ? 14 : gap}px`);
+      containerRef.current.style.setProperty('--item-max-width', `${estimate.maxWidth}px`);
+      containerRef.current.style.setProperty('--item-width', `${estimate.preferredWidth}px`);
+      containerRef.current.style.setProperty('gap', `${estimate.gap}px`);
       containerRef.current.style.width = '100%';
     };
 
@@ -62,7 +86,19 @@ export function useViewportGrid({
       let containerWidth = Math.max(rect.width, clientWidth, offsetWidth);
       
       // Skip if width hasn't changed significantly (within 10px) to prevent unnecessary recalculations
+      // Also skip if we haven't initialized yet and width seems reasonable
       if (Math.abs(containerWidth - lastWidthRef.current) < 10 && lastWidthRef.current > 0) {
+        return;
+      }
+      
+      // If this is the first calculation, delay slightly to let CSS-based initial layout render
+      // This prevents the flash of small cards before JavaScript kicks in
+      if (!hasInitializedRef.current) {
+        setTimeout(() => {
+          if (containerRef.current && !hasInitializedRef.current) {
+            calculateGrid();
+          }
+        }, 150);
         return;
       }
       
@@ -228,8 +264,26 @@ export function useViewportGrid({
     };
     
     // Set up fallback immediately - this prevents initial layout shift
-    if (containerRef.current) {
-      setCSSFallback();
+    // Use a microtask to ensure DOM is ready but before paint
+    if (typeof window !== 'undefined') {
+      // Set initial state immediately based on viewport
+      const initialEstimate = getInitialEstimate();
+      setItemWidth(initialEstimate.preferredWidth);
+      
+      // Set CSS fallback synchronously if container exists
+      if (containerRef.current) {
+        setCSSFallback();
+      } else {
+        // If container doesn't exist yet, set it up as soon as it's available
+        const checkAndSet = () => {
+          if (containerRef.current) {
+            setCSSFallback();
+          } else {
+            requestAnimationFrame(checkAndSet);
+          }
+        };
+        requestAnimationFrame(checkAndSet);
+      }
     }
     
     // Set up observer after a short delay to ensure DOM is ready
