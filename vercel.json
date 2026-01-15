@@ -17,6 +17,10 @@
     {
       "path": "/api/watchlist/top/refresh",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/games/top/refresh",
+      "schedule": "0 0 * * *"
     }
   ]
 }
