@@ -134,10 +134,14 @@ export function useViewportGrid({
       // Set CSS variables and fine-tune grid
       if (containerRef.current) {
         containerRef.current.style.setProperty('--item-width', `${calculatedWidth}px`);
-        // Use auto-fill with calculated width to allow wrapping to next row when needed
-        // Cards will maintain consistent size and wrap automatically if they don't fit
-        containerRef.current.style.setProperty('grid-template-columns', `repeat(auto-fill, minmax(${calculatedWidth}px, ${calculatedWidth}px))`);
+        containerRef.current.style.setProperty('--item-max-width', `${responsiveMaxWidth}px`);
+        // Use auto-fit with 1fr to ensure cards fill the full width
+        // Cards will maintain minimum size but expand to fill available space
+        // The cards themselves will respect max-width via CSS variable
+        containerRef.current.style.setProperty('grid-template-columns', `repeat(auto-fit, minmax(${calculatedWidth}px, 1fr))`);
         containerRef.current.style.setProperty('gap', `${responsiveGap}px`);
+        // Ensure container takes full width
+        containerRef.current.style.width = '100%';
       }
     };
 

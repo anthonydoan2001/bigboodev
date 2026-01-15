@@ -101,7 +101,7 @@ export function WatchlistCard({
   
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
-      <div className="group relative space-y-2 w-full flex flex-col" style={{ width: 'var(--item-width, 100%)', maxWidth: 'var(--item-width, 100%)', minWidth: 0 }}>
+      <div className="group relative space-y-2 w-full flex flex-col" style={{ width: '100%', maxWidth: 'var(--item-max-width, 100%)', minWidth: 0 }}>
         <div 
           className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20 cursor-context-menu"
           onContextMenu={(e) => {
