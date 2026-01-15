@@ -36,8 +36,8 @@ export function Carousel({ children, title, count, icon, showMoreLink, totalCoun
     const gap = isMobile ? 12 : isTablet ? 14 : 16; // Responsive gap: 12px mobile, 14px tablet, 16px desktop
     
     // Responsive poster sizes - balanced for readability and title wrapping
-    const minWidth = isMobile ? 120 : isTablet ? 150 : 170;
-    const maxWidth = isMobile ? 160 : isTablet ? 200 : 230;
+    const minWidth = isMobile ? 150 : isTablet ? 200 : 220;
+    const maxWidth = isMobile ? 200 : isTablet ? 280 : 350;
     
     // Calculate how many items can fit with maximum width
     const maxItemsWithMaxWidth = Math.floor((containerWidth + gap) / (maxWidth + gap));
@@ -51,7 +51,7 @@ export function Carousel({ children, title, count, icon, showMoreLink, totalCoun
     // If we can fit more items, try to find a sweet spot
     if (maxItemsWithMinWidth > maxItemsWithMaxWidth) {
       // Aim for comfortable poster size that allows titles to wrap
-      const preferredWidth = isMobile ? 140 : isTablet ? 175 : 200;
+      const preferredWidth = isMobile ? 180 : isTablet ? 240 : 300;
       const preferredItems = Math.floor((containerWidth + gap) / (preferredWidth + gap));
       if (preferredItems > 0) {
         targetItems = preferredItems;

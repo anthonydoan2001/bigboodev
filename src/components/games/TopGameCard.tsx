@@ -104,7 +104,7 @@ export function TopGameCard({
       <div className="group relative w-full flex flex-col" style={{ width: 'var(--item-width, 100%)', maxWidth: 'var(--item-width, 100%)', minWidth: 0, overflow: 'visible' }}>
         <div 
           ref={cardRef}
-          className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20 cursor-context-menu w-full"
+          className="relative aspect-[16/9] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20 cursor-context-menu w-full"
           onContextMenu={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -128,7 +128,7 @@ export function TopGameCard({
             <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black/90"></div>
           </div>
 
-          <div className="relative aspect-[2/3] overflow-hidden rounded-xl w-full">
+          <div className="relative aspect-[16/9] overflow-hidden rounded-xl w-full">
             {item.image ? (
               <Image
                 src={item.image}

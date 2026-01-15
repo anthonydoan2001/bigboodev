@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Gamepad2, ListVideo, Trophy } from 'lucide-react';
+import { CheckCircle2, Gamepad2, ListVideo } from 'lucide-react';
 import { SearchBar } from '../watchlist/SearchBar';
 import { useGames } from '@/lib/hooks/useGames';
 import { useState, useRef } from 'react';
@@ -48,45 +48,43 @@ export function GamesNav() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-      <div className="flex gap-2">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+      <div className="flex gap-1.5 sm:gap-2 flex-wrap">
         <Link href="/games/playing">
           <Button
             variant={isActive('/games/playing') ? 'default' : 'outline'}
-            className="h-10"
+            className="h-9 sm:h-10 text-xs sm:text-sm px-2 sm:px-4"
           >
-            <Gamepad2 className="h-4 w-4 mr-2" />
-            Playing ({playingGames.length})
+            <Gamepad2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+            <span className="hidden sm:inline">Playing</span>
+            <span className="sm:hidden">Play</span>
+            <span className="ml-1">({playingGames.length})</span>
           </Button>
         </Link>
         <Link href="/games">
           <Button
             variant={isActive('/games') ? 'default' : 'outline'}
-            className="h-10"
+            className="h-9 sm:h-10 text-xs sm:text-sm px-2 sm:px-4"
           >
-            <ListVideo className="h-4 w-4 mr-2" />
-            Plan to Play ({planToPlayGames.length})
+            <ListVideo className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+            <span className="hidden sm:inline">Plan to Play</span>
+            <span className="sm:hidden">Plan</span>
+            <span className="ml-1">({planToPlayGames.length})</span>
           </Button>
         </Link>
         <Link href="/games/played">
           <Button
             variant={isActive('/games/played') ? 'default' : 'outline'}
-            className="h-10"
+            className="h-9 sm:h-10 text-xs sm:text-sm px-2 sm:px-4"
           >
-            <CheckCircle2 className="h-4 w-4 mr-2" />
-            Played ({playedGames.length})
-          </Button>
-        </Link>
-        <Link href="/games/top">
-          <Button
-            variant={isActive('/games/top') ? 'default' : 'outline'}
-            className="h-10"
-          >
-            <Trophy className="h-4 w-4" />
+            <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+            <span className="hidden sm:inline">Played</span>
+            <span className="sm:hidden">Done</span>
+            <span className="ml-1">({playedGames.length})</span>
           </Button>
         </Link>
       </div>
-      <div className="flex-1 max-w-md">
+      <div className="flex-1 w-full sm:max-w-md">
         <SearchBar
           onSearch={handleSearch}
           onClear={handleClearSearch}

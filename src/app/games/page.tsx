@@ -4,35 +4,29 @@ export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useMemo, useState, useEffect, useRef, Suspense } from 'react';
+import { useMemo, Suspense } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { GamesNav } from '@/components/games/GamesNav';
-import { Carousel } from '@/components/watchlist/Carousel';
 import { GameCard } from '@/components/games/GameCard';
 import { SearchResultCard } from '@/components/games/SearchResultCard';
 import { CardSkeleton } from '@/components/watchlist/CardSkeleton';
 import { GameSearchResult } from '@/types/games';
-import { ListVideo } from 'lucide-react';
 import { useGames } from '@/lib/hooks/useGames';
 import { useGamesMutations } from '@/lib/hooks/useGamesMutations';
 import { useViewportGrid } from '@/lib/hooks/useViewportGrid';
-import { Game } from '@prisma/client';
 
 function GamesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
   const searchPage = parseInt(searchParams.get('page') || '1', 10);
+  const listPage = parseInt(searchParams.get('listPage') || '1', 10);
 
   const { planToPlayGames, playedGames, playingGames, allGames, isLoading: listLoading } = useGames();
   const { addMutation, deleteMutation, markPlayingMutation, markPlayedMutation } = useGamesMutations();
-
-  // Stable randomized order - only created once per page load
-  const randomizedOrderRef = useRef<Map<string, number>>(new Map());
-  const hasInitializedRef = useRef(false);
 
   // Search query
   const { data: searchData, isLoading: searchLoading } = useQuery<{ results: GameSearchResult[] }>({
@@ -50,54 +44,6 @@ function GamesContent() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Create stable randomized order only on initial load
-  useEffect(() => {
-    if (!hasInitializedRef.current && !listLoading && planToPlayGames.length > 0) {
-      const gamesOrder = planToPlayGames.map((_: Game, index: number) => index);
-      for (let i = gamesOrder.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [gamesOrder[i], gamesOrder[j]] = [gamesOrder[j], gamesOrder[i]];
-      }
-      planToPlayGames.forEach((item: Game, originalIndex: number) => {
-        randomizedOrderRef.current.set(item.id, gamesOrder[originalIndex]);
-      });
-      hasInitializedRef.current = true;
-    }
-  }, [planToPlayGames, listLoading]);
-
-  // Get randomized plan to play games - filter to only include current items, maintain stable order
-  const randomizedGames = useMemo(() => {
-    if (!hasInitializedRef.current && planToPlayGames.length > 0) {
-      const gamesOrder = planToPlayGames.map((_: Game, index: number) => index);
-      for (let i = gamesOrder.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [gamesOrder[i], gamesOrder[j]] = [gamesOrder[j], gamesOrder[i]];
-      }
-      planToPlayGames.forEach((item: Game, originalIndex: number) => {
-        randomizedOrderRef.current.set(item.id, gamesOrder[originalIndex]);
-      });
-      hasInitializedRef.current = true;
-    }
-    
-    if (!hasInitializedRef.current) return planToPlayGames;
-    
-    const gamesOrders = Array.from(randomizedOrderRef.current.values()).filter(v => v < 10000);
-    const maxGamesOrder = gamesOrders.length > 0 ? Math.max(...gamesOrders) : -1;
-    
-    const itemsWithOrder = planToPlayGames
-      .map(item => {
-        let order = randomizedOrderRef.current.get(item.id);
-        if (order === undefined || order >= 10000) {
-          order = Math.random() * 1000 + maxGamesOrder + 1000;
-          randomizedOrderRef.current.set(item.id, order);
-        }
-        return { item, order };
-      })
-      .sort((a, b) => a.order - b.order);
-    
-    // Limit to 21 items for the main games section
-    return itemsWithOrder.map(({ item }) => item).slice(0, 21);
-  }, [planToPlayGames]);
 
   // Filter out items without images or ratings from search results
   const searchResults: GameSearchResult[] = (searchData?.results || []).filter(
@@ -137,10 +83,21 @@ function GamesContent() {
     return item?.id || null;
   };
 
-  // Grid card width hook - viewport aware
+  // Grid card width hooks - viewport aware with responsive sizing
   const { containerRef: searchContainerRef, itemsPerPage: searchItemsPerPage } = useViewportGrid({
     headerHeight: 180, // Nav + spacing
     footerHeight: 0, // No footer - pagination is in header
+    maxCardWidth: 650, // Larger cards (will be clamped responsively)
+    minCardWidth: 280, // Larger minimum (will be clamped responsively)
+    cardAspectRatio: 9/16, // 16/9 aspect ratio (height/width)
+  });
+
+  const { containerRef: listContainerRef, itemsPerPage: listItemsPerPage } = useViewportGrid({
+    headerHeight: 180, // Nav + spacing
+    footerHeight: 0, // No footer - pagination is in header
+    maxCardWidth: 650, // Larger cards (will be clamped responsively)
+    minCardWidth: 280, // Larger minimum (will be clamped responsively)
+    cardAspectRatio: 9/16, // 16/9 aspect ratio (height/width)
   });
 
   // Paginate search results using viewport-aware items per page
@@ -151,7 +108,15 @@ function GamesContent() {
 
   const totalSearchPages = Math.ceil(searchResults.length / searchItemsPerPage);
 
-  const handlePageChange = (newPage: number) => {
+  // Paginate plan to play games
+  const paginatedPlanToPlayGames = useMemo(() => {
+    const startIndex = (listPage - 1) * listItemsPerPage;
+    return planToPlayGames.slice(startIndex, startIndex + listItemsPerPage);
+  }, [planToPlayGames, listPage, listItemsPerPage]);
+
+  const totalListPages = Math.ceil(planToPlayGames.length / listItemsPerPage);
+
+  const handleSearchPageChange = (newPage: number) => {
     const params = new URLSearchParams();
     // Always preserve search query
     if (searchQuery) {
@@ -162,11 +127,22 @@ function GamesContent() {
     router.push(`/games?${params.toString()}`);
   };
 
+  const handleListPageChange = (newPage: number) => {
+    const params = new URLSearchParams();
+    // Preserve search query if exists
+    if (searchQuery) {
+      params.set('search', searchQuery);
+    }
+    // Set the list page
+    params.set('listPage', newPage.toString());
+    router.push(`/games?${params.toString()}`);
+  };
+
   const showingSearch = searchQuery.length > 0;
 
   return (
-    <div className={`w-full py-4 sm:py-8 px-3 sm:px-4 md:px-6 lg:px-8 ${showingSearch ? 'h-screen flex flex-col overflow-hidden' : 'min-h-screen'}`}>
-      <div className={`w-full space-y-4 sm:space-y-6 ${showingSearch ? 'flex flex-col h-full' : ''}`}>
+    <div className={`w-full ${showingSearch ? 'h-screen flex flex-col overflow-hidden py-4 sm:py-8 px-3 sm:px-4 md:px-6 lg:px-8' : 'h-screen flex flex-col overflow-hidden py-4 sm:py-6 md:py-8 px-3 sm:px-4 md:px-6 lg:px-8'}`}>
+      <div className={`w-full ${showingSearch ? 'space-y-3 sm:space-y-4 md:space-y-6 flex flex-col h-full' : 'flex flex-col h-full space-y-4 sm:space-y-6'}`}>
         <GamesNav />
 
         {/* Content */}
@@ -174,7 +150,7 @@ function GamesContent() {
           <div className="flex flex-col flex-1 min-h-0 space-y-4">
             {searchLoading ? (
               <div className="flex-1 overflow-hidden min-h-0">
-                <div ref={searchContainerRef} className="grid gap-4 h-full" style={{ gridAutoRows: 'min-content' }}>
+                <div ref={searchContainerRef} className="grid gap-3 sm:gap-4 h-full w-full" style={{ gridAutoRows: 'min-content' }}>
                   {Array.from({ length: searchItemsPerPage || 18 }).map((_, i) => (
                     <div key={i} style={{ width: 'var(--item-width, 200px)' }}>
                       <CardSkeleton />
@@ -184,39 +160,38 @@ function GamesContent() {
               </div>
             ) : (
               <div className="flex flex-col flex-1 min-h-0 space-y-4">
-                {/* Pagination Controls */}
-                {totalSearchPages > 1 ? (
-                  <div className="flex items-center justify-end gap-2 flex-wrap min-h-[36px] flex-shrink-0">
+                {/* Pagination Controls - Same row as header */}
+                <div className="flex items-center justify-between min-h-[32px] sm:min-h-[36px] flex-shrink-0">
+                  <div></div>
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handlePageChange(Math.max(1, searchPage - 1))}
+                      onClick={() => handleSearchPageChange(Math.max(1, searchPage - 1))}
                       disabled={searchPage === 1}
-                      className="text-xs sm:text-sm"
+                      className="text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
                     >
                       Previous
                     </Button>
-                    <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+                    <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap px-1">
                       Page {searchPage} of {totalSearchPages}
                     </span>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handlePageChange(Math.min(totalSearchPages, searchPage + 1))}
+                      onClick={() => handleSearchPageChange(Math.min(totalSearchPages, searchPage + 1))}
                       disabled={searchPage === totalSearchPages}
-                      className="text-xs sm:text-sm"
+                      className="text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
                     >
                       Next
                     </Button>
                   </div>
-                ) : (
-                  <div></div>
-                )}
+                </div>
 
                 {/* Search Results - Grid Layout */}
                 {paginatedSearchResults.length > 0 ? (
-                  <div className="flex-1 overflow-hidden min-h-0">
-                    <div ref={searchContainerRef} className="grid gap-4 h-full" style={{ gridAutoRows: 'min-content' }}>
+                  <div className="flex-1 overflow-hidden min-h-0 w-full">
+                    <div ref={searchContainerRef} className="grid gap-3 sm:gap-4 h-full w-full" style={{ gridAutoRows: 'min-content' }}>
                       {paginatedSearchResults.map((result) => {
                         const alreadyInList = isInGamesList(result.externalId);
                         const itemPlayed = isPlayed(result.externalId);
@@ -253,38 +228,67 @@ function GamesContent() {
             )}
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="flex flex-col flex-1 min-h-0 space-y-4">
+            {/* Pagination Controls - Always show, same row as header */}
+            <div className="flex items-center justify-between min-h-[32px] sm:min-h-[36px] flex-shrink-0">
+              <div></div>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleListPageChange(Math.max(1, listPage - 1))}
+                  disabled={listPage === 1}
+                  className="text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
+                >
+                  Previous
+                </Button>
+                <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap px-1">
+                  Page {listPage} of {totalListPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleListPageChange(Math.min(totalListPages, listPage + 1))}
+                  disabled={listPage === totalListPages}
+                  className="text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+
+            {/* Plan to Play Games - Grid Layout */}
             {listLoading ? (
-              <div className="space-y-8">
-                {Array.from({ length: 2 }).map((_, i) => (
-                  <div key={i} className="space-y-4">
-                    <Skeleton className="h-8 w-48 rounded-lg" />
-                    <div className="flex gap-4 overflow-hidden">
-                      {Array.from({ length: 8 }).map((_, j) => (
-                        <CardSkeleton key={j} />
-                      ))}
+              <div className="flex-1 overflow-hidden min-h-0 w-full">
+                <div ref={listContainerRef} className="grid gap-3 sm:gap-4 h-full w-full" style={{ gridAutoRows: 'min-content' }}>
+                  {Array.from({ length: listItemsPerPage || 18 }).map((_, i) => (
+                    <div key={i} style={{ width: 'var(--item-width, 200px)' }}>
+                      <CardSkeleton />
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              </div>
+            ) : paginatedPlanToPlayGames.length > 0 ? (
+              <div className="flex-1 overflow-hidden min-h-0 w-full">
+                <div ref={listContainerRef} className="grid gap-3 sm:gap-4 h-full w-full" style={{ gridAutoRows: 'min-content' }}>
+                  {paginatedPlanToPlayGames.map((item) => (
+                    <div key={item.id} style={{ width: 'var(--item-width, 200px)' }}>
+                      <GameCard
+                        item={item}
+                        onDelete={() => deleteMutation.mutate(item.id)}
+                        onMarkPlayed={() => markPlayedMutation.mutate({ id: item.id })}
+                        onMarkPlaying={() => markPlayingMutation.mutate({ id: item.id })}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : planToPlayGames.length > 0 ? (
-              <>
-                {/* Main Games Section */}
-                {randomizedGames.length > 0 && (
-                  <Carousel title="Plan to Play" icon={<ListVideo className="h-4 w-4" />}>
-                    {randomizedGames.map((item) => (
-                      <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 200px)' }}>
-                        <GameCard
-                          item={item}
-                          onDelete={() => deleteMutation.mutate(item.id)}
-                          onMarkPlayed={() => markPlayedMutation.mutate({ id: item.id })}
-                          onMarkPlaying={() => markPlayingMutation.mutate({ id: item.id })}
-                        />
-                      </div>
-                    ))}
-                  </Carousel>
-                )}
-              </>
+              <Card>
+                <CardContent className="p-12 text-center text-muted-foreground">
+                  <p>No games found on this page</p>
+                </CardContent>
+              </Card>
             ) : (
               <Card>
                 <CardContent className="p-12 text-center text-muted-foreground space-y-4">

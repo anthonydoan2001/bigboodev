@@ -32,39 +32,55 @@ export function useViewportGrid({
       const containerWidth = containerRef.current.clientWidth;
       if (containerWidth === 0) return;
       
+      // Responsive breakpoints
+      const isMobile = containerWidth < 640; // sm breakpoint
+      const isTablet = containerWidth >= 640 && containerWidth < 1024; // md breakpoint
+      
+      // Responsive gap based on screen size
+      const responsiveGap = isMobile ? 12 : isTablet ? 14 : gap;
+      
+      // Responsive card sizes based on screen size
+      const responsiveMinWidth = isMobile ? Math.min(minCardWidth, 140) : isTablet ? Math.min(minCardWidth, 200) : minCardWidth;
+      const responsiveMaxWidth = isMobile ? Math.min(maxCardWidth, 220) : isTablet ? Math.min(maxCardWidth, 400) : maxCardWidth;
+      
+      // Responsive header/footer heights for mobile
+      const responsiveHeaderHeight = isMobile ? Math.max(headerHeight - 40, 120) : headerHeight;
+      const responsiveFooterHeight = isMobile ? Math.max(footerHeight - 20, 60) : footerHeight;
+      
       // Calculate available viewport height
       const viewportHeight = window.innerHeight;
-      const availableHeight = viewportHeight - headerHeight - footerHeight;
+      const availableHeight = viewportHeight - responsiveHeaderHeight - responsiveFooterHeight;
       
       // Calculate how many columns fit
-      const maxItemsWithMaxWidth = Math.floor((containerWidth + gap) / (maxCardWidth + gap));
-      const maxItemsWithMinWidth = Math.floor((containerWidth + gap) / (minCardWidth + gap));
+      const maxItemsWithMaxWidth = Math.floor((containerWidth + responsiveGap) / (responsiveMaxWidth + responsiveGap));
+      const maxItemsWithMinWidth = Math.floor((containerWidth + responsiveGap) / (responsiveMinWidth + responsiveGap));
       
       // Find optimal column count (prefer larger cards)
       let targetColumns = Math.max(1, maxItemsWithMaxWidth);
       
       if (maxItemsWithMinWidth > maxItemsWithMaxWidth) {
-        // Try to find sweet spot around 160-200px width
-        const preferredWidth = 180;
-        const preferredItems = Math.floor((containerWidth + gap) / (preferredWidth + gap));
+        // Try to find sweet spot - responsive preferred width
+        const preferredWidth = isMobile ? 160 : isTablet ? 250 : 300;
+        const preferredItems = Math.floor((containerWidth + responsiveGap) / (preferredWidth + responsiveGap));
         if (preferredItems > 0) {
           targetColumns = preferredItems;
         }
       }
       
       // Calculate card width
-      const totalGaps = gap * (targetColumns - 1);
+      const totalGaps = responsiveGap * (targetColumns - 1);
       let calculatedWidth = Math.floor((containerWidth - totalGaps) / targetColumns);
-      calculatedWidth = Math.max(minCardWidth, Math.min(maxCardWidth, calculatedWidth));
+      calculatedWidth = Math.max(responsiveMinWidth, Math.min(responsiveMaxWidth, calculatedWidth));
       
       // Calculate card height based on aspect ratio
       const cardImageHeight = calculatedWidth * cardAspectRatio;
       // Total card height includes image + text below
-      const totalCardHeight = cardImageHeight + textHeightBelowCard;
+      const responsiveTextHeight = isMobile ? Math.max(textHeightBelowCard - 10, 50) : textHeightBelowCard;
+      const totalCardHeight = cardImageHeight + responsiveTextHeight;
       
       // Calculate how many rows fit in available height
-      const rowHeight = totalCardHeight + gap;
-      const maxRows = Math.floor((availableHeight + gap) / rowHeight);
+      const rowHeight = totalCardHeight + responsiveGap;
+      const maxRows = Math.floor((availableHeight + responsiveGap) / rowHeight);
       const targetRows = Math.max(1, maxRows);
       
       // Calculate items per page
@@ -78,7 +94,10 @@ export function useViewportGrid({
       // Set CSS variables
       if (containerRef.current) {
         containerRef.current.style.setProperty('--item-width', `${calculatedWidth}px`);
-        containerRef.current.style.setProperty('grid-template-columns', `repeat(${targetColumns}, ${calculatedWidth}px)`);
+        // Use auto-fill with calculated width to allow wrapping to next row when needed
+        // Cards will maintain consistent size and wrap automatically if they don't fit
+        containerRef.current.style.setProperty('grid-template-columns', `repeat(auto-fill, minmax(${calculatedWidth}px, ${calculatedWidth}px))`);
+        containerRef.current.style.setProperty('gap', `${responsiveGap}px`);
       }
     };
 
