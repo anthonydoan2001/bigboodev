@@ -18,14 +18,53 @@ export function useGridCardWidth({
   const [columns, setColumns] = useState(6);
 
   useEffect(() => {
+    // Set CSS Grid fallback immediately for initial layout
+    const setCSSFallback = () => {
+      if (!containerRef.current) return;
+      
+      // Get responsive min width for fallback
+      const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
+      const isMobile = windowWidth < 640;
+      const isTablet = windowWidth >= 640 && windowWidth < 1024;
+      const fallbackMinWidth = isMobile ? 120 : isTablet ? 150 : Math.min(minWidth, 200);
+      
+      // Set CSS Grid fallback that will work immediately
+      containerRef.current.style.setProperty(
+        'grid-template-columns',
+        `repeat(auto-fill, minmax(${fallbackMinWidth}px, 1fr))`
+      );
+    };
+
     const calculateWidth = () => {
       if (!containerRef.current) return;
       
       // Check if container has children before calculating
       if (containerRef.current.children.length === 0) return;
       
-      const containerWidth = containerRef.current.clientWidth;
-      if (containerWidth === 0) return;
+      // Check multiple width sources for more reliable measurement
+      const rect = containerRef.current.getBoundingClientRect();
+      const clientWidth = containerRef.current.clientWidth;
+      const offsetWidth = containerRef.current.offsetWidth;
+      
+      // Use the largest valid width (offsetWidth is most reliable for flex containers)
+      let containerWidth = Math.max(rect.width, clientWidth, offsetWidth);
+      
+      // Wait for container to have a reasonable width
+      if (containerWidth < 200) {
+        const parent = containerRef.current.parentElement;
+        if (parent) {
+          const parentRect = parent.getBoundingClientRect();
+          const parentOffsetWidth = parent.offsetWidth;
+          const parentWidth = Math.max(parentRect.width, parent.clientWidth, parentOffsetWidth);
+          if (parentWidth > containerWidth && parentWidth >= 200) {
+            containerWidth = parentWidth;
+          }
+        }
+        
+        if (containerWidth < 200) {
+          return;
+        }
+      }
       
       // Use same calculation logic as carousel
       // Calculate how many items can fit with maximum width (prefer larger items)
@@ -68,23 +107,79 @@ export function useGridCardWidth({
       }
     };
 
-    // Initial calculation
-    const timeoutId = setTimeout(calculateWidth, 0);
+    // Check if container width is stable before calculating
+    const checkStabilityAndCalculate = () => {
+      if (!containerRef.current) return;
+      if (containerRef.current.children.length === 0) return;
+      
+      const width1 = Math.max(
+        containerRef.current.getBoundingClientRect().width,
+        containerRef.current.clientWidth,
+        containerRef.current.offsetWidth
+      );
+      
+      // Check again after a short delay to ensure width is stable
+      setTimeout(() => {
+        if (!containerRef.current) return;
+        
+        const width2 = Math.max(
+          containerRef.current.getBoundingClientRect().width,
+          containerRef.current.clientWidth,
+          containerRef.current.offsetWidth
+        );
+        
+        // If width is stable (within 5px), proceed with calculation
+        if (Math.abs(width1 - width2) < 5 && width1 >= 200) {
+          calculateWidth();
+        } else if (width1 < 200 || Math.abs(width1 - width2) >= 5) {
+          // Width is still changing or too small, retry
+          setTimeout(checkStabilityAndCalculate, 100);
+        }
+      }, 50);
+    };
 
     // Use ResizeObserver for responsive updates
-    const resizeObserver = new ResizeObserver(calculateWidth);
+    const resizeObserver = new ResizeObserver(() => {
+      requestAnimationFrame(() => {
+        calculateWidth();
+      });
+    });
     
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current);
-    }
+    // Set CSS fallback immediately and whenever container becomes available
+    const setupFallbackAndObserver = () => {
+      if (containerRef.current) {
+        setCSSFallback();
+        
+        if (!containerRef.current.dataset.observed) {
+          resizeObserver.observe(containerRef.current);
+          containerRef.current.dataset.observed = 'true';
+        }
+      }
+    };
+    
+    // Set up fallback and observer immediately and after delays
+    setupFallbackAndObserver();
+    setTimeout(setupFallbackAndObserver, 0);
+    setTimeout(setupFallbackAndObserver, 50);
+    setTimeout(setupFallbackAndObserver, 150);
+
+    // Initial calculation with stability check
+    const timeouts: NodeJS.Timeout[] = [];
+    timeouts.push(setTimeout(() => requestAnimationFrame(checkStabilityAndCalculate), 0));
+    timeouts.push(setTimeout(() => requestAnimationFrame(checkStabilityAndCalculate), 100));
+    timeouts.push(setTimeout(() => requestAnimationFrame(checkStabilityAndCalculate), 250));
+    timeouts.push(setTimeout(() => requestAnimationFrame(checkStabilityAndCalculate), 500));
 
     // Fallback to window resize
-    window.addEventListener('resize', calculateWidth);
+    const handleResize = () => {
+      requestAnimationFrame(calculateWidth);
+    };
+    window.addEventListener('resize', handleResize);
 
     return () => {
-      clearTimeout(timeoutId);
+      timeouts.forEach(timeout => clearTimeout(timeout));
       resizeObserver.disconnect();
-      window.removeEventListener('resize', calculateWidth);
+      window.removeEventListener('resize', handleResize);
     };
   }, [gap, minWidth, maxWidth, recalculateTrigger]);
 
@@ -94,8 +189,30 @@ export function useGridCardWidth({
       const calculateWidth = () => {
         if (!containerRef.current) return;
         
-        const containerWidth = containerRef.current.clientWidth;
-        if (containerWidth === 0) return;
+        // Check multiple width sources for more reliable measurement
+        const rect = containerRef.current.getBoundingClientRect();
+        const clientWidth = containerRef.current.clientWidth;
+        const offsetWidth = containerRef.current.offsetWidth;
+        
+        // Use the largest valid width (offsetWidth is most reliable for flex containers)
+        let containerWidth = Math.max(rect.width, clientWidth, offsetWidth);
+        
+        // Wait for container to have a reasonable width
+        if (containerWidth < 200) {
+          const parent = containerRef.current.parentElement;
+          if (parent) {
+            const parentRect = parent.getBoundingClientRect();
+            const parentOffsetWidth = parent.offsetWidth;
+            const parentWidth = Math.max(parentRect.width, parent.clientWidth, parentOffsetWidth);
+            if (parentWidth > containerWidth && parentWidth >= 200) {
+              containerWidth = parentWidth;
+            }
+          }
+          
+          if (containerWidth < 200) {
+            return;
+          }
+        }
         
         const maxItemsWithMaxWidth = Math.floor((containerWidth + gap) / (maxWidth + gap));
         const maxItemsWithMinWidth = Math.floor((containerWidth + gap) / (minWidth + gap));
