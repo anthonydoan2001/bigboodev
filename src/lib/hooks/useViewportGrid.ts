@@ -31,7 +31,7 @@ export function useViewportGrid({
   useEffect(() => {
     // Calculate a better initial estimate based on viewport
     const getInitialEstimate = () => {
-      if (typeof window === 'undefined') return { minWidth: 200, maxWidth: 280, gap: 16 };
+      if (typeof window === 'undefined') return { minWidth: 200, maxWidth: 280, gap: 16, preferredWidth: 200 };
       
       const windowWidth = window.innerWidth;
       const isMobile = windowWidth < 640;
