@@ -43,6 +43,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 's3.coinmarketcap.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'media.rawg.io',
+      },
     ],
   },
 };

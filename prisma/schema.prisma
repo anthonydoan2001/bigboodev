@@ -84,3 +84,36 @@ model TopItem {
   @@index([lastUpdated])
   @@map("top_items")
 }
+
+model Game {
+  id          String   @id @default(cuid())
+  title       String
+  status      String   @default("PLAN_TO_PLAY")
+  externalId  String   @map("external_id")
+  imageUrl    String?  @map("image_url")
+  rating      Float?
+  released    String?  // Release date as string (YYYY-MM-DD format)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([externalId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("games")
+}
+
+model TopGame {
+  id          String   @id
+  title       String
+  imageUrl    String   @map("image_url")
+  rating      Float
+  released    String?  // Release date as string (YYYY-MM-DD format)
+  externalId  Int      @map("external_id")
+  lastUpdated DateTime @default(now()) @map("last_updated")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([externalId])
+  @@index([lastUpdated])
+  @@map("top_games")
+}
