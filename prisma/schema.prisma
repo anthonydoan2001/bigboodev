@@ -117,3 +117,17 @@ model TopGame {
   @@index([lastUpdated])
   @@map("top_games")
 }
+
+model ApiUsage {
+  id          String   @id @default(cuid())
+  apiName     String   @map("api_name") // 'finnhub', 'coinmarketcap', 'rawg', 'tmdb', 'jikan', 'espn', 'openweather'
+  endpoint    String?  // Optional endpoint path
+  timestamp   DateTime @default(now())
+  success     Boolean  @default(true)
+  statusCode  Int?     @map("status_code")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([apiName, timestamp])
+  @@index([timestamp])
+  @@map("api_usage")
+}

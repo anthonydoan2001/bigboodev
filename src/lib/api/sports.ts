@@ -95,6 +95,13 @@ export async function fetchScores(sport: SportType, date?: Date): Promise<GameSc
       },
     });
 
+    const isSuccess = response.ok && response.status !== 429;
+    await trackApiUsage('espn', {
+      endpoint: `/${path}/scoreboard`,
+      success: isSuccess,
+      statusCode: response.status,
+    });
+
     if (!response.ok) {
       console.error(`ESPN API error: ${response.status} ${response.statusText}`);
       throw new Error(`ESPN API returned ${response.status}`);

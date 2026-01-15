@@ -25,11 +25,20 @@ export interface AnimeSearchResponse {
   };
 }
 
+import { trackApiUsage } from '@/lib/api-usage';
+
 const JIKAN_BASE_URL = 'https://api.jikan.moe/v4';
 
 export async function searchAnime(query: string): Promise<AnimeSearchResult[]> {
   try {
     const response = await fetch(`${JIKAN_BASE_URL}/anime?q=${encodeURIComponent(query)}&limit=10`);
+
+    const isSuccess = response.ok && response.status !== 429;
+    await trackApiUsage('jikan', {
+      endpoint: '/anime',
+      success: isSuccess,
+      statusCode: response.status,
+    });
 
     if (!response.ok) {
       throw new Error('Failed to search anime');
