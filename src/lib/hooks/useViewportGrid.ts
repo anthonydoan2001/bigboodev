@@ -26,11 +26,51 @@ export function useViewportGrid({
   const [itemsPerPage, setItemsPerPage] = useState(18);
 
   useEffect(() => {
+    // Set CSS Grid fallback immediately for initial layout
+    const setCSSFallback = () => {
+      if (!containerRef.current) return;
+      
+      // Get responsive min width for fallback
+      const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 1024;
+      const isMobile = windowWidth < 640;
+      const isTablet = windowWidth >= 640 && windowWidth < 1024;
+      const fallbackMinWidth = isMobile ? 140 : isTablet ? 200 : Math.min(minCardWidth, 280);
+      
+      // Set CSS Grid fallback that will work immediately
+      containerRef.current.style.setProperty(
+        'grid-template-columns',
+        `repeat(auto-fill, minmax(${fallbackMinWidth}px, 1fr))`
+      );
+    };
+
     const calculateGrid = () => {
       if (!containerRef.current) return;
       
-      const containerWidth = containerRef.current.clientWidth;
-      if (containerWidth === 0) return;
+      // Check multiple width sources for more reliable measurement
+      const rect = containerRef.current.getBoundingClientRect();
+      const clientWidth = containerRef.current.clientWidth;
+      const offsetWidth = containerRef.current.offsetWidth;
+      
+      // Use the largest valid width (offsetWidth is most reliable for flex containers)
+      let containerWidth = Math.max(rect.width, clientWidth, offsetWidth);
+      
+      // If container width is still too small, try to get a better measurement
+      if (containerWidth < 200) {
+        const parent = containerRef.current.parentElement;
+        if (parent) {
+          const parentRect = parent.getBoundingClientRect();
+          const parentOffsetWidth = parent.offsetWidth;
+          const parentWidth = Math.max(parentRect.width, parent.clientWidth, parentOffsetWidth);
+          if (parentWidth > containerWidth && parentWidth >= 200) {
+            containerWidth = parentWidth;
+          }
+        }
+        
+        // If still too small, wait for proper sizing
+        if (containerWidth < 200) {
+          return;
+        }
+      }
       
       // Responsive breakpoints
       const isMobile = containerWidth < 640; // sm breakpoint
@@ -91,7 +131,7 @@ export function useViewportGrid({
       setRows(targetRows);
       setItemsPerPage(totalItems);
       
-      // Set CSS variables
+      // Set CSS variables and fine-tune grid
       if (containerRef.current) {
         containerRef.current.style.setProperty('--item-width', `${calculatedWidth}px`);
         // Use auto-fill with calculated width to allow wrapping to next row when needed
@@ -101,23 +141,96 @@ export function useViewportGrid({
       }
     };
 
-    // Initial calculation
-    const timeoutId = setTimeout(calculateGrid, 0);
+    // Check if container width is stable before calculating
+    const checkStabilityAndCalculate = () => {
+      if (!containerRef.current) return;
+      
+      const width1 = Math.max(
+        containerRef.current.getBoundingClientRect().width,
+        containerRef.current.clientWidth,
+        containerRef.current.offsetWidth
+      );
+      
+      // Check again after a short delay to ensure width is stable
+      setTimeout(() => {
+        if (!containerRef.current) return;
+        
+        const width2 = Math.max(
+          containerRef.current.getBoundingClientRect().width,
+          containerRef.current.clientWidth,
+          containerRef.current.offsetWidth
+        );
+        
+        // If width is stable (within 5px), proceed with calculation
+        if (Math.abs(width1 - width2) < 5 && width1 >= 200) {
+          calculateGrid();
+        } else if (width1 < 200 || Math.abs(width1 - width2) >= 5) {
+          // Width is still changing or too small, retry
+          setTimeout(checkStabilityAndCalculate, 100);
+        }
+      }, 50);
+    };
 
     // Use ResizeObserver for responsive updates
-    const resizeObserver = new ResizeObserver(calculateGrid);
+    const resizeObserver = new ResizeObserver(() => {
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        calculateGrid();
+      });
+    });
     
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current);
-    }
+    // Set CSS fallback immediately and whenever container becomes available
+    const setupFallbackAndObserver = () => {
+      if (containerRef.current) {
+        setCSSFallback();
+        
+        if (!containerRef.current.dataset.observed) {
+          resizeObserver.observe(containerRef.current);
+          containerRef.current.dataset.observed = 'true';
+        }
+      }
+    };
+    
+    // Set up fallback and observer immediately and after delays
+    setupFallbackAndObserver();
+    setTimeout(setupFallbackAndObserver, 0);
+    setTimeout(setupFallbackAndObserver, 50);
+    setTimeout(setupFallbackAndObserver, 150);
+
+    // Initial calculation with stability check
+    // This ensures the grid calculates only when container has stable dimensions
+    const timeouts: NodeJS.Timeout[] = [];
+    
+    // Try immediately with stability check
+    timeouts.push(setTimeout(() => {
+      requestAnimationFrame(checkStabilityAndCalculate);
+    }, 0));
+    
+    // Retry after a short delay
+    timeouts.push(setTimeout(() => {
+      requestAnimationFrame(checkStabilityAndCalculate);
+    }, 100));
+    
+    // Retry after a longer delay (for slow renders)
+    timeouts.push(setTimeout(() => {
+      requestAnimationFrame(checkStabilityAndCalculate);
+    }, 250));
+    
+    // Retry after layout is likely complete
+    timeouts.push(setTimeout(() => {
+      requestAnimationFrame(checkStabilityAndCalculate);
+    }, 500));
 
     // Listen to window resize for viewport changes
-    window.addEventListener('resize', calculateGrid);
+    const handleResize = () => {
+      requestAnimationFrame(calculateGrid);
+    };
+    window.addEventListener('resize', handleResize);
 
     return () => {
-      clearTimeout(timeoutId);
+      timeouts.forEach(timeout => clearTimeout(timeout));
       resizeObserver.disconnect();
-      window.removeEventListener('resize', calculateGrid);
+      window.removeEventListener('resize', handleResize);
     };
   }, [gap, minCardWidth, maxCardWidth, cardAspectRatio, headerHeight, footerHeight, textHeightBelowCard]);
 
