@@ -13,14 +13,17 @@ import { GamesNav } from '@/components/games/GamesNav';
 import { useGames } from '@/lib/hooks/useGames';
 import { useGamesMutations } from '@/lib/hooks/useGamesMutations';
 import { useQuery } from '@tanstack/react-query';
-import { ListVideo } from 'lucide-react';
-import { Suspense, useMemo } from 'react';
+import { ListVideo, RefreshCw } from 'lucide-react';
+import { Suspense, useMemo, useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
 
 function TopContent() {
   const { planToPlayGames, playedGames, playingGames, allGames, isLoading: gamesLoading } = useGames();
   const { addMutation, deleteMutation, markPlayingMutation, markPlayedMutation } = useGamesMutations();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hasTriedRefresh, setHasTriedRefresh] = useState(false);
 
-  const { data: topData, isLoading: topLoading } = useQuery<{ results: TopGame[] }>({
+  const { data: topData, isLoading: topLoading, refetch } = useQuery<{ results: TopGame[] }>({
     queryKey: ['top-games'],
     queryFn: async () => {
       const { getAuthHeaders } = await import('@/lib/api-client');
@@ -33,6 +36,33 @@ function TopContent() {
     },
     staleTime: 30 * 60 * 1000, // Cache for 30 minutes
   });
+
+  // Auto-trigger refresh if no data and haven't tried yet
+  useEffect(() => {
+    if (!topLoading && topData && (!topData.results || topData.results.length === 0) && !hasTriedRefresh) {
+      handleRefresh();
+    }
+  }, [topLoading, topData, hasTriedRefresh]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    setHasTriedRefresh(true);
+    try {
+      const { getAuthHeaders } = await import('@/lib/api-client');
+      await fetch('/api/games/top/refresh?force=true', {
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      });
+      // Refetch top games after refresh
+      setTimeout(() => {
+        refetch();
+        setIsRefreshing(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to refresh top games:', error);
+      setIsRefreshing(false);
+    }
+  };
 
   // Helper to check if item is in games list
   const isInGamesList = (externalId: number) => {
@@ -168,8 +198,17 @@ function TopContent() {
           </div>
         ) : (
           <Card>
-            <CardContent className="p-12 text-center text-muted-foreground">
-              <p>Failed to load top games</p>
+            <CardContent className="p-12 text-center text-muted-foreground space-y-4">
+              <p>No top games available</p>
+              <Button
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                variant="outline"
+                size="sm"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Refreshing...' : 'Refresh Top Games'}
+              </Button>
             </CardContent>
           </Card>
         )}
