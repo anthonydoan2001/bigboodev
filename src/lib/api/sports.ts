@@ -1,4 +1,5 @@
 import { SportType, GameScore, TopPerformer } from '@/types/sports';
+import { trackApiUsage } from '@/lib/api-usage';
 
 const ESPN_BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports';
 
