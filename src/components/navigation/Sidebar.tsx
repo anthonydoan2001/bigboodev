@@ -42,29 +42,41 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className={cn(
-        "fixed left-0 top-0 h-screen border-r bg-card/80 backdrop-blur-md transition-all duration-300 ease-in-out z-40",
-        isCollapsed ? "w-[70px]" : "w-64"
-      )}>
+      <aside
+        className={cn(
+          "fixed left-0 top-0 h-screen border-r bg-card/80 backdrop-blur-md z-40",
+          "transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
+          isCollapsed ? "w-[70px]" : "w-64"
+        )}
+        style={{
+          willChange: isCollapsed ? 'auto' : 'width'
+        }}
+      >
         <div className="flex h-full flex-col">
           {/* Logo/Brand */}
           <div className={cn(
-            "flex h-16 items-center transition-all duration-300",
+            "flex h-16 items-center transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
             isCollapsed ? "justify-center" : "justify-between px-6"
           )}>
-            {!isCollapsed && (
-              <h1 className="text-title bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            <div className={cn(
+              "overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
+              isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
+            )}>
+              <h1 className="text-title bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent whitespace-nowrap">
                 bigboo.dev
               </h1>
-            )}
-            <div className={cn("transition-all duration-300", isCollapsed && "scale-90")}>
+            </div>
+            <div className={cn(
+              "transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
+              isCollapsed ? "scale-100" : "scale-100"
+            )}>
               <ThemeToggle />
             </div>
           </div>
 
           {/* Navigation */}
           <nav className="flex-1 space-y-2 p-3">
-            {navItems.map((item) => {
+            {navItems.map((item, index) => {
               // Special handling for watchlist to match sub-routes
               const isActive = item.href === '/watchlist'
                 ? pathname.startsWith('/watchlist')
@@ -76,24 +88,40 @@ export function Sidebar() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-3 rounded-xl px-3 py-3 text-body-sm font-medium transition-all duration-200 group relative overflow-hidden',
+                    'flex items-center gap-3 rounded-xl py-3 text-body-sm font-medium group relative',
+                    'transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]',
                     isActive
                       ? 'bg-primary/10 text-primary hover:bg-primary/15'
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
-                    isCollapsed ? 'justify-center px-0 w-10 mx-auto' : 'px-3 w-full'
+                    isCollapsed ? 'w-10 mx-auto' : 'w-full mx-3'
                   )}
+                  style={{
+                    transitionDelay: isCollapsed ? '0ms' : `${index * 30}ms`
+                  }}
                   title={isCollapsed ? item.name : undefined}
                 >
                   {isActive && !isCollapsed && (
-                    <div className="absolute left-0 top-0 h-full w-1 bg-primary rounded-r-full" />
+                    <div
+                      className="absolute left-0 top-0 h-full w-1 bg-primary rounded-r-full transition-opacity duration-300"
+                      style={{
+                        transitionDelay: '100ms'
+                      }}
+                    />
                   )}
-                  <Icon className={cn(
-                    "h-5 w-5 flex-shrink-0 transition-transform duration-200",
-                    isCollapsed ? "group-hover:scale-110" : "mr-1"
-                  )} />
+                  <div className={cn(
+                    "flex items-center justify-center flex-shrink-0",
+                    isCollapsed ? "w-10" : "w-5 ml-3"
+                  )}>
+                    <Icon className={cn(
+                      "h-5 w-5",
+                      "transition-all duration-300 ease-out",
+                      isCollapsed ? "scale-110 group-hover:scale-125 group-hover:rotate-3" : "scale-100"
+                    )} />
+                  </div>
                   <span className={cn(
-                    "transition-all duration-300 overflow-hidden whitespace-nowrap",
-                    isCollapsed ? "w-0 opacity-0 hidden" : "w-auto opacity-100 block"
+                    "overflow-hidden whitespace-nowrap",
+                    "transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
+                    isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
                   )}>
                     {item.name}
                   </span>
@@ -110,15 +138,29 @@ export function Sidebar() {
         size="icon"
         onClick={toggleSidebar}
         className={cn(
-          "fixed top-1/2 -translate-y-1/2 z-50 h-8 w-8 rounded-full border bg-background shadow-lg transition-all duration-300 ease-in-out hover:bg-accent text-muted-foreground hover:text-foreground",
+          "fixed top-1/2 -translate-y-1/2 z-50 h-8 w-8 rounded-full border bg-background shadow-lg",
+          "transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
+          "hover:bg-accent hover:scale-110 hover:shadow-xl active:scale-95",
+          "text-muted-foreground hover:text-foreground",
           isCollapsed ? "left-[54px]" : "left-[240px]"
         )}
       >
-        {isCollapsed ? (
-          <ChevronRight className="h-4 w-4" />
-        ) : (
-          <ChevronLeft className="h-4 w-4" />
-        )}
+        <div className="relative w-4 h-4">
+          <ChevronRight
+            className={cn(
+              "absolute inset-0 h-4 w-4",
+              "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
+              isCollapsed ? "rotate-0 opacity-100 scale-100" : "rotate-180 opacity-0 scale-50"
+            )}
+          />
+          <ChevronLeft
+            className={cn(
+              "absolute inset-0 h-4 w-4",
+              "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
+              isCollapsed ? "rotate-180 opacity-0 scale-50" : "rotate-0 opacity-100 scale-100"
+            )}
+          />
+        </div>
       </Button>
     </>
   );

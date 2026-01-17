@@ -8,10 +8,10 @@ import { withAuthOrCron } from '@/lib/api-auth';
  * 1. Fetches CoinMarketCap IDs (if needed)
  * 2. Fetches metadata (logos, names)
  * 3. Fetches quotes (prices, changes)
- * 
+ *
  * Should be run every 5 minutes
  */
-export const GET = withAuthOrCron(async () => {
+async function handleRefresh(request: Request, auth: { type: 'session' | 'cron'; token: string }) {
   try {
     // Step 1: Get or create ID mappings
     const existingIds = await db.cryptoQuote.findMany({
@@ -146,4 +146,9 @@ export const GET = withAuthOrCron(async () => {
       { status: 500 }
     );
   }
-});
+}
+
+// Export with auth in production, bypass in development
+export const GET = process.env.NODE_ENV === 'development'
+  ? async (request: Request) => handleRefresh(request, { type: 'cron', token: 'dev' })
+  : withAuthOrCron(handleRefresh);

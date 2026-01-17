@@ -6,29 +6,24 @@ import { withAuthOrCron } from '@/lib/api-auth';
 /**
  * API route to refresh stock quotes from Finnhub API
  * This should be called by a cron job or scheduled task
- * 
+ *
  * Refresh frequency:
  * - During market hours (9:30 AM - 4:00 PM ET, Mon-Fri): Every 5 minutes
  * - Outside market hours: Every hour
  */
-export const GET = withAuthOrCron(async (request: Request) => {
+async function handleRefresh(request: Request, auth: { type: 'session' | 'cron'; token: string }) {
   try {
-    const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-    
-    // Verify cron secret if set (for Vercel Cron)
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Auth is handled by wrapper or bypassed in dev mode
 
     // Check for force parameter (for manual testing)
     const url = new URL(request.url);
     const force = url.searchParams.get('force') === 'true';
 
-    // Check if we should refresh based on market hours
-    // Always refresh if no data exists, force is true, or follow market hours logic
+    // If called by cron, always refresh (cron handles scheduling)
+    // Otherwise, check if we should refresh based on market hours
+    const isCronCall = auth.type === 'cron';
     const hasData = await db.stockQuote.count() > 0;
-    const shouldRefresh = force || !hasData || isMarketHours() || await shouldRefreshOutsideMarketHours();
+    const shouldRefresh = isCronCall || force || !hasData || isMarketHours() || await shouldRefreshOutsideMarketHours();
     
     if (!shouldRefresh) {
       return NextResponse.json({
@@ -121,7 +116,7 @@ export const GET = withAuthOrCron(async (request: Request) => {
       { status: 500 }
     );
   }
-});
+}
 
 /**
  * Check if we should refresh outside market hours
@@ -142,3 +137,8 @@ async function shouldRefreshOutsideMarketHours(): Promise<boolean> {
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
   return latestQuote.lastUpdated < oneHourAgo;
 }
+
+// Export with auth in production, bypass in development
+export const GET = process.env.NODE_ENV === 'development'
+  ? async (request: Request) => handleRefresh(request, { type: 'cron', token: 'dev' })
+  : withAuthOrCron(handleRefresh);
