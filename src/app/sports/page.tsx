@@ -6,7 +6,7 @@ import { ScoreCardSkeleton } from '@/components/sports/ScoreCardSkeleton';
 import { SportFilter } from '@/components/sports/SportFilter';
 import { TopPerformersView } from '@/components/sports/TopPerformersView';
 import { TopPerformersSkeleton } from '@/components/sports/TopPerformersSkeleton';
-import { ScheduleView } from '@/components/sports/ScheduleView';
+import { PlayoffBracket } from '@/components/sports/PlayoffBracket';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { autoFavoriteHoustonGames, getFavorites, isHoustonGame, toggleFavorite as toggleFavoriteInStorage } from '@/lib/favorites';
@@ -286,7 +286,7 @@ export default function SportsPage() {
               )}
               {showUpcomingGames && (
                 <TabsTrigger value="upcoming" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                  Upcoming Games
+                  Playoff Bracket
                 </TabsTrigger>
               )}
             </TabsList>
@@ -373,12 +373,12 @@ export default function SportsPage() {
                     <Card>
                       <CardContent className="p-6">
                         <div className="text-center text-destructive">
-                          Error loading upcoming playoff games. Please try again.
+                          Error loading playoff bracket. Please try again.
                         </div>
                       </CardContent>
                     </Card>
                   ) : (
-                    <ScheduleView games={upcomingGames || []} />
+                    <PlayoffBracket games={upcomingGames || []} />
                   )}
                 </div>
               </TabsContent>
