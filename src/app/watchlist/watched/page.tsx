@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useMemo, Suspense } from 'react';
+import { useMemo, Suspense, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -43,6 +43,16 @@ function WatchedContent() {
   }, [filteredWatchedItems, page, itemsPerPage]);
 
   const totalPages = Math.ceil(filteredWatchedItems.length / itemsPerPage);
+
+  // Adjust page when itemsPerPage changes (e.g., on window resize)
+  useEffect(() => {
+    if (totalPages > 0 && page > totalPages) {
+      // Current page is invalid, redirect to last valid page
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('page', totalPages.toString());
+      router.replace(`/watchlist/watched?${params.toString()}`);
+    }
+  }, [itemsPerPage, totalPages, page, searchParams, router]);
 
   const handleFilterChange = (newFilter: 'all' | 'anime' | 'movie' | 'show') => {
     const params = new URLSearchParams();
@@ -131,14 +141,13 @@ function WatchedContent() {
 
           {/* Watched Results - Grid Layout */}
           {isLoading ? (
-            <div className="flex-1 overflow-hidden min-h-0 w-full">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 w-full pb-4">
               <div 
                 ref={containerRef} 
-                className="grid watchlist-grid gap-4 h-full w-full" 
+                className="grid watchlist-grid gap-4 w-full" 
                 style={{ 
                   gridAutoRows: 'min-content',
-                  width: '100%',
-                  gap: '16px'
+                  width: '100%'
                 }}
               >
                 {Array.from({ length: itemsPerPage || 18 }).map((_, i) => (
@@ -149,14 +158,13 @@ function WatchedContent() {
               </div>
             </div>
           ) : paginatedWatchedItems.length > 0 ? (
-            <div className="flex-1 overflow-hidden min-h-0 w-full">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 w-full pb-4">
               <div 
                 ref={containerRef} 
-                className="grid watchlist-grid gap-4 h-full w-full" 
+                className="grid watchlist-grid gap-4 w-full" 
                 style={{ 
                   gridAutoRows: 'min-content',
-                  width: '100%',
-                  gap: '16px'
+                  width: '100%'
                 }}
               >
                 {paginatedWatchedItems.map((item) => (

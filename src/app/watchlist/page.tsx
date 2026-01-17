@@ -265,6 +265,24 @@ function WatchlistContent() {
 
   const totalSearchPages = Math.ceil(filteredSearchResults.length / searchItemsPerPage);
 
+  // Adjust page when itemsPerPage changes (e.g., on window resize)
+  useEffect(() => {
+    if (totalSearchPages > 0 && searchPage > totalSearchPages) {
+      // Current page is invalid, redirect to last valid page
+      const params = new URLSearchParams();
+      // Always preserve search query
+      if (searchQuery) {
+        params.set('search', searchQuery);
+      }
+      // Preserve filter
+      if (searchFilter && searchFilter !== 'all') {
+        params.set('filter', searchFilter);
+      }
+      params.set('page', totalSearchPages.toString());
+      router.replace(`/watchlist?${params.toString()}`);
+    }
+  }, [searchItemsPerPage, totalSearchPages, searchPage, searchQuery, searchFilter, router]);
+
   const handleFilterChange = (newFilter: 'all' | 'anime' | 'movie' | 'show') => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('filter', newFilter);
@@ -381,15 +399,15 @@ function WatchlistContent() {
 
                 {/* Search Results - Grid Layout */}
                 {paginatedSearchResults.length > 0 ? (
-                  <div className="flex-1 overflow-hidden min-h-0">
-                    <div ref={searchContainerRef} className="grid gap-4 h-full" style={{ gridAutoRows: 'min-content' }}>
+                  <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 w-full pb-4">
+                    <div ref={searchContainerRef} className="grid watchlist-grid gap-4 w-full" style={{ gridAutoRows: 'min-content', width: '100%' }}>
                       {paginatedSearchResults.map((result) => {
                         const alreadyInList = isInWatchlist(result.externalId, result.type);
                         const itemWatched = isWatched(result.externalId, result.type);
                         const itemWatching = isWatching(result.externalId, result.type);
                         const itemId = getWatchlistItemId(result.externalId, result.type);
                         return (
-                          <div key={result.id} style={{ width: 'var(--item-width, 200px)' }}>
+                          <div key={result.id} style={{ width: '100%', minWidth: 0 }}>
                             <SearchResultCard
                               result={result}
                               onAdd={() => addMutation.mutate(result)}

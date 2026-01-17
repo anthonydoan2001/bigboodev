@@ -26,6 +26,7 @@ export function useViewportGrid({
   const [itemsPerPage, setItemsPerPage] = useState(18);
   const isCalculatingRef = useRef(false);
   const lastWidthRef = useRef(0);
+  const lastHeightRef = useRef(0);
   const hasInitializedRef = useRef(false);
 
   useEffect(() => {
@@ -74,7 +75,7 @@ export function useViewportGrid({
       containerRef.current.style.width = '100%';
     };
 
-    const calculateGrid = () => {
+    const calculateGrid = (forceRecalculate = false) => {
       if (!containerRef.current || isCalculatingRef.current) return;
       
       // Check multiple width sources for more reliable measurement
@@ -85,15 +86,24 @@ export function useViewportGrid({
       // Use the largest valid width (offsetWidth is most reliable for flex containers)
       let containerWidth = Math.max(rect.width, clientWidth, offsetWidth);
       
-      // Skip if width hasn't changed significantly (within 10px) to prevent unnecessary recalculations
-      // Also skip if we haven't initialized yet and width seems reasonable
-      if (Math.abs(containerWidth - lastWidthRef.current) < 10 && lastWidthRef.current > 0) {
+      // Get current viewport height to detect height changes
+      const currentHeight = typeof window !== 'undefined' ? window.innerHeight : 0;
+      
+      // Recalculate if width OR height changed significantly (within 10px threshold)
+      // This ensures itemsPerPage updates when viewport height changes
+      const widthChanged = Math.abs(containerWidth - lastWidthRef.current) >= 10;
+      const heightChanged = Math.abs(currentHeight - lastHeightRef.current) >= 10;
+      
+      // Skip only if BOTH width and height haven't changed significantly AND we've already initialized
+      // UNLESS forceRecalculate is true (used by window resize handler)
+      if (!forceRecalculate && !widthChanged && !heightChanged && lastWidthRef.current > 0 && hasInitializedRef.current) {
         return;
       }
       
       // If this is the first calculation, delay slightly to let CSS-based initial layout render
       // This prevents the flash of small cards before JavaScript kicks in
-      if (!hasInitializedRef.current) {
+      // But if forceRecalculate is true, skip this delay
+      if (!hasInitializedRef.current && !forceRecalculate) {
         setTimeout(() => {
           if (containerRef.current && !hasInitializedRef.current) {
             calculateGrid();
@@ -122,6 +132,9 @@ export function useViewportGrid({
       
       isCalculatingRef.current = true;
       lastWidthRef.current = containerWidth;
+      if (typeof window !== 'undefined') {
+        lastHeightRef.current = window.innerHeight;
+      }
       
       // Responsive breakpoints
       const isMobile = containerWidth < 640; // sm breakpoint
@@ -170,13 +183,19 @@ export function useViewportGrid({
       const totalCardHeight = cardImageHeight + responsiveTextHeight;
       
       // Calculate how many rows fit in available height
+      // Use minimal buffer to maximize items per page while preventing cut-off
       const rowHeight = totalCardHeight + responsiveGap;
-      const maxRows = Math.floor((availableHeight + responsiveGap) / rowHeight);
+      // Use a very small buffer (just 20px) to allow maximum items while preventing cut-off
+      const buffer = 20; // Small fixed buffer instead of percentage-based
+      const maxRows = Math.floor((availableHeight - buffer) / rowHeight);
       const targetRows = Math.max(1, maxRows);
       
-      // Calculate items per page
+      // Calculate items per page - dynamically calculated, no hard limits
+      // This will vary based on viewport size: larger screens = more items, smaller screens = fewer items
       const totalItems = targetColumns * targetRows;
       
+      // Update state immediately - don't wait for requestAnimationFrame
+      // This ensures React re-renders with new itemsPerPage value
       setItemWidth(calculatedWidth);
       setColumns(targetColumns);
       setRows(targetRows);
@@ -184,20 +203,17 @@ export function useViewportGrid({
       
       // Set CSS variables and fine-tune grid
       if (containerRef.current) {
-        // Use requestAnimationFrame to batch style updates and prevent layout thrashing
+        // Update CSS variables immediately for responsive behavior
+        containerRef.current.style.setProperty('--item-width', `${calculatedWidth}px`);
+        containerRef.current.style.setProperty('--item-max-width', `${responsiveMaxWidth}px`);
+        // Don't override grid-template-columns - let CSS class handle responsive grid columns
+        // The watchlist-grid CSS class uses auto-fit with responsive minmax values
+        containerRef.current.style.setProperty('gap', `${responsiveGap}px`);
+        // Ensure container takes full width
+        containerRef.current.style.width = '100%';
+        
+        // Use requestAnimationFrame only for marking as initialized
         requestAnimationFrame(() => {
-          if (!containerRef.current) return;
-          
-          containerRef.current.style.setProperty('--item-width', `${calculatedWidth}px`);
-          containerRef.current.style.setProperty('--item-max-width', `${responsiveMaxWidth}px`);
-          // Use auto-fit with 1fr to ensure cards fill the full width
-          // Cards will maintain minimum size but expand to fill available space
-          // The cards themselves will respect max-width via CSS variable
-          containerRef.current.style.setProperty('grid-template-columns', `repeat(auto-fit, minmax(${calculatedWidth}px, 1fr))`);
-          containerRef.current.style.setProperty('gap', `${responsiveGap}px`);
-          // Ensure container takes full width
-          containerRef.current.style.width = '100%';
-          
           hasInitializedRef.current = true;
           isCalculatingRef.current = false;
         });
@@ -246,7 +262,7 @@ export function useViewportGrid({
       if (resizeTimeout) clearTimeout(resizeTimeout);
       resizeTimeout = setTimeout(() => {
         requestAnimationFrame(() => {
-          calculateGrid();
+          calculateGrid(true); // Force recalculation on container resize
         });
       }, 200); // Wait 200ms after resize stops to prevent flickering
     });
@@ -309,14 +325,21 @@ export function useViewportGrid({
     }, 300));
 
     // Listen to window resize for viewport changes with debouncing
+    // This is critical for updating itemsPerPage when viewport height changes
     let windowResizeTimeout: NodeJS.Timeout | null = null;
     const handleResize = () => {
       if (windowResizeTimeout) clearTimeout(windowResizeTimeout);
       windowResizeTimeout = setTimeout(() => {
-        requestAnimationFrame(calculateGrid);
-      }, 150);
+        // Force recalculation - bypass early return check
+        // This ensures calculation always runs on window resize
+        requestAnimationFrame(() => {
+          calculateGrid(true); // Pass true to force recalculation
+        });
+      }, 100); // Reduced debounce for more responsive updates
     };
-    window.addEventListener('resize', handleResize, { passive: true });
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', handleResize, { passive: true });
+    }
 
     return () => {
       timeouts.forEach(timeout => clearTimeout(timeout));

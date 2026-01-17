@@ -169,6 +169,7 @@
   /* Responsive grid for watchlist cards - prevents initial flash of small cards */
   .watchlist-grid {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    overflow-x: hidden;
   }
 
   @media (max-width: 640px) {
