@@ -154,15 +154,15 @@ export function StocksCryptoWidget() {
   const { data: stocksData, isLoading: stocksLoading, error: stocksError, refetch: refetchStocks } = useQuery({
     queryKey: ['stockQuotes'],
     queryFn: fetchStockQuotes,
-    staleTime: 60000, // Consider stale after 1 minute
-    refetchInterval: 60000, // Auto-refresh every 1 minute
+    staleTime: 3600000, // Consider stale after 1 hour
+    refetchInterval: 3600000, // Auto-refresh every 1 hour
   });
 
   const { data: cryptoData, isLoading: cryptoLoading, error: cryptoError, refetch: refetchCrypto } = useQuery({
     queryKey: ['cryptoQuotes'],
     queryFn: fetchCryptoQuotesFromDB,
-    staleTime: 30000, // Consider stale after 30 seconds
-    refetchInterval: 30000, // Auto-refresh every 30 seconds
+    staleTime: 3600000, // Consider stale after 1 hour
+    refetchInterval: 3600000, // Auto-refresh every 1 hour
   });
 
   // Refetch on mount and window focus
@@ -179,7 +179,7 @@ export function StocksCryptoWidget() {
 
   if (isLoading) {
     return (
-      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm h-full">
+      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm h-full py-0 gap-0">
         <CardContent className="p-0">
           <div className="divide-y divide-border/40">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -203,7 +203,7 @@ export function StocksCryptoWidget() {
 
   if (hasError || !hasData) {
     return (
-      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm">
+      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0">
         <CardContent className="p-4">
           <p className="text-body-sm text-muted-foreground text-center py-4">
             {hasError ? 'Failed to load market data' : 'No market data available'}
@@ -214,7 +214,7 @@ export function StocksCryptoWidget() {
   }
 
   return (
-    <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm">
+    <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0">
       <CardContent className="p-0">
         <div className="divide-y divide-border/40">
           {/* Stocks */}

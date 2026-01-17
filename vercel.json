@@ -4,11 +4,7 @@
   "crons": [
     {
       "path": "/api/stocks/refresh",
-      "schedule": "*/5 13-20 * * 1-5"
-    },
-    {
-      "path": "/api/stocks/refresh",
-      "schedule": "0 * * * *"
+      "schedule": "*/5 * * * *"
     },
     {
       "path": "/api/crypto/refresh",

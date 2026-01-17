@@ -60,7 +60,7 @@ export function CalendarWidget() {
   };
   
   return (
-    <Card className="w-full border-white/10 shadow-sm bg-background/40 backdrop-blur-md">
+    <Card className="w-full border-white/10 shadow-sm bg-background/40 backdrop-blur-md py-0 gap-0">
       <CardHeader className="pt-4 pb-2 px-4">
         <div className="flex items-center justify-between px-2">
           <CardTitle className="text-title">

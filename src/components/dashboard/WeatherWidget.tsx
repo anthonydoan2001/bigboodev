@@ -17,7 +17,7 @@ export function WeatherWidget() {
 
   if (isLoading) {
     return (
-      <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden">
+      <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden py-0 gap-0">
         <CardContent className="p-6 h-full flex items-center justify-between gap-4">
           <div className="flex flex-col gap-2 flex-1">
             <div className="h-12 w-20 bg-muted/30 animate-pulse rounded-md" />
@@ -35,7 +35,7 @@ export function WeatherWidget() {
 
   if (error || !weather) {
     return (
-      <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm flex items-center justify-center">
+      <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm flex items-center justify-center py-0 gap-0">
         <p className="text-body-sm text-muted-foreground">Failed to load weather</p>
       </Card>
     );
