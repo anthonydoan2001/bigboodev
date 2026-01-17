@@ -1,5 +1,7 @@
 export type SportType = 'NBA' | 'NFL';
 
+export type PlayoffRound = 'Wild Card' | 'Divisional' | 'Conference Championship' | 'Super Bowl';
+
 export interface GameScore {
   id: string;
   sport: SportType;
@@ -13,6 +15,7 @@ export interface GameScore {
   quarter?: string;
   timeRemaining?: string;
   startTime: Date;
+  playoffRound?: PlayoffRound;
   odds?: {
     spread?: string;
     overUnder?: string;

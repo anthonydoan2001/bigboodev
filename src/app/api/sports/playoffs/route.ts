@@ -7,6 +7,7 @@ export const GET = withAuth(async (request: NextRequest) => {
   try {
     const searchParams = request.nextUrl.searchParams;
     const sport = searchParams.get('sport') as SportType | null;
+    const debug = searchParams.get('debug') === 'true';
 
     if (!sport) {
       return NextResponse.json(
@@ -25,11 +26,28 @@ export const GET = withAuth(async (request: NextRequest) => {
     }
 
     const games = await fetchUpcomingPlayoffGames(sport);
-    return NextResponse.json({ sport, games });
+    
+    const response: any = { sport, games };
+    
+    // Include debug info if requested
+    if (debug) {
+      response.debug = {
+        gamesFound: games.length,
+        currentDate: new Date().toISOString(),
+        gamesWithRounds: games.filter(g => g.playoffRound).length,
+        roundsFound: [...new Set(games.map(g => g.playoffRound).filter(Boolean))],
+      };
+    }
+    
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Error in playoffs API:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: 'Failed to fetch playoff games' },
+      { 
+        error: 'Failed to fetch playoff games',
+        details: errorMessage,
+      },
       { status: 500 }
     );
   }
