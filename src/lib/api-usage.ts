@@ -94,6 +94,13 @@ export async function trackApiUsage(
   } = {}
 ): Promise<void> {
   try {
+    // Check if apiUsage model exists in Prisma client
+    if (!('apiUsage' in db) || !db.apiUsage) {
+      // Silently fail - this is expected if Prisma client hasn't been regenerated
+      // or if the migration hasn't been run yet
+      return;
+    }
+
     await db.apiUsage.create({
       data: {
         apiName,
@@ -104,7 +111,10 @@ export async function trackApiUsage(
     });
   } catch (error) {
     // Don't throw - tracking failures shouldn't break the app
-    console.error(`Failed to track API usage for ${apiName}:`, error);
+    // Only log if it's not a missing model error
+    if (error instanceof Error && !error.message.includes('undefined')) {
+      console.error(`Failed to track API usage for ${apiName}:`, error);
+    }
   }
 }
 

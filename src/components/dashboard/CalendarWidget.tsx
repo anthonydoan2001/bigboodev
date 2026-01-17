@@ -63,10 +63,10 @@ export function CalendarWidget() {
     <Card className="w-full border-white/10 shadow-sm bg-background/40 backdrop-blur-md">
       <CardHeader className="pt-4 pb-2 px-4">
         <div className="flex items-center justify-between px-2">
-          <CardTitle className="text-xl font-bold">
+          <CardTitle className="text-title">
             {monthNames[month]}
           </CardTitle>
-          <span className="text-sm font-medium text-muted-foreground bg-accent/50 px-2 py-1 rounded-md">
+          <span className="text-body-sm text-muted-foreground bg-accent/50 px-2 py-1 rounded-md">
             {year}
           </span>
         </div>
@@ -77,7 +77,7 @@ export function CalendarWidget() {
           {dayNames.map((day) => (
             <div
               key={day}
-              className="text-[0.65rem] uppercase tracking-wider font-semibold text-muted-foreground text-center py-1"
+              className="text-caption-sm text-muted-foreground text-center py-1"
             >
               {day}
             </div>
@@ -97,10 +97,10 @@ export function CalendarWidget() {
               <div
                 key={day}
                 className={cn(
-                  "aspect-square flex items-center justify-center text-sm font-medium rounded-full transition-all duration-200",
+                  "aspect-square flex items-center justify-center text-body-sm rounded-full",
                   isTodayDate
                     ? "bg-primary text-primary-foreground font-bold shadow-md scale-105"
-                    : "hover:bg-accent hover:text-accent-foreground cursor-default text-muted-foreground"
+                    : "text-muted-foreground font-medium"
                 )}
               >
                 {day}

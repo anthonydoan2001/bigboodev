@@ -123,7 +123,7 @@ export function WatchlistCard({
             <div />
           </DropdownMenuTrigger>
             {/* Tooltip */}
-            <div className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full mb-2 z-50 px-2.5 py-1.5 bg-black/90 text-white text-xs font-medium rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none max-w-[200px] break-words text-center">
+            <div className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full mb-2 z-50 px-2.5 py-1.5 bg-black/90 text-white text-caption rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none max-w-[200px] break-words text-center">
               {item.title}
               <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black/90"></div>
             </div>
@@ -139,15 +139,15 @@ export function WatchlistCard({
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center bg-secondary text-muted-foreground">
-                  <span className="text-sm font-medium">No Image</span>
+                  <span className="text-body-sm">No Image</span>
                 </div>
               )}
             </div>
 
             {/* Rating Badge - Top Left */}
             {item.rating && (
-              <div className="absolute left-1.5 top-1.5 rounded-md bg-black/60 px-2 py-1 text-xs font-bold text-white backdrop-blur-md flex items-center gap-1 z-10">
-                <span className="text-yellow-400 text-sm">★</span> {item.rating.toFixed(1)}
+              <div className="absolute left-1.5 top-1.5 rounded-md bg-black/60 px-2 py-1 text-caption font-bold text-white backdrop-blur-md flex items-center gap-1 z-10">
+                <span className="text-yellow-400 text-body-sm">★</span> {item.rating.toFixed(1)}
               </div>
             )}
 
@@ -210,7 +210,7 @@ export function WatchlistCard({
         
         <div className="space-y-1 w-full min-w-0 flex-shrink-0 overflow-visible">
           {(item.year || item.episodes) && (
-            <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+            <div className="flex items-center gap-1.5 text-caption text-muted-foreground">
               {item.year && <span>{item.year}</span>}
               {item.episodes && (
                 <>
@@ -220,8 +220,8 @@ export function WatchlistCard({
               )}
             </div>
           )}
-          <h3 
-            className="text-sm font-semibold leading-snug text-foreground/90" 
+          <h3
+            className="text-body-sm font-semibold leading-snug text-foreground/90" 
             style={{ 
               width: '100%',
               minWidth: 0,

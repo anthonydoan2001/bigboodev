@@ -59,38 +59,41 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="w-full py-8 px-4 sm:px-6 lg:px-8 min-h-screen">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Main Content Area - Shows first on mobile */}
-        <div className="order-1 lg:order-2 lg:col-span-3 flex flex-col gap-6">
-          {/* Header Section */}
-          <div className="space-y-2 py-2">
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">{greeting}</h1>
-            {quoteLoading ? (
-              <p className="text-muted-foreground text-xl md:text-2xl animate-pulse">
-                Loading quote...
-              </p>
-            ) : quote ? (
-              <p className="text-muted-foreground text-xl md:text-2xl italic">
-                "{quote.content}" — {quote.author}
-              </p>
-            ) : (
-              <p className="text-muted-foreground text-xl md:text-2xl">
-                Here's what's happening today
-              </p>
-            )}
-          </div>
-
-          {/* Stocks & Crypto Widget */}
-          <div className="flex-1">
-            <StocksCryptoWidget />
-          </div>
+    <div className="w-full py-6 px-4 sm:px-6 lg:px-8 min-h-screen">
+      {/* Header Section with Weather */}
+      <div className="mb-6 flex flex-col lg:flex-row lg:items-center gap-6">
+        {/* Left: Weather Widget */}
+        <div className="lg:w-80 flex-shrink-0">
+          <WeatherWidget />
         </div>
 
-        {/* Left Sidebar Column - Shows second on mobile */}
-        <div className="order-2 lg:order-1 lg:col-span-1 space-y-6">
-          <WeatherWidget />
+        {/* Right: Greeting & Quote */}
+        <div className="space-y-3 flex-1">
+          <h1 className="text-display-lg">{greeting}, Big Boo</h1>
+          {quoteLoading ? (
+            <div className="h-8 w-3/4 max-w-2xl bg-muted/20 animate-pulse rounded-md" />
+          ) : quote ? (
+            <p className="text-muted-foreground text-title-lg italic font-normal">
+              "{quote.content}" — {quote.author}
+            </p>
+          ) : (
+            <p className="text-muted-foreground text-title-lg font-normal">
+              Here's what's happening today
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Bento-style Dashboard Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 auto-rows-auto gap-4 md:gap-6">
+        {/* Calendar Widget */}
+        <div className="col-span-1 sm:col-span-1 row-span-1">
           <CalendarWidget />
+        </div>
+
+        {/* Stocks & Crypto Widget - Compact width */}
+        <div className="col-span-1 sm:col-span-1 lg:col-span-1 xl:col-span-1 2xl:col-span-1 row-span-1">
+          <StocksCryptoWidget />
         </div>
       </div>
     </div>

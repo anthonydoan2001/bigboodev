@@ -17,16 +17,26 @@ export function WeatherWidget() {
 
   if (isLoading) {
     return (
-      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm h-full flex items-center justify-center min-h-[140px]">
-        <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+      <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden">
+        <CardContent className="p-6 h-full flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-2 flex-1">
+            <div className="h-12 w-20 bg-muted/30 animate-pulse rounded-md" />
+            <div className="h-5 w-24 bg-muted/20 animate-pulse rounded-md" />
+            <div className="flex gap-3">
+              <div className="h-4 w-12 bg-muted/20 animate-pulse rounded-md" />
+              <div className="h-4 w-12 bg-muted/20 animate-pulse rounded-md" />
+            </div>
+          </div>
+          <div className="w-24 h-24 bg-muted/20 animate-pulse rounded-full" />
+        </CardContent>
       </Card>
     );
   }
 
   if (error || !weather) {
     return (
-      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm h-full flex items-center justify-center min-h-[140px]">
-        <p className="text-sm text-muted-foreground">Failed to load weather</p>
+      <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm flex items-center justify-center">
+        <p className="text-body-sm text-muted-foreground">Failed to load weather</p>
       </Card>
     );
   }
@@ -34,18 +44,18 @@ export function WeatherWidget() {
   const { current } = weather;
 
   return (
-    <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden">
-      <CardContent className="p-6 flex items-center justify-between gap-4">
+    <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden">
+      <CardContent className="p-6 h-full flex items-center justify-between gap-4">
         <div className="flex flex-col">
           <div className="flex items-baseline gap-2">
-            <span className="text-4xl md:text-5xl font-light tracking-tight text-foreground">
+            <span className="text-display font-light text-foreground">
               {current.temperature}°
             </span>
           </div>
-          <span className="text-base text-muted-foreground capitalize mt-1 font-medium">
+          <span className="text-body text-muted-foreground capitalize mt-1">
             {current.condition}
           </span>
-          <div className="flex gap-3 text-sm text-muted-foreground mt-2">
+          <div className="flex gap-3 text-body-sm text-muted-foreground mt-2">
             <span className="font-medium">H: {current.high}°</span>
             <span className="font-medium">L: {current.low}°</span>
           </div>
