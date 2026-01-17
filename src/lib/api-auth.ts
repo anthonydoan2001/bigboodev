@@ -79,11 +79,34 @@ export function unauthorizedResponse(): NextResponse {
  */
 export function requireAuthOrCron(request: Request): { type: 'session' | 'cron'; token: string } {
   // Check cron secret first
-  const authHeader = request.headers.get('authorization');
+  // Try both lowercase and capitalized header names (HTTP headers are case-insensitive but Next.js might normalize)
+  const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
   const cronSecret = process.env.CRON_SECRET;
   
+  // Log for debugging (always log in production to diagnose issues)
+  console.log('[Auth] Checking authentication:', {
+    hasAuthHeader: !!authHeader,
+    hasCronSecret: !!cronSecret,
+    authHeaderPrefix: authHeader ? `${authHeader.substring(0, 20)}...` : 'none',
+    expectedFormat: cronSecret ? `Bearer ${cronSecret.substring(0, 10)}...` : 'none',
+    url: new URL(request.url).pathname,
+  });
+  
   if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+    console.log('[Auth] Cron authentication successful');
     return { type: 'cron', token: cronSecret };
+  }
+  
+  // If cron secret is set but header doesn't match, log details
+  if (cronSecret && authHeader) {
+    console.warn('[Auth] CRON_SECRET is set and Authorization header exists but does not match:', {
+      headerLength: authHeader.length,
+      secretLength: cronSecret.length,
+      headerStartsWithBearer: authHeader.startsWith('Bearer '),
+      firstCharsMatch: authHeader.substring(7, 17) === cronSecret.substring(0, 10),
+    });
+  } else if (cronSecret && !authHeader) {
+    console.warn('[Auth] CRON_SECRET is set but no Authorization header received. Cron job may not be configured correctly.');
   }
   
   // Otherwise require session auth
@@ -121,8 +144,10 @@ export function withAuthOrCron(
   return async (request: Request | any): Promise<NextResponse> => {
     try {
       const auth = requireAuthOrCron(request);
+      console.log(`[Auth] Proceeding with ${auth.type} authentication`);
       return await handler(request, auth);
     } catch (error) {
+      console.error('[Auth] Authentication error:', error);
       if (error instanceof Error && error.message === 'UNAUTHORIZED') {
         return unauthorizedResponse();
       }

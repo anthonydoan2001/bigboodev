@@ -14,6 +14,7 @@ import { withAuthOrCron } from '@/lib/api-auth';
 async function handleRefresh(request: Request, auth: { type: 'session' | 'cron'; token: string }) {
   try {
     // Auth is handled by wrapper or bypassed in dev mode
+    console.log(`[Stocks Refresh] Called by ${auth.type} at ${new Date().toISOString()}`);
 
     // Check for force parameter (for manual testing)
     const url = new URL(request.url);
@@ -24,6 +25,8 @@ async function handleRefresh(request: Request, auth: { type: 'session' | 'cron';
     const isCronCall = auth.type === 'cron';
     const hasData = await db.stockQuote.count() > 0;
     const shouldRefresh = isCronCall || force || !hasData || isMarketHours() || await shouldRefreshOutsideMarketHours();
+    
+    console.log(`[Stocks Refresh] Should refresh: ${shouldRefresh}, isCronCall: ${isCronCall}, hasData: ${hasData}, isMarketHours: ${isMarketHours()}`);
     
     if (!shouldRefresh) {
       return NextResponse.json({
@@ -106,11 +109,17 @@ async function handleRefresh(request: Request, auth: { type: 'session' | 'cron';
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Error refreshing stock quotes:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('[Stocks Refresh] Error refreshing stock quotes:', {
+      error: errorMessage,
+      stack: errorStack,
+      timestamp: new Date().toISOString(),
+    });
     return NextResponse.json(
       { 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: errorMessage,
         timestamp: new Date().toISOString(),
       },
       { status: 500 }
