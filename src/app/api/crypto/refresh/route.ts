@@ -13,6 +13,8 @@ import { withAuthOrCron } from '@/lib/api-auth';
  */
 async function handleRefresh(request: Request, auth: { type: 'session' | 'cron'; token: string }) {
   try {
+    console.log(`[Crypto Refresh] Called by ${auth.type} at ${new Date().toISOString()}`);
+    
     // Step 1: Get or create ID mappings
     const existingIds = await db.cryptoQuote.findMany({
       select: { symbol: true },
@@ -136,11 +138,17 @@ async function handleRefresh(request: Request, auth: { type: 'session' | 'cron';
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Error refreshing crypto quotes:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('[Crypto Refresh] Error refreshing crypto quotes:', {
+      error: errorMessage,
+      stack: errorStack,
+      timestamp: new Date().toISOString(),
+    });
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: errorMessage,
         timestamp: new Date().toISOString(),
       },
       { status: 500 }

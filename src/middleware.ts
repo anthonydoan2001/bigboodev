@@ -4,6 +4,7 @@ import type { NextRequest } from 'next/server';
 /**
  * Middleware to protect all routes except /login and /api/auth/*
  * Checks for valid session token in cookies or headers
+ * Also allows cron jobs with valid CRON_SECRET
  */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -11,6 +12,42 @@ export function middleware(request: NextRequest) {
   // Allow login page and auth API routes
   if (pathname === '/login' || pathname.startsWith('/api/auth/')) {
     return NextResponse.next();
+  }
+
+  // Check for cron authentication (for refresh endpoints)
+  // Vercel cron jobs send Authorization: Bearer ${CRON_SECRET} header
+  const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
+  const cronSecret = process.env.CRON_SECRET;
+  
+  // If this is a refresh endpoint or cron-test endpoint, check for cron auth
+  const isRefreshEndpoint = pathname.startsWith('/api/') && 
+    (pathname.includes('/refresh') || pathname.includes('/cron-test'));
+  
+  if (isRefreshEndpoint) {
+    // Log for debugging
+    console.log('[Middleware] Checking cron auth for', pathname, {
+      hasAuthHeader: !!authHeader,
+      hasCronSecret: !!cronSecret,
+      authHeaderPrefix: authHeader ? authHeader.substring(0, 30) : 'none',
+    });
+    
+    if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+      console.log('[Middleware] ✓ Cron authentication successful for', pathname);
+      return NextResponse.next();
+    } else if (cronSecret && authHeader) {
+      // Secret exists and header exists but doesn't match - log details
+      console.warn('[Middleware] ✗ Cron auth failed - header mismatch', {
+        headerLength: authHeader.length,
+        secretLength: cronSecret.length,
+        headerStartsWithBearer: authHeader.startsWith('Bearer '),
+        headerValue: authHeader.substring(7, 20),
+        secretValue: cronSecret.substring(0, 13),
+      });
+    } else if (cronSecret && !authHeader) {
+      console.warn('[Middleware] ✗ Cron auth failed - no Authorization header');
+    } else if (!cronSecret) {
+      console.warn('[Middleware] ✗ CRON_SECRET not set in environment');
+    }
   }
 
   // Check for session token in cookies
