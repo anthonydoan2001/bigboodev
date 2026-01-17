@@ -60,11 +60,11 @@ function StockCard({ quote }: { quote: StockQuote }) {
   const changeColor = isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
 
   return (
-    <div className="flex items-center justify-between py-1.5 px-1.5 md:px-2 rounded-md gap-2 md:gap-3">
-      {/* Left side: Logo, Ticker, Company Name */}
-      <div className="flex items-center gap-2 md:gap-2.5 min-w-0 flex-shrink">
+    <div className="flex items-center justify-between py-2.5 px-3 border-b border-border/40 last:border-0">
+      {/* Left side: Logo & Ticker */}
+      <div className="flex items-center gap-3 min-w-0 flex-1">
         {/* Logo */}
-        <div className="relative w-8 h-8 md:w-10 md:h-10 flex-shrink-0 rounded-full bg-background/50 flex items-center justify-center overflow-hidden ring-1 ring-border/20">
+        <div className="relative w-7 h-7 flex-shrink-0 rounded-full bg-background/50 flex items-center justify-center overflow-hidden ring-1 ring-border/10">
           {quote.logoUrl ? (
             <Image
               src={quote.logoUrl}
@@ -74,29 +74,26 @@ function StockCard({ quote }: { quote: StockQuote }) {
               unoptimized
             />
           ) : (
-            <span className="text-xs font-semibold text-muted-foreground">{quote.symbol.charAt(0)}</span>
+            <span className="text-[10px] font-semibold text-muted-foreground">{quote.symbol.charAt(0)}</span>
           )}
         </div>
-        
-        {/* Ticker and Company Name */}
-        <div className="flex flex-col min-w-0">
-          <span className="font-bold font-mono text-lg md:text-xl leading-none mb-0.5">{quote.symbol}</span>
-          {quote.companyName && (
-            <span className="text-xs md:text-sm text-muted-foreground truncate leading-none opacity-80">
-              {cleanCompanyName(quote.companyName)}
-            </span>
-          )}
-        </div>
+
+        {/* Ticker */}
+        <span className="font-semibold font-mono text-body-sm leading-none">{quote.symbol}</span>
       </div>
 
-      {/* Right side: Price and Change */}
-      <div className="flex flex-col items-end flex-shrink-0 gap-0.5 ml-2">
-        <span className="font-bold font-mono text-lg md:text-xl leading-none whitespace-nowrap">{formatPrice(quote.currentPrice)}</span>
-        <span className={cn("text-xs md:text-sm font-mono font-medium flex items-center gap-0.5 leading-none whitespace-nowrap", changeColor)}>
+      {/* Middle: Price */}
+      <div className="flex-shrink-0 mx-4">
+        <span className="font-mono text-body-sm font-medium tabular-nums">{formatPrice(quote.currentPrice)}</span>
+      </div>
+
+      {/* Right: Change */}
+      <div className="flex items-center gap-1 flex-shrink-0 min-w-[85px] justify-end">
+        <span className={cn("text-body-sm font-mono font-medium flex items-center gap-0.5 tabular-nums", changeColor)}>
           {isPositive ? (
-            <ArrowUp className="h-3 w-3 md:h-4 md:w-4" />
+            <ArrowUp className="h-3.5 w-3.5" />
           ) : (
-            <ArrowDown className="h-3 w-3 md:h-4 md:w-4" />
+            <ArrowDown className="h-3.5 w-3.5" />
           )}
           {formatPercentChange(quote.percentChange)}
         </span>
@@ -111,11 +108,11 @@ function CryptoCard({ crypto }: { crypto: CryptoQuote }) {
   const changeColor = isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
 
   return (
-    <div className="flex items-center justify-between py-1.5 px-1.5 md:px-2 rounded-md gap-2 md:gap-3">
-      {/* Left side: Logo, Symbol, Name */}
-      <div className="flex items-center gap-2 md:gap-2.5 min-w-0 flex-shrink">
+    <div className="flex items-center justify-between py-2.5 px-3 border-b border-border/40 last:border-0">
+      {/* Left side: Logo & Symbol */}
+      <div className="flex items-center gap-3 min-w-0 flex-1">
         {/* Logo */}
-        <div className="relative w-8 h-8 md:w-10 md:h-10 flex-shrink-0 rounded-full bg-background/50 flex items-center justify-center overflow-hidden ring-1 ring-border/20">
+        <div className="relative w-7 h-7 flex-shrink-0 rounded-full bg-background/50 flex items-center justify-center overflow-hidden ring-1 ring-border/10">
           {crypto.logoUrl ? (
             <Image
               src={crypto.logoUrl}
@@ -125,29 +122,26 @@ function CryptoCard({ crypto }: { crypto: CryptoQuote }) {
               unoptimized
             />
           ) : (
-            <span className="text-xs font-semibold text-muted-foreground">{crypto.symbol.charAt(0)}</span>
+            <span className="text-[10px] font-semibold text-muted-foreground">{crypto.symbol.charAt(0)}</span>
           )}
         </div>
-        
-        {/* Symbol and Name */}
-        <div className="flex flex-col min-w-0">
-          <span className="font-bold font-mono text-lg md:text-xl leading-none mb-0.5">{crypto.symbol}</span>
-          {crypto.name && (
-            <span className="text-xs md:text-sm text-muted-foreground truncate leading-none opacity-80">
-              {crypto.name}
-            </span>
-          )}
-        </div>
+
+        {/* Symbol */}
+        <span className="font-semibold font-mono text-body-sm leading-none">{crypto.symbol}</span>
       </div>
 
-      {/* Right side: Price and Change */}
-      <div className="flex flex-col items-end flex-shrink-0 gap-0.5 ml-2">
-        <span className="font-bold font-mono text-lg md:text-xl leading-none whitespace-nowrap">{formatPrice(crypto.price)}</span>
-        <span className={cn("text-xs md:text-sm font-mono font-medium flex items-center gap-0.5 leading-none whitespace-nowrap", changeColor)}>
+      {/* Middle: Price */}
+      <div className="flex-shrink-0 mx-4">
+        <span className="font-mono text-body-sm font-medium tabular-nums">{formatPrice(crypto.price)}</span>
+      </div>
+
+      {/* Right: Change */}
+      <div className="flex items-center gap-1 flex-shrink-0 min-w-[85px] justify-end">
+        <span className={cn("text-body-sm font-mono font-medium flex items-center gap-0.5 tabular-nums", changeColor)}>
           {isPositive ? (
-            <ArrowUp className="h-3 w-3 md:h-4 md:w-4" />
+            <ArrowUp className="h-3.5 w-3.5" />
           ) : (
-            <ArrowDown className="h-3 w-3 md:h-4 md:w-4" />
+            <ArrowDown className="h-3.5 w-3.5" />
           )}
           {formatPercentChange(crypto.percentChange24h)}
         </span>
@@ -185,11 +179,21 @@ export function StocksCryptoWidget() {
 
   if (isLoading) {
     return (
-      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm h-full">
+        <CardContent className="p-0">
+          <div className="divide-y divide-border/40">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-14 bg-muted/20 animate-pulse rounded-md" />
+              <div key={i} className="flex items-center justify-between py-2 px-3">
+                {/* Left side skeleton */}
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-6 h-6 rounded-full bg-muted/30 animate-pulse" />
+                  <div className="h-4 w-12 bg-muted/30 animate-pulse rounded-md" />
+                </div>
+                {/* Middle skeleton */}
+                <div className="h-4 w-16 bg-muted/30 animate-pulse rounded-md mx-4" />
+                {/* Right side skeleton */}
+                <div className="h-4 w-16 bg-muted/20 animate-pulse rounded-md" />
+              </div>
             ))}
           </div>
         </CardContent>
@@ -201,7 +205,7 @@ export function StocksCryptoWidget() {
     return (
       <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm">
         <CardContent className="p-4">
-          <p className="text-sm text-muted-foreground text-center py-4">
+          <p className="text-body-sm text-muted-foreground text-center py-4">
             {hasError ? 'Failed to load market data' : 'No market data available'}
           </p>
         </CardContent>
@@ -211,13 +215,13 @@ export function StocksCryptoWidget() {
 
   return (
     <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm">
-      <CardContent className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <CardContent className="p-0">
+        <div className="divide-y divide-border/40">
           {/* Stocks */}
           {hasStocks && stocksData.quotes.map((quote) => (
             <StockCard key={quote.symbol} quote={quote} />
           ))}
-          
+
           {/* Crypto */}
           {hasCrypto && cryptoData.quotes.map((crypto: CryptoQuote) => (
             <CryptoCard key={crypto.symbol} crypto={crypto} />

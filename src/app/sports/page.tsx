@@ -219,7 +219,7 @@ export default function SportsPage() {
 
           {/* Live Update Indicator */}
           {hasLiveGames && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 text-caption text-muted-foreground">
               <div className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
@@ -244,7 +244,7 @@ export default function SportsPage() {
             ) : currentError ? (
               <Card>
                 <CardContent className="p-6">
-                  <div className="text-center text-destructive">
+                  <div className="text-center text-body-sm text-destructive">
                     Error loading favorites. Please try again.
                   </div>
                 </CardContent>
@@ -252,7 +252,7 @@ export default function SportsPage() {
             ) : !gamesToShow || gamesToShow.length === 0 ? (
               <Card>
                 <CardContent className="p-6">
-                  <div className="text-center text-muted-foreground">
+                  <div className="text-center text-body-sm text-muted-foreground">
                     No favorite games. Star games to add them here!
                   </div>
                 </CardContent>
@@ -303,7 +303,7 @@ export default function SportsPage() {
               ) : currentError ? (
                 <Card>
                   <CardContent className="p-6">
-                    <div className="text-center text-destructive">
+                    <div className="text-center text-body-sm text-destructive">
                       Error loading scores. Please try again.
                     </div>
                   </CardContent>
@@ -311,7 +311,7 @@ export default function SportsPage() {
               ) : !gamesToShow || gamesToShow.length === 0 ? (
                 <Card>
                   <CardContent className="p-6">
-                    <div className="text-center text-muted-foreground">
+                    <div className="text-center text-body-sm text-muted-foreground">
                       No games today for {selectedSport}
                     </div>
                   </CardContent>
@@ -341,7 +341,7 @@ export default function SportsPage() {
                   ) : performersError ? (
                     <Card>
                       <CardContent className="p-6">
-                        <div className="text-center text-destructive">
+                        <div className="text-center text-body-sm text-destructive">
                           Error loading top performers. Please try again.
                         </div>
                       </CardContent>
@@ -372,7 +372,7 @@ export default function SportsPage() {
                   ) : upcomingGamesError ? (
                     <Card>
                       <CardContent className="p-6">
-                        <div className="text-center text-destructive">
+                        <div className="text-center text-body-sm text-destructive">
                           Error loading playoff bracket. Please try again.
                         </div>
                       </CardContent>

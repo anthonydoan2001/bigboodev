@@ -335,7 +335,7 @@ function WatchlistContent() {
                         variant={searchFilter === 'all' ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => handleFilterChange('all')}
-                        className="text-xs sm:text-sm"
+                        className="text-caption sm:text-body-sm"
                       >
                         All ({searchResults.length})
                       </Button>
@@ -343,7 +343,7 @@ function WatchlistContent() {
                         variant={searchFilter === 'anime' ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => handleFilterChange('anime')}
-                        className="text-xs sm:text-sm"
+                        className="text-caption sm:text-body-sm"
                       >
                         Anime ({searchResults.filter(item => item.type.toLowerCase() === 'anime').length})
                       </Button>
@@ -351,7 +351,7 @@ function WatchlistContent() {
                         variant={searchFilter === 'movie' ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => handleFilterChange('movie')}
-                        className="text-xs sm:text-sm"
+                        className="text-caption sm:text-body-sm"
                       >
                         Movie ({searchResults.filter(item => item.type.toLowerCase() === 'movie').length})
                       </Button>
@@ -359,7 +359,7 @@ function WatchlistContent() {
                         variant={searchFilter === 'show' ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => handleFilterChange('show')}
-                        className="text-xs sm:text-sm"
+                        className="text-caption sm:text-body-sm"
                       >
                         TV Show ({searchResults.filter(item => item.type.toLowerCase() === 'show').length})
                       </Button>
@@ -375,11 +375,11 @@ function WatchlistContent() {
                         size="sm"
                         onClick={() => handlePageChange(Math.max(1, searchPage - 1))}
                         disabled={searchPage === 1}
-                        className="text-xs sm:text-sm"
+                        className="text-caption sm:text-body-sm"
                       >
                         Previous
                       </Button>
-                      <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+                      <span className="text-caption sm:text-body-sm text-muted-foreground whitespace-nowrap">
                         Page {searchPage} of {totalSearchPages}
                       </span>
                       <Button
@@ -387,7 +387,7 @@ function WatchlistContent() {
                         size="sm"
                         onClick={() => handlePageChange(Math.min(totalSearchPages, searchPage + 1))}
                         disabled={searchPage === totalSearchPages}
-                        className="text-xs sm:text-sm"
+                        className="text-caption sm:text-body-sm"
                       >
                         Next
                       </Button>
@@ -428,13 +428,13 @@ function WatchlistContent() {
                   </div>
                 ) : searchResults.length > 0 ? (
                   <Card>
-                    <CardContent className="p-12 text-center text-muted-foreground">
+                    <CardContent className="p-12 text-center text-body text-muted-foreground">
                       <p>No {searchFilter === 'all' ? '' : searchFilter} results found for "{searchQuery}"</p>
                     </CardContent>
                   </Card>
                 ) : (
                   <Card>
-                    <CardContent className="p-12 text-center text-muted-foreground">
+                    <CardContent className="p-12 text-center text-body text-muted-foreground">
                       <p>No results found for "{searchQuery}"</p>
                     </CardContent>
                   </Card>
@@ -544,8 +544,8 @@ function WatchlistContent() {
             ) : (
               <Card>
                 <CardContent className="p-12 text-center text-muted-foreground space-y-4">
-                  <p className="text-lg">Your watchlist is empty</p>
-                  <p className="text-sm">Search for anime, movies, or TV shows to add them to your watchlist</p>
+                  <p className="text-title">Your watchlist is empty</p>
+                  <p className="text-body-sm">Search for anime, movies, or TV shows to add them to your watchlist</p>
                 </CardContent>
               </Card>
             )}

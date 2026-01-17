@@ -16,7 +16,7 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
     switch (game.status) {
       case 'live':
         return (
-          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-500 text-xs font-semibold tabular-nums">
+          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-500 text-caption font-semibold tabular-nums">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
@@ -25,10 +25,10 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
           </div>
         );
       case 'final':
-        return <span className="text-xs font-semibold text-muted-foreground">FINAL</span>;
+        return <span className="text-caption font-semibold text-muted-foreground">FINAL</span>;
       case 'scheduled':
         return (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1 text-caption text-muted-foreground">
             <Clock className="w-3 h-3" />
             {game.startTime.toLocaleTimeString('en-US', {
               hour: 'numeric',
@@ -49,7 +49,7 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
         {/* Header */}
         <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between bg-muted/20">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground tracking-wide">
+            <span className="text-caption text-muted-foreground tracking-wide">
               {game.sport}
             </span>
           </div>
@@ -97,17 +97,17 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
                 )}
               </div>
               <div className="flex flex-col min-w-0">
-                <span className={`text-base truncate ${isFinal && isAwayWinning ? 'font-bold' : 'font-medium'}`}>
+                <span className={`text-body truncate ${isFinal && isAwayWinning ? 'font-bold' : 'font-medium'}`}>
                   {game.awayTeam}
                 </span>
                 {game.odds?.favorite === 'away' && game.status === 'scheduled' && (
-                  <span className="text-xs text-muted-foreground font-medium">
+                  <span className="text-caption text-muted-foreground">
                     {game.odds.spread}
                   </span>
                 )}
               </div>
             </div>
-            <span className={`text-2xl tabular-nums tracking-tight ${isFinal && isAwayWinning ? 'text-foreground font-bold' : 'text-muted-foreground font-medium'}`}>
+            <span className={`text-heading tabular-nums font-mono ${isFinal && isAwayWinning ? 'text-foreground font-bold' : 'text-muted-foreground font-medium'}`}>
               {game.status !== 'scheduled' ? game.awayScore : '-'}
             </span>
           </div>
@@ -129,17 +129,17 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
                 )}
               </div>
               <div className="flex flex-col min-w-0">
-                <span className={`text-base truncate ${isFinal && isHomeWinning ? 'font-bold' : 'font-medium'}`}>
+                <span className={`text-body truncate ${isFinal && isHomeWinning ? 'font-bold' : 'font-medium'}`}>
                   {game.homeTeam}
                 </span>
                 {game.odds?.favorite === 'home' && game.status === 'scheduled' && (
-                  <span className="text-xs text-muted-foreground font-medium">
+                  <span className="text-caption text-muted-foreground">
                     {game.odds.spread}
                   </span>
                 )}
               </div>
             </div>
-            <span className={`text-2xl tabular-nums tracking-tight ${isFinal && isHomeWinning ? 'text-foreground font-bold' : 'text-muted-foreground font-medium'}`}>
+            <span className={`text-heading tabular-nums font-mono ${isFinal && isHomeWinning ? 'text-foreground font-bold' : 'text-muted-foreground font-medium'}`}>
               {game.status !== 'scheduled' ? game.homeScore : '-'}
             </span>
           </div>
@@ -150,12 +150,12 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
           {/* Game Status / Time */}
           {(game.status === 'live' || game.status === 'final') ? (
             game.odds?.spread ? (
-              <div className="px-4 py-2 flex items-center justify-between text-xs border-b border-border/50 last:border-0 min-h-[33px]">
+              <div className="px-4 py-2 flex items-center justify-between text-caption border-b border-border/50 last:border-0 min-h-[33px]">
                 <span className="text-muted-foreground ml-auto">Spread: {game.odds.spread}</span>
               </div>
             ) : null
           ) : (
-            <div className="px-4 py-3 text-center text-xs text-muted-foreground font-medium">
+            <div className="px-4 py-3 text-center text-caption text-muted-foreground">
               {game.startTime.toLocaleDateString('en-US', {
                 weekday: 'long',
                 month: 'long',
@@ -166,7 +166,7 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
 
           {/* Top Scorer Section - Distinct Row */}
           {game.sport === 'NBA' && game.topScorer && (game.status === 'live' || game.status === 'final') && (
-            <div className="px-4 py-2 bg-muted/20 flex items-center justify-between gap-2 text-xs">
+            <div className="px-4 py-2 bg-muted/20 flex items-center justify-between gap-2 text-caption">
               <div className="flex items-center gap-2">
                 {game.topScorer.image && (
                   <div className="relative w-6 h-6 rounded-full overflow-hidden bg-background border border-border/50">
@@ -181,7 +181,7 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
                 )}
                 <span className="font-semibold text-foreground">{game.topScorer.name}</span>
               </div>
-              <Badge variant="outline" className="h-5 px-1.5 bg-background border-border/50 font-mono">
+              <Badge variant="outline" className="h-5 px-1.5 bg-background border-border/50 font-mono text-caption">
                 {game.topScorer.points} PTS
               </Badge>
             </div>

@@ -53,7 +53,7 @@ export function Sidebar() {
             isCollapsed ? "justify-center" : "justify-between px-6"
           )}>
             {!isCollapsed && (
-              <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              <h1 className="text-title bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 bigboo.dev
               </h1>
             )}
@@ -76,7 +76,7 @@ export function Sidebar() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200 group relative overflow-hidden',
+                    'flex items-center gap-3 rounded-xl px-3 py-3 text-body-sm font-medium transition-all duration-200 group relative overflow-hidden',
                     isActive
                       ? 'bg-primary/10 text-primary hover:bg-primary/15'
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',

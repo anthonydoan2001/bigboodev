@@ -10,9 +10,14 @@ if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = db;
 }
 
-// Verify topItem model is available (for debugging)
-if (process.env.NODE_ENV === 'development' && !('topItem' in db)) {
-  console.warn('⚠️  Prisma client missing topItem model. Please restart the dev server after running: npx prisma generate');
+// Verify models are available (for debugging)
+if (process.env.NODE_ENV === 'development') {
+  if (!('topItem' in db)) {
+    console.warn('⚠️  Prisma client missing topItem model. Please restart the dev server after running: npx prisma generate');
+  }
+  if (!('apiUsage' in db)) {
+    console.warn('⚠️  Prisma client missing apiUsage model. Please restart the dev server after running: npx prisma generate');
+  }
 }
 
 
