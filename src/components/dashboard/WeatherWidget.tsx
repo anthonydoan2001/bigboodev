@@ -3,8 +3,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { fetchWeather } from '@/lib/api/weather';
 import { useQuery } from '@tanstack/react-query';
-import { RefreshCw } from 'lucide-react';
-import Image from 'next/image';
+import { WeatherIcon } from './WeatherIcon';
 
 export function WeatherWidget() {
   const { data: weather, isLoading, error } = useQuery({
@@ -44,7 +43,7 @@ export function WeatherWidget() {
   const { current } = weather;
 
   return (
-    <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden">
+    <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden py-0 gap-0">
       <CardContent className="p-6 h-full flex items-center justify-between gap-4">
         <div className="flex flex-col">
           <div className="flex items-baseline gap-2">
@@ -60,14 +59,8 @@ export function WeatherWidget() {
             <span className="font-medium">L: {current.low}°</span>
           </div>
         </div>
-        <div className="relative w-24 h-24 flex-shrink-0 -mr-2">
-          <Image
-            src={`https://openweathermap.org/img/wn/${current.icon}@4x.png`}
-            alt={current.condition}
-            fill
-            className="object-contain"
-            unoptimized
-          />
+        <div className="relative w-28 h-28 flex-shrink-0">
+          <WeatherIcon iconCode={current.icon} />
         </div>
       </CardContent>
     </Card>
