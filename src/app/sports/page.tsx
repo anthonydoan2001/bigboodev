@@ -6,7 +6,7 @@ import { ScoreCardSkeleton } from '@/components/sports/ScoreCardSkeleton';
 import { SportFilter } from '@/components/sports/SportFilter';
 import { TopPerformersView } from '@/components/sports/TopPerformersView';
 import { TopPerformersSkeleton } from '@/components/sports/TopPerformersSkeleton';
-import { PlayoffBracket } from '@/components/sports/PlayoffBracket';
+import { PlayoffBracket, generateAllPlayoffGames } from '@/components/sports/PlayoffBracket';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { autoFavoriteHoustonGames, getFavorites, isHoustonGame, toggleFavorite as toggleFavoriteInStorage } from '@/lib/favorites';
@@ -64,7 +64,11 @@ async function fetchUpcomingPlayoffGames(sport: SportType) {
     throw new Error('Failed to fetch upcoming playoff games');
   }
   const data = await response.json();
-  return data.games as GameScore[];
+  // Convert date strings back to Date objects (same as fetchScores)
+  return data.games.map((game: any) => ({
+    ...game,
+    startTime: new Date(game.startTime),
+  })) as GameScore[];
 }
 
 export default function SportsPage() {
@@ -188,16 +192,36 @@ export default function SportsPage() {
   const currentLoading = isFavoritesView ? favoriteQueries.isLoading : scoresLoading;
   const currentError = isFavoritesView ? favoriteQueries.error : scoresError;
 
+  // Helper function to check if a completed game is older than 24 hours
+  const isCompletedGameOld = (game: GameScore): boolean => {
+    if (game.status !== 'final') return false;
+    const now = new Date();
+    const gameTime = game.startTime;
+    const hoursSinceGame = (now.getTime() - gameTime.getTime()) / (1000 * 60 * 60);
+    // Remove completed games that are more than 24 hours old
+    return hoursSinceGame > 24;
+  };
+
+  // For NFL, use all playoff games with winners advancing
+  // For other sports, use regular scores
+  let gamesToShow: GameScore[] = [];
+  if (selectedSport === 'NFL' && !isFavoritesView) {
+    // Use playoff games with winners advancing, but exclude completed games older than 24 hours
+    if (upcomingGames) {
+      const allPlayoffGames = generateAllPlayoffGames(upcomingGames);
+      gamesToShow = allPlayoffGames.filter(game => !isCompletedGameOld(game));
+    }
+  } else {
+    // Filter games for favorites or use regular scores, exclude completed games older than 24 hours
+    const filteredScores = isFavoritesView
+      ? currentScores?.filter(game => favorites.includes(game.id))
+      : currentScores;
+    gamesToShow = (filteredScores || []).filter(game => !isCompletedGameOld(game));
+  }
+
   // Check if there are any live games
-  const hasLiveGames = Array.isArray(currentScores) && currentScores.some(game => game.status === 'live');
+  const hasLiveGames = Array.isArray(gamesToShow) && gamesToShow.some(game => game.status === 'live');
   const isAutoRefreshing = hasLiveGames && (scoresFetching || favoriteQueries.isFetching);
-
-  // Filter games for favorites
-  const filteredScores = isFavoritesView
-    ? currentScores?.filter(game => favorites.includes(game.id))
-    : currentScores;
-
-  const gamesToShow = filteredScores || [];
 
   return (
     <div className="container mx-auto py-8 px-8 min-h-screen max-w-full">
@@ -292,44 +316,88 @@ export default function SportsPage() {
             </TabsList>
 
             <TabsContent value="scores" className="mt-6">
-              {currentLoading ? (
-                <div className="px-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {Array.from({ length: 8 }).map((_, i) => (
-                      <ScoreCardSkeleton key={i} />
-                    ))}
+              {selectedSport === 'NFL' ? (
+                // For NFL, show loading state from playoff games query
+                upcomingGamesLoading ? (
+                  <div className="px-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {Array.from({ length: 8 }).map((_, i) => (
+                        <ScoreCardSkeleton key={i} />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ) : currentError ? (
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="text-center text-body-sm text-destructive">
-                      Error loading scores. Please try again.
+                ) : upcomingGamesError ? (
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="text-center text-body-sm text-destructive">
+                        Error loading playoff games. Please try again.
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : !gamesToShow || gamesToShow.length === 0 ? (
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="text-center text-body-sm text-muted-foreground">
+                        No playoff games found for {selectedSport}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="px-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {gamesToShow.map((game) => (
+                        <ScoreCard
+                          key={game.id}
+                          game={game}
+                          isFavorite={favorites.includes(game.id)}
+                          onToggleFavorite={handleToggleFavorite}
+                          isHoustonGame={isHoustonGame(game.homeTeam, game.awayTeam)}
+                        />
+                      ))}
                     </div>
-                  </CardContent>
-                </Card>
-              ) : !gamesToShow || gamesToShow.length === 0 ? (
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="text-center text-body-sm text-muted-foreground">
-                      No games today for {selectedSport}
-                    </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                )
               ) : (
-                <div className="px-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {gamesToShow.map((game) => (
-                      <ScoreCard
-                        key={game.id}
-                        game={game}
-                        isFavorite={favorites.includes(game.id)}
-                        onToggleFavorite={handleToggleFavorite}
-                        isHoustonGame={isHoustonGame(game.homeTeam, game.awayTeam)}
-                      />
-                    ))}
+                // For other sports, use regular scores
+                currentLoading ? (
+                  <div className="px-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {Array.from({ length: 8 }).map((_, i) => (
+                        <ScoreCardSkeleton key={i} />
+                      ))}
+                    </div>
                   </div>
-                </div>
+                ) : currentError ? (
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="text-center text-body-sm text-destructive">
+                        Error loading scores. Please try again.
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : !gamesToShow || gamesToShow.length === 0 ? (
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="text-center text-body-sm text-muted-foreground">
+                        No games today for {selectedSport}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="px-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {gamesToShow.map((game) => (
+                        <ScoreCard
+                          key={game.id}
+                          game={game}
+                          isFavorite={favorites.includes(game.id)}
+                          onToggleFavorite={handleToggleFavorite}
+                          isHoustonGame={isHoustonGame(game.homeTeam, game.awayTeam)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )
               )}
             </TabsContent>
 

@@ -201,6 +201,15 @@
     animation: weather-rain-drop linear infinite;
   }
 
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
   /* Responsive grid for watchlist cards - prevents initial flash of small cards */
   .watchlist-grid {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
