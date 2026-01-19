@@ -131,3 +131,32 @@ model ApiUsage {
   @@index([timestamp])
   @@map("api_usage")
 }
+
+model Collection {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  imageUrl    String?  @map("image_url")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  items       CollectionItem[]
+
+  @@index([name])
+  @@map("collections")
+}
+
+model CollectionItem {
+  id           String     @id @default(cuid())
+  collectionId String     @map("collection_id")
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  seriesId     String?    @map("series_id") // Komga series ID
+  bookId       String?    @map("book_id")   // Komga book ID
+  phase        String?    // Phase/group name (e.g., "Avengers World", "Infinity")
+  order        Int        // Reading order within the collection
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@index([collectionId, order])
+  @@index([seriesId])
+  @@index([bookId])
+  @@map("collection_items")
+}

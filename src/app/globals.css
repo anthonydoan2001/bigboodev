@@ -125,6 +125,20 @@
     @apply bg-background text-foreground;
   }
 
+  /* Performance optimizations for smooth scrolling */
+  img {
+    image-rendering: auto;
+    image-rendering: crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+  }
+
+  /* GPU acceleration for transforms */
+  [style*="transform"] {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+
   /* Typography Scale - Consistent sizing across app */
   .text-display-lg {
     @apply text-5xl sm:text-6xl font-bold tracking-tight;
@@ -226,5 +240,25 @@
     overflow-x: hidden;
     justify-content: center;
     align-content: start;
+  }
+
+  /* Smooth scroll optimization */
+  .smooth-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Hardware acceleration for better performance */
+  .gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+
+  /* Disable animations during scroll for better performance */
+  @media (prefers-reduced-motion: no-preference) {
+    html:focus-within {
+      scroll-behavior: smooth;
+    }
   }
 }
