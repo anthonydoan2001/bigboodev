@@ -33,13 +33,30 @@ export function ContinuousViewer({
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const previousZoomRef = useRef<number>(zoom);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastScrolledPageRef = useRef<number>(0);
 
-  // Reset scroll flag only when bookId changes (not when currentPage changes)
+  // Reset scroll flag when bookId changes
   useEffect(() => {
     setHasScrolledToInitialPage(false);
     scrollStartedRef.current = false;
     previousZoomRef.current = zoom;
+    lastScrolledPageRef.current = 0;
   }, [bookId, zoom]);
+  
+  // Reset scroll flag when currentPage changes significantly (for resuming reading)
+  // This ensures we scroll to the new page when resuming from saved progress
+  useEffect(() => {
+    // If currentPage changed and we haven't scrolled to this specific page yet, reset the flag
+    // This handles the case where currentPage updates from 1 (default) to the saved page
+    if (currentPage !== lastScrolledPageRef.current && currentPage > 0) {
+      // Reset if we haven't scrolled yet, or if the page changed significantly (more than 1 page difference)
+      // This allows scrolling when resuming from saved progress
+      if (!hasScrolledToInitialPage || Math.abs(currentPage - lastScrolledPageRef.current) > 1) {
+        setHasScrolledToInitialPage(false);
+        scrollStartedRef.current = false;
+      }
+    }
+  }, [currentPage, hasScrolledToInitialPage]);
 
   const isVertical = readingMode === 'continuous-vertical';
   const isRTL = readingMode.includes('rtl');
@@ -226,37 +243,55 @@ export function ContinuousViewer({
 
   // Scroll to current page on initial load (optimized for speed)
   useEffect(() => {
-    if (hasScrolledToInitialPage || !currentPage || scrollStartedRef.current) return;
+    if (hasScrolledToInitialPage || !currentPage || scrollStartedRef.current || totalPages === 0) return;
 
     const container = containerRef.current;
-    const pageEl = pageRefs.current.get(currentPage);
-    if (!container || !pageEl) return;
+    if (!container) return;
 
-    const scrollToPage = () => {
+    const scrollToPage = (retryCount = 0) => {
       if (scrollStartedRef.current || hasScrolledToInitialPage) return;
+
+      const targetPageEl = pageRefs.current.get(currentPage);
+      if (!targetPageEl) {
+        // Retry if page element isn't ready yet (max 10 retries = 2 seconds)
+        if (retryCount < 10) {
+          setTimeout(() => scrollToPage(retryCount + 1), 200);
+        }
+        return;
+      }
+
+      // For horizontal mode, ensure image dimensions are available
+      if (!isVertical && !imageDimensions.has(currentPage)) {
+        // Retry if dimensions aren't ready yet (max 10 retries = 2 seconds)
+        if (retryCount < 10) {
+          setTimeout(() => scrollToPage(retryCount + 1), 200);
+        }
+        return;
+      }
 
       scrollStartedRef.current = true;
       (container as any).__isProgrammaticScroll = true;
 
       requestAnimationFrame(() => {
-        const targetPageEl = pageRefs.current.get(currentPage);
-        if (!targetPageEl) {
+        const finalPageEl = pageRefs.current.get(currentPage);
+        if (!finalPageEl) {
           (container as any).__isProgrammaticScroll = false;
           scrollStartedRef.current = false;
           return;
         }
 
         if (isVertical) {
-          container.scrollTop = targetPageEl.offsetTop;
+          container.scrollTop = finalPageEl.offsetTop;
         } else {
           // For horizontal scrolling, scroll to center the page in viewport
-          const pageRect = targetPageEl.getBoundingClientRect();
+          const pageRect = finalPageEl.getBoundingClientRect();
           const containerRect = container.getBoundingClientRect();
-          const scrollLeft = targetPageEl.offsetLeft - (containerRect.width / 2) + (pageRect.width / 2);
+          const scrollLeft = finalPageEl.offsetLeft - (containerRect.width / 2) + (pageRect.width / 2);
           container.scrollLeft = Math.max(0, scrollLeft);
         }
 
         setHasScrolledToInitialPage(true);
+        lastScrolledPageRef.current = currentPage;
         onScrolledToPosition?.();
 
         setTimeout(() => {
@@ -267,13 +302,13 @@ export function ContinuousViewer({
 
     // Try to scroll immediately if page is loaded
     if (loadedPages.has(currentPage) && (isVertical || imageDimensions.has(currentPage))) {
-      requestAnimationFrame(scrollToPage);
+      requestAnimationFrame(() => scrollToPage());
     } else {
-      // Wait a bit for images to load, then scroll anyway
-      const timeout = setTimeout(scrollToPage, 200);
+      // Wait for images to load, with retry logic
+      const timeout = setTimeout(() => scrollToPage(), 100);
       return () => clearTimeout(timeout);
     }
-  }, [bookId, currentPage, isRTL, isVertical, loadedPages, imageDimensions, hasScrolledToInitialPage, onScrolledToPosition]);
+  }, [bookId, currentPage, isRTL, isVertical, loadedPages, imageDimensions, hasScrolledToInitialPage, onScrolledToPosition, totalPages]);
 
   // Container and layout based on reading mode
   const containerClassName = isVertical
