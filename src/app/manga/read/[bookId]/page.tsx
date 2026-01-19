@@ -227,12 +227,10 @@ function ReaderContent() {
       // Check if readProgress exists and has a valid page number
       if (readProgress && typeof readProgress.page === 'number') {
         const lastReadPage = readProgress.page;
-        const isCompleted = readProgress.completed || false;
         
-        // Always use the saved page if it's valid, regardless of completed status
-        // This ensures users can resume where they left off
+        // Use the saved page if it's valid - this is where the user left off
+        // Komga's readProgress.page represents the last page that was viewed
         if (lastReadPage >= 1 && lastReadPage <= totalPages) {
-          // Use the saved page - this is where the user left off
           startPage = lastReadPage;
         } 
         // If page number is out of bounds, clamp to total pages
@@ -339,6 +337,12 @@ function ReaderContent() {
       abortController.abort();
     };
   }, [bookId, currentPage, totalPages]);
+
+  // Reset initialization state when bookId changes
+  useEffect(() => {
+    setIsInitialized(false);
+    setCurrentPage(1);
+  }, [bookId]);
 
   const canGoPrevious = isRTL ? currentPage < totalPages : currentPage > 1;
   const canGoNext = isRTL ? currentPage > 1 : currentPage < totalPages;
