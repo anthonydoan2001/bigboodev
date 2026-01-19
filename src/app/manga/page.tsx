@@ -15,6 +15,8 @@ import { CardSkeleton } from '@/components/watchlist/CardSkeleton';
 import { useSearchBooks, useSeries } from '@/lib/hooks/useKomga';
 import { useViewportGrid } from '@/lib/hooks/useViewportGrid';
 import { KomgaSeries } from '@/types/komga';
+import { FolderOpen } from 'lucide-react';
+import Link from 'next/link';
 
 function MangaContent() {
   const router = useRouter();
@@ -109,12 +111,20 @@ function MangaContent() {
       <div className={`w-full space-y-4 sm:space-y-6 ${showingSearch ? 'flex flex-col h-full' : ''}`}>
         {/* Filters and Search Bar */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <SeriesFilter 
-            filter={filterParam} 
-            onFilterChange={handleFilterChange}
-            comicCount={comicCount}
-            mangaCount={mangaCount}
-          />
+          <div className="flex items-center gap-4">
+            <SeriesFilter
+              filter={filterParam}
+              onFilterChange={handleFilterChange}
+              comicCount={comicCount}
+              mangaCount={mangaCount}
+            />
+            <Link href="/manga/collections">
+              <Button variant="outline" size="sm" className="gap-2">
+                <FolderOpen className="h-4 w-4" />
+                Collections
+              </Button>
+            </Link>
+          </div>
           <KomgaSearchBar />
         </div>
 
@@ -124,7 +134,7 @@ function MangaContent() {
             {searchLoading ? (
               <div className="flex-1 min-h-0 w-full overflow-hidden">
                 <div ref={searchContainerRef} className="watchlist-grid gap-3 sm:gap-4 w-full h-full overflow-hidden" style={{ gridAutoRows: 'min-content' }}>
-                  {Array.from({ length: searchItemsPerPage || 18 }).map((_, i) => (
+                  {Array.from({ length: 12 }).map((_, i) => (
                     <div key={i} style={{ width: '100%', minWidth: 0 }}>
                       <CardSkeleton />
                     </div>
@@ -201,15 +211,13 @@ function MangaContent() {
 export default function MangaPage() {
   return (
     <Suspense fallback={
-      <div className="w-full h-screen flex flex-col py-8 px-4 md:px-6 lg:px-8 overflow-hidden">
-        <div className="w-full flex flex-col h-full space-y-6">
-          <div className="h-10 w-full bg-muted animate-pulse rounded flex-shrink-0" />
-          <div className="h-full flex-1 overflow-hidden">
-            <div className="grid gap-4 h-full grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
-              {Array.from({ length: 16 }).map((_, i) => (
-                <CardSkeleton key={i} />
-              ))}
-            </div>
+      <div className="w-full min-h-screen py-8 px-4 md:px-6 lg:px-8">
+        <div className="w-full space-y-6">
+          <div className="h-10 w-48 bg-muted/50 rounded" />
+          <div className="watchlist-grid gap-4">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <CardSkeleton key={i} />
+            ))}
           </div>
         </div>
       </div>

@@ -1,10 +1,11 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { KomgaBook } from '@/types/komga';
 import { Button } from '@/components/ui/button';
-import { ExternalLink } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import Image from 'next/image';
-import { getBookThumbnailUrl, getBookReaderUrl } from '@/lib/api/komga';
+import { getBookThumbnailUrl } from '@/lib/api/komga';
 
 interface ComicCardProps {
   book: KomgaBook;
@@ -12,8 +13,8 @@ interface ComicCardProps {
 }
 
 export function ComicCard({ book, showProgress = false }: ComicCardProps) {
+  const router = useRouter();
   const thumbnailUrl = getBookThumbnailUrl(book.id);
-  const readerUrl = getBookReaderUrl(book.id);
   
   const title = book.metadata?.title || book.name || 'Untitled';
   const pageCount = book.media?.pagesCount || 0;
@@ -21,7 +22,7 @@ export function ComicCard({ book, showProgress = false }: ComicCardProps) {
   const progressPercent = pageCount > 0 ? Math.round((currentPage / pageCount) * 100) : 0;
 
   const handleClick = () => {
-    window.open(readerUrl, '_blank', 'noopener,noreferrer');
+    router.push(`/manga/read/${book.id}`);
   };
 
   return (
@@ -68,8 +69,8 @@ export function ComicCard({ book, showProgress = false }: ComicCardProps) {
                 handleClick();
               }}
             >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Open
+              <BookOpen className="h-4 w-4 mr-2" />
+              Read
             </Button>
           </div>
         </div>

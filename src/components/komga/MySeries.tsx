@@ -8,15 +8,15 @@ import { CardSkeleton } from '@/components/watchlist/CardSkeleton';
 import { Library } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ExternalLink } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 
 interface SeriesCardProps {
   series: KomgaSeries;
+  onOpenReader?: (bookId: string) => void;
 }
 
 function SeriesCard({ series }: SeriesCardProps) {
   const thumbnailUrl = `/api/komga/series-thumbnail/${series.id}`;
-  const seriesUrl = `${process.env.NEXT_PUBLIC_KOMGA_BASE_URL || 'https://komga.bigboo.dev'}/series/${series.id}`;
   
   const title = series.metadata?.title || series.name || 'Untitled';
   const booksCount = series.booksCount || 0;
@@ -24,7 +24,8 @@ function SeriesCard({ series }: SeriesCardProps) {
   const booksUnreadCount = series.booksUnreadCount || 0;
 
   const handleClick = () => {
-    window.open(seriesUrl, '_blank', 'noopener,noreferrer');
+    // Navigate to series detail page
+    window.location.href = `/manga/series/${series.id}`;
   };
 
   return (
@@ -74,8 +75,8 @@ function SeriesCard({ series }: SeriesCardProps) {
                 handleClick();
               }}
             >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              View Series
+              <BookOpen className="h-4 w-4 mr-2" />
+              View Books
             </Button>
           </div>
         </div>
