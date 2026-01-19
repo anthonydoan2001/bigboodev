@@ -51,7 +51,7 @@ export function KomgaSearchBar({ placeholder = 'Search comics...' }: KomgaSearch
   };
 
   return (
-    <form onSubmit={handleSubmit} className="relative w-full max-w-2xl">
+    <form onSubmit={handleSubmit} className="relative w-full max-w-md">
       <div className="relative flex items-center">
         <Search className="absolute left-3 h-5 w-5 text-muted-foreground pointer-events-none" />
         <Input

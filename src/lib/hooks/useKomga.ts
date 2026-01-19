@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getAuthHeaders } from '@/lib/api-client';
-import { KomgaBook, KomgaLibraryStats } from '@/types/komga';
+import { KomgaBook, KomgaLibraryStats, KomgaSeries } from '@/types/komga';
 
 /**
  * React Query hooks for Komga API
@@ -17,6 +17,22 @@ export function useRecentBooks(limit: number = 10) {
       if (!res.ok) throw new Error('Failed to fetch recent books');
       const data = await res.json();
       return data.books || [];
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useSeries(limit: number = 50) {
+  return useQuery<KomgaSeries[]>({
+    queryKey: ['komga', 'series', limit],
+    queryFn: async () => {
+      const res = await fetch(`/api/komga/series?limit=${limit}`, {
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Failed to fetch series');
+      const data = await res.json();
+      return data.series || [];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

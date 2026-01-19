@@ -7,22 +7,76 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useMemo, Suspense } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LibraryStats } from '@/components/komga/LibraryStats';
-import { RecentlyAdded } from '@/components/komga/RecentlyAdded';
-import { ContinueReading } from '@/components/komga/ContinueReading';
+import { MySeries } from '@/components/komga/MySeries';
 import { KomgaSearchBar } from '@/components/komga/SearchBar';
+import { SeriesFilter, SeriesFilterType } from '@/components/komga/SeriesFilter';
 import { ComicCard } from '@/components/komga/ComicCard';
 import { CardSkeleton } from '@/components/watchlist/CardSkeleton';
-import { useSearchBooks } from '@/lib/hooks/useKomga';
+import { useSearchBooks, useSeries } from '@/lib/hooks/useKomga';
 import { useViewportGrid } from '@/lib/hooks/useViewportGrid';
+import { KomgaSeries } from '@/types/komga';
 
 function MangaContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
   const searchPage = parseInt(searchParams.get('page') || '0', 10);
+  const filterParam = (searchParams.get('filter') as SeriesFilterType) || 'all';
 
   const { data: searchData, isLoading: searchLoading } = useSearchBooks(searchQuery, searchPage, 20);
+  const { data: allSeries } = useSeries(1000); // Fetch all series for filtering
+
+  // Filter series by type (comic vs manga)
+  // This checks library name, tags, or genres for "comic" or "manga"
+  const filterSeries = (series: KomgaSeries[], filter: SeriesFilterType): KomgaSeries[] => {
+    if (filter === 'all') return series;
+    
+    return series.filter((s) => {
+      const name = s.name?.toLowerCase() || '';
+      const title = s.metadata?.title?.toLowerCase() || '';
+      const tags = s.metadata?.tags?.map(t => t.toLowerCase()) || [];
+      const genres = s.metadata?.genres?.map(g => g.toLowerCase()) || [];
+      
+      const searchText = `${name} ${title} ${tags.join(' ')} ${genres.join(' ')}`;
+      
+      if (filter === 'comic') {
+        // Check if it's a comic (not manga)
+        return searchText.includes('comic') && !searchText.includes('manga');
+      } else if (filter === 'manga') {
+        // Check if it's manga
+        return searchText.includes('manga');
+      }
+      
+      return true;
+    });
+  };
+
+  // Calculate counts for filter buttons
+  const filteredSeries = useMemo(() => {
+    if (!allSeries) return [];
+    return filterSeries(allSeries, filterParam);
+  }, [allSeries, filterParam]);
+
+  const comicCount = useMemo(() => {
+    if (!allSeries) return 0;
+    return filterSeries(allSeries, 'comic').length;
+  }, [allSeries]);
+
+  const mangaCount = useMemo(() => {
+    if (!allSeries) return 0;
+    return filterSeries(allSeries, 'manga').length;
+  }, [allSeries]);
+
+  const handleFilterChange = (newFilter: SeriesFilterType) => {
+    const params = new URLSearchParams();
+    if (searchQuery) {
+      params.set('search', searchQuery);
+    }
+    if (newFilter !== 'all') {
+      params.set('filter', newFilter);
+    }
+    router.push(`/manga?${params.toString()}`);
+  };
 
   // Grid card width hook - viewport aware
   const { containerRef: searchContainerRef, itemsPerPage: searchItemsPerPage } = useViewportGrid({
@@ -53,12 +107,14 @@ function MangaContent() {
   return (
     <div className={`w-full ${showingSearch ? 'h-screen flex flex-col overflow-hidden py-4 sm:py-8 px-3 sm:px-4 md:px-6 lg:px-8' : 'min-h-screen py-4 sm:py-8 px-3 sm:px-4 md:px-6 lg:px-8'}`}>
       <div className={`w-full space-y-4 sm:space-y-6 ${showingSearch ? 'flex flex-col h-full' : ''}`}>
-        {/* Header */}
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <h1 className="text-title font-semibold">Manga</h1>
-            <p className="text-body-sm text-muted-foreground">Browse your comic library</p>
-          </div>
+        {/* Filters and Search Bar */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <SeriesFilter 
+            filter={filterParam} 
+            onFilterChange={handleFilterChange}
+            comicCount={comicCount}
+            mangaCount={mangaCount}
+          />
           <KomgaSearchBar />
         </div>
 
@@ -130,14 +186,11 @@ function MangaContent() {
           </div>
         ) : (
           <div className="space-y-8">
-            {/* Library Statistics */}
-            <LibraryStats />
-
-            {/* Recently Added */}
-            <RecentlyAdded limit={10} />
-
-            {/* Continue Reading */}
-            <ContinueReading />
+            {/* My Series */}
+            <MySeries 
+              limit={1000} 
+              filter={(series) => filterSeries(series, filterParam)}
+            />
           </div>
         )}
       </div>
