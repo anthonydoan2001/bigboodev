@@ -316,10 +316,10 @@ function WatchlistContent() {
         {showingSearch ? (
           <div className="flex flex-col flex-1 min-h-0 space-y-4">
             {searchLoading ? (
-              <div className="flex-1 overflow-hidden min-h-0">
-                <div ref={searchContainerRef} className="grid gap-4 h-full" style={{ gridAutoRows: 'min-content' }}>
+              <div className="flex-1 min-h-0 w-full overflow-hidden">
+                <div ref={searchContainerRef} className="watchlist-grid gap-3 sm:gap-4 w-full h-full overflow-hidden" style={{ gridAutoRows: 'min-content' }}>
                   {Array.from({ length: searchItemsPerPage || 18 }).map((_, i) => (
-                    <div key={i} style={{ width: 'var(--item-width, 200px)' }}>
+                    <div key={i} style={{ width: '100%', minWidth: 0 }}>
                       <CardSkeleton />
                     </div>
                   ))}
@@ -397,10 +397,10 @@ function WatchlistContent() {
                   )}
                 </div>
 
-                {/* Search Results - Grid Layout */}
+                {/* Search Results - Grid Layout - NO SCROLL */}
                 {paginatedSearchResults.length > 0 ? (
-                  <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 w-full pb-4">
-                    <div ref={searchContainerRef} className="grid watchlist-grid gap-4 w-full" style={{ gridAutoRows: 'min-content', width: '100%' }}>
+                  <div className="flex-1 min-h-0 w-full overflow-hidden">
+                    <div ref={searchContainerRef} className="watchlist-grid gap-3 sm:gap-4 w-full h-full overflow-hidden" style={{ gridAutoRows: 'min-content' }}>
                       {paginatedSearchResults.map((result) => {
                         const alreadyInList = isInWatchlist(result.externalId, result.type);
                         const itemWatched = isWatched(result.externalId, result.type);

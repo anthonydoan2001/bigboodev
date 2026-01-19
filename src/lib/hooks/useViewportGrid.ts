@@ -60,15 +60,18 @@ export function useViewportGrid({
     // Set CSS Grid fallback immediately for initial layout
     const setCSSFallback = () => {
       if (!containerRef.current) return;
-      
+
       const estimate = getInitialEstimate();
-      
-      // Set CSS Grid fallback that will work immediately - use the estimated preferred width
-      // This prevents the flash of small cards
-      containerRef.current.style.setProperty(
-        'grid-template-columns',
-        `repeat(auto-fit, minmax(${estimate.preferredWidth}px, 1fr))`
-      );
+
+      // Calculate estimated columns for initial layout
+      const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 1920;
+      const estimatedPadding = 64; // Approximate padding
+      const availableWidth = windowWidth - estimatedPadding;
+      const estimatedColumns = Math.max(1, Math.floor(availableWidth / (estimate.preferredWidth + estimate.gap)));
+
+      // Set CSS Grid fallback with calculated columns (no auto-fit)
+      // This prevents the flash of small cards and ensures consistent sizing
+      containerRef.current.style.gridTemplateColumns = `repeat(${estimatedColumns}, ${estimate.preferredWidth}px)`;
       containerRef.current.style.setProperty('--item-max-width', `${estimate.maxWidth}px`);
       containerRef.current.style.setProperty('--item-width', `${estimate.preferredWidth}px`);
       containerRef.current.style.setProperty('gap', `${estimate.gap}px`);
@@ -193,7 +196,20 @@ export function useViewportGrid({
       // Calculate items per page - dynamically calculated, no hard limits
       // This will vary based on viewport size: larger screens = more items, smaller screens = fewer items
       const totalItems = targetColumns * targetRows;
-      
+
+      // Debug logging
+      console.log('🎯 Grid Calculation:', {
+        containerWidth,
+        viewportHeight,
+        availableHeight,
+        columns: targetColumns,
+        rows: targetRows,
+        cardWidth: calculatedWidth,
+        cardHeight: totalCardHeight,
+        itemsPerPage: totalItems,
+        gap: responsiveGap
+      });
+
       // Update state immediately - don't wait for requestAnimationFrame
       // This ensures React re-renders with new itemsPerPage value
       setItemWidth(calculatedWidth);
@@ -201,17 +217,20 @@ export function useViewportGrid({
       setRows(targetRows);
       setItemsPerPage(totalItems);
       
-      // Set CSS variables and fine-tune grid
+      // Set CSS variables and apply grid layout dynamically
       if (containerRef.current) {
         // Update CSS variables immediately for responsive behavior
         containerRef.current.style.setProperty('--item-width', `${calculatedWidth}px`);
         containerRef.current.style.setProperty('--item-max-width', `${responsiveMaxWidth}px`);
-        // Don't override grid-template-columns - let CSS class handle responsive grid columns
-        // The watchlist-grid CSS class uses auto-fit with responsive minmax values
         containerRef.current.style.setProperty('gap', `${responsiveGap}px`);
+
+        // CRITICAL: Set grid-template-columns dynamically based on calculated columns
+        // This overrides the CSS class and makes the grid truly responsive
+        containerRef.current.style.gridTemplateColumns = `repeat(${targetColumns}, ${calculatedWidth}px)`;
+
         // Ensure container takes full width
         containerRef.current.style.width = '100%';
-        
+
         // Use requestAnimationFrame only for marking as initialized
         requestAnimationFrame(() => {
           hasInitializedRef.current = true;

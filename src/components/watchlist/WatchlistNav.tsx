@@ -1,12 +1,12 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Eye, ListVideo, Trophy } from 'lucide-react';
-import { SearchBar } from './SearchBar';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
-import { useState, useRef } from 'react';
+import { CheckCircle2, Eye, ListVideo, Trophy } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useRef, useState } from 'react';
+import { SearchBar } from './SearchBar';
 
 export function WatchlistNav() {
   const pathname = usePathname();

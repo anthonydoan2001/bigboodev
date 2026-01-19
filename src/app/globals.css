@@ -210,27 +210,21 @@
     }
   }
 
-  /* Responsive grid for watchlist cards - prevents initial flash of small cards */
+  /* Responsive grid for watchlist cards - JavaScript controls columns dynamically */
   .watchlist-grid {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    display: grid;
+    /* grid-template-columns is set dynamically via JavaScript in useViewportGrid */
     overflow-x: hidden;
+    justify-content: center;
+    align-content: start;
   }
 
-  @media (max-width: 640px) {
-    .watchlist-grid {
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .watchlist-grid {
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    }
-  }
-
-  @media (min-width: 1280px) {
-    .watchlist-grid {
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    }
+  /* Responsive grid for game cards - JavaScript controls columns dynamically */
+  .games-grid {
+    display: grid;
+    /* grid-template-columns is set dynamically via JavaScript in useViewportGrid */
+    overflow-x: hidden;
+    justify-content: center;
+    align-content: start;
   }
 }
