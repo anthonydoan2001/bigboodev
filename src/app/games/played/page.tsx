@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useMemo, Suspense } from 'react';
+import { useMemo, useEffect, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -38,6 +38,16 @@ function PlayedContent() {
   }, [playedGames, page, itemsPerPage]);
 
   const totalPages = Math.ceil(playedGames.length / itemsPerPage);
+
+  // Adjust page when itemsPerPage changes (e.g., on window resize)
+  useEffect(() => {
+    if (totalPages > 0 && page > totalPages) {
+      // Current page is invalid, redirect to last valid page
+      const params = new URLSearchParams();
+      params.set('page', totalPages.toString());
+      router.replace(`/games/played?${params.toString()}`);
+    }
+  }, [itemsPerPage, totalPages, page, router]);
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams();
@@ -81,24 +91,24 @@ function PlayedContent() {
             </div>
           </div>
 
-          {/* Played Results - Grid Layout */}
+          {/* Played Results - Grid Layout - NO SCROLL */}
           {isLoading ? (
-            <div className="flex-1 overflow-hidden min-h-0 w-full">
-              <div ref={containerRef} className="grid gap-3 sm:gap-4 h-full w-full" style={{ gridAutoRows: 'min-content' }}>
+            <div className="flex-1 min-h-0 w-full overflow-hidden">
+              <div ref={containerRef} className="games-grid gap-3 sm:gap-4 w-full h-full overflow-hidden" style={{ gridAutoRows: 'min-content' }}>
                 {Array.from({ length: itemsPerPage || 18 }).map((_, i) => (
-                  <div key={i} style={{ width: 'var(--item-width, 200px)' }}>
+                  <div key={i} style={{ width: '100%', minWidth: 0 }}>
                     <CardSkeleton />
                   </div>
                 ))}
               </div>
             </div>
           ) : paginatedPlayedGames.length > 0 ? (
-            <div className="flex-1 overflow-hidden min-h-0 w-full">
-              <div ref={containerRef} className="grid gap-3 sm:gap-4 h-full w-full" style={{ gridAutoRows: 'min-content' }}>
+            <div className="flex-1 min-h-0 w-full overflow-hidden">
+              <div ref={containerRef} className="games-grid gap-3 sm:gap-4 w-full h-full overflow-hidden" style={{ gridAutoRows: 'min-content' }}>
                 {paginatedPlayedGames.map((item) => (
-                  <div key={item.id} style={{ width: 'var(--item-width, 200px)' }}>
-                    <GameCard 
-                      item={item} 
+                  <div key={item.id} style={{ width: '100%', minWidth: 0 }}>
+                    <GameCard
+                      item={item}
                       onDelete={() => deleteMutation.mutate(item.id)}
                       hideStatusBadge={true}
                     />

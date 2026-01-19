@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useMemo, Suspense } from 'react';
+import { useMemo, useEffect, Suspense } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -116,6 +116,34 @@ function GamesContent() {
 
   const totalListPages = Math.ceil(planToPlayGames.length / listItemsPerPage);
 
+  const showingSearch = searchQuery.length > 0;
+
+  // Adjust search page when itemsPerPage changes (e.g., on window resize)
+  useEffect(() => {
+    if (showingSearch && totalSearchPages > 0 && searchPage > totalSearchPages) {
+      // Current page is invalid, redirect to last valid page
+      const params = new URLSearchParams();
+      if (searchQuery) {
+        params.set('search', searchQuery);
+      }
+      params.set('page', totalSearchPages.toString());
+      router.replace(`/games?${params.toString()}`);
+    }
+  }, [searchItemsPerPage, totalSearchPages, searchPage, searchQuery, showingSearch, router]);
+
+  // Adjust list page when itemsPerPage changes (e.g., on window resize)
+  useEffect(() => {
+    if (!showingSearch && totalListPages > 0 && listPage > totalListPages) {
+      // Current page is invalid, redirect to last valid page
+      const params = new URLSearchParams();
+      if (searchQuery) {
+        params.set('search', searchQuery);
+      }
+      params.set('listPage', totalListPages.toString());
+      router.replace(`/games?${params.toString()}`);
+    }
+  }, [listItemsPerPage, totalListPages, listPage, searchQuery, showingSearch, router]);
+
   const handleSearchPageChange = (newPage: number) => {
     const params = new URLSearchParams();
     // Always preserve search query
@@ -138,8 +166,6 @@ function GamesContent() {
     router.push(`/games?${params.toString()}`);
   };
 
-  const showingSearch = searchQuery.length > 0;
-
   return (
     <div className={`w-full ${showingSearch ? 'h-screen flex flex-col overflow-hidden py-4 sm:py-8 px-3 sm:px-4 md:px-6 lg:px-8' : 'h-screen flex flex-col overflow-hidden py-4 sm:py-6 md:py-8 px-3 sm:px-4 md:px-6 lg:px-8'}`}>
       <div className={`w-full ${showingSearch ? 'space-y-3 sm:space-y-4 md:space-y-6 flex flex-col h-full' : 'flex flex-col h-full space-y-4 sm:space-y-6'}`}>
@@ -149,10 +175,10 @@ function GamesContent() {
         {showingSearch ? (
           <div className="flex flex-col flex-1 min-h-0 space-y-4">
             {searchLoading ? (
-              <div className="flex-1 overflow-hidden min-h-0">
-                <div ref={searchContainerRef} className="grid gap-3 sm:gap-4 h-full w-full" style={{ gridAutoRows: 'min-content' }}>
+              <div className="flex-1 min-h-0 w-full overflow-hidden">
+                <div ref={searchContainerRef} className="games-grid gap-3 sm:gap-4 w-full h-full overflow-hidden" style={{ gridAutoRows: 'min-content' }}>
                   {Array.from({ length: searchItemsPerPage || 18 }).map((_, i) => (
-                    <div key={i} style={{ width: 'var(--item-width, 200px)' }}>
+                    <div key={i} style={{ width: '100%', minWidth: 0 }}>
                       <CardSkeleton />
                     </div>
                   ))}
@@ -188,17 +214,17 @@ function GamesContent() {
                   </div>
                 </div>
 
-                {/* Search Results - Grid Layout */}
+                {/* Search Results - Grid Layout - NO SCROLL */}
                 {paginatedSearchResults.length > 0 ? (
-                  <div className="flex-1 overflow-hidden min-h-0 w-full">
-                    <div ref={searchContainerRef} className="grid gap-3 sm:gap-4 h-full w-full" style={{ gridAutoRows: 'min-content' }}>
+                  <div className="flex-1 min-h-0 w-full overflow-hidden">
+                    <div ref={searchContainerRef} className="games-grid gap-3 sm:gap-4 w-full h-full overflow-hidden" style={{ gridAutoRows: 'min-content' }}>
                       {paginatedSearchResults.map((result) => {
                         const alreadyInList = isInGamesList(result.externalId);
                         const itemPlayed = isPlayed(result.externalId);
                         const itemPlaying = isPlaying(result.externalId);
                         const itemId = getGameItemId(result.externalId);
                         return (
-                          <div key={result.id} style={{ width: 'var(--item-width, 200px)' }}>
+                          <div key={result.id} style={{ width: '100%', minWidth: 0 }}>
                             <SearchResultCard
                               result={result}
                               onAdd={() => addMutation.mutate(result)}
@@ -257,22 +283,22 @@ function GamesContent() {
               </div>
             </div>
 
-            {/* Plan to Play Games - Grid Layout */}
+            {/* Plan to Play Games - Grid Layout - NO SCROLL */}
             {listLoading ? (
-              <div className="flex-1 overflow-hidden min-h-0 w-full">
-                <div ref={listContainerRef} className="grid gap-3 sm:gap-4 h-full w-full" style={{ gridAutoRows: 'min-content' }}>
+              <div className="flex-1 min-h-0 w-full overflow-hidden">
+                <div ref={listContainerRef} className="games-grid gap-3 sm:gap-4 w-full h-full overflow-hidden" style={{ gridAutoRows: 'min-content' }}>
                   {Array.from({ length: listItemsPerPage || 18 }).map((_, i) => (
-                    <div key={i} style={{ width: 'var(--item-width, 200px)' }}>
+                    <div key={i} style={{ width: '100%', minWidth: 0 }}>
                       <CardSkeleton />
                     </div>
                   ))}
                 </div>
               </div>
             ) : paginatedPlanToPlayGames.length > 0 ? (
-              <div className="flex-1 overflow-hidden min-h-0 w-full">
-                <div ref={listContainerRef} className="grid gap-3 sm:gap-4 h-full w-full" style={{ gridAutoRows: 'min-content' }}>
+              <div className="flex-1 min-h-0 w-full overflow-hidden">
+                <div ref={listContainerRef} className="games-grid gap-3 sm:gap-4 w-full h-full overflow-hidden" style={{ gridAutoRows: 'min-content' }}>
                   {paginatedPlanToPlayGames.map((item) => (
-                    <div key={item.id} style={{ width: 'var(--item-width, 200px)' }}>
+                    <div key={item.id} style={{ width: '100%', minWidth: 0 }}>
                       <GameCard
                         item={item}
                         onDelete={() => deleteMutation.mutate(item.id)}
