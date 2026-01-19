@@ -3,7 +3,7 @@
 import { useLibraryStats } from '@/lib/hooks/useKomga';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BookOpen, Library, BookMarked, BookCheck } from 'lucide-react';
+import { Library, BookMarked, BookCheck } from 'lucide-react';
 
 export function LibraryStats() {
   const { data: stats, isLoading, error } = useLibraryStats();
@@ -21,23 +21,7 @@ export function LibraryStats() {
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-body-sm font-medium text-muted-foreground flex items-center gap-2">
-            <BookOpen className="h-4 w-4" />
-            Total Books
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <Skeleton className="h-8 w-16" />
-          ) : (
-            <p className="text-title font-bold">{stats?.totalBooks || 0}</p>
-          )}
-        </CardContent>
-      </Card>
-
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-body-sm font-medium text-muted-foreground flex items-center gap-2">
