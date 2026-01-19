@@ -40,6 +40,12 @@ export function ComicReader({ bookId, isOpen, onClose }: ComicReaderProps) {
   const seriesTitle = bookData?.seriesId ? 'Series' : undefined; // Could fetch series name if needed
   const seriesId = bookData?.seriesId || '';
 
+  // Reset initialization state when bookId changes
+  useEffect(() => {
+    setIsInitialized(false);
+    setCurrentPage(1);
+  }, [bookId]);
+
   // Load reader settings for this series
   useEffect(() => {
     if (seriesId) {
@@ -51,12 +57,24 @@ export function ComicReader({ bookId, isOpen, onClose }: ComicReaderProps) {
 
   // Initialize current page from read progress or default to page 1
   useEffect(() => {
-    if (bookData && !isInitialized) {
-      const lastReadPage = bookData.readProgress?.page || 1;
-      setCurrentPage(Math.max(1, Math.min(lastReadPage, totalPages)));
+    if (bookData && !isInitialized && totalPages > 0) {
+      const readProgress = bookData.readProgress;
+      let startPage = 1;
+      
+      if (readProgress && typeof readProgress.page === 'number') {
+        const lastReadPage = readProgress.page;
+        // Use the saved page if it's valid - this is where the user left off
+        if (lastReadPage >= 1 && lastReadPage <= totalPages) {
+          startPage = lastReadPage;
+        } else if (lastReadPage > totalPages) {
+          startPage = totalPages;
+        }
+      }
+      
+      setCurrentPage(startPage);
       setIsInitialized(true);
     }
-  }, [bookData, totalPages, isInitialized]);
+  }, [bookData, totalPages, isInitialized, bookId]);
 
   // Reset state when reader closes
   useEffect(() => {
