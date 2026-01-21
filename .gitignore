@@ -42,15 +42,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-.claude/agents/architect-review.md
-.claude/agents/code-reviewer.md
-.claude/agents/fullstack-developer.md
-.claude/agents/product-owner.md
-.claude/agents/project-manager.md
-.claude/agents/qa-engineer.md
-.claude/agents/security-engineer.md
-.claude/agents/system-architect.md
-.claude/agents/ux-designer.md
-.claude/agents/vercel-deployment-specialist.md
-.claude/agents/writer.md
-.claude/agents/
+# AI tools and artifacts
+.claude/
+.cursor/
+.cursorrules
+*.ai.md
+*_ai.md
+*_claude.md
+*.claude.md
