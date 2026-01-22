@@ -1,5 +1,5 @@
-import { SportType, GameScore, TopPerformer, PlayoffRound } from '@/types/sports';
 import { trackApiUsage } from '@/lib/api-usage';
+import { GameScore, PlayoffRound, SportType, TopPerformer } from '@/types/sports';
 
 const ESPN_BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports';
 
@@ -291,7 +291,7 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
 
     const { path } = SPORT_LEAGUES[sport];
     const now = new Date();
-    
+
     // Fetch games from 30 days ago to 400 days ahead to catch all playoff games
     // NFL playoffs typically run from early January to early February
     // Need to cover both current season and next season's playoffs (games can be scheduled a year ahead)
@@ -303,16 +303,16 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
       const day = String(date.getDate()).padStart(2, '0');
       dateStrings.push(`${year}${month}${day}`);
     }
-    
+
     // Split into chunks of 7 dates per request (to avoid URL length issues and rate limiting)
     // But prioritize January dates where playoffs typically occur
     const chunkSize = 7;
     const chunks: string[][] = [];
-    
+
     // First, prioritize January dates (playoff month)
     const januaryDates: string[] = [];
     const otherDates: string[] = [];
-    
+
     dateStrings.forEach(dateStr => {
       // Check if it's January (01) or February (02)
       const month = dateStr.substring(4, 6);
@@ -322,13 +322,13 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
         otherDates.push(dateStr);
       }
     });
-    
+
     // Create chunks prioritizing January dates
     const allPrioritizedDates = [...januaryDates, ...otherDates];
     for (let i = 0; i < allPrioritizedDates.length; i += chunkSize) {
       chunks.push(allPrioritizedDates.slice(i, i + chunkSize));
     }
-    
+
     // Also fetch without dates to get current/recent playoff games
     // This helps catch games when date-based fetching misses them
     const noDateResponse = fetch(`${ESPN_BASE_URL}/${path}/scoreboard?limit=300`, {
@@ -337,7 +337,7 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
         'Accept': 'application/json',
       },
     });
-    
+
     // Fetch all chunks in parallel with error handling
     const responses = await Promise.allSettled([
       noDateResponse,
@@ -353,7 +353,7 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
     ]);
 
     const allGames: ESPNGame[] = [];
-    
+
     for (const response of responses) {
       if (response.status === 'fulfilled' && response.value.ok) {
         try {
@@ -375,40 +375,40 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
     const nowTime = now.getTime();
     const currentMonth = now.getMonth(); // 0-11, where 0 = January
     const isPlayoffSeason = currentMonth === 0 || currentMonth === 1; // Jan or Feb
-    
+
     // First, try to identify playoff games
     let playoffGames = allGames
       .filter((event) => {
         if (!event.competitions || event.competitions.length === 0) return false;
         const competition = event.competitions[0];
         const gameDate = new Date(competition.date);
-        
+
         // Check if it's a playoff game
         // Season type 3 = playoffs (check both event level and competition level)
         const eventSeasonType = event.season?.type;
         const competitionSeasonType = competition.season?.type;
         const seasonType = eventSeasonType || competitionSeasonType;
         const isPlayoffByType = seasonType === 3;
-        
+
         // Check notes for playoff indicators (Wild Card, Divisional, Conference, Super Bowl)
         const notes = competition.notes || [];
         const hasPlayoffNote = notes.some(note => {
           const headline = note.headline?.toLowerCase() || '';
-          return headline.includes('wild card') || 
-                 headline.includes('divisional') || 
-                 headline.includes('conference') || 
+          return headline.includes('wild card') ||
+                 headline.includes('divisional') ||
+                 headline.includes('conference') ||
                  headline.includes('super bowl') ||
                  headline.includes('playoff');
         });
-        
+
         const isPlayoff = isPlayoffByType || hasPlayoffNote;
-        
+
         // Include scheduled (pre), live (in), and recently completed (post) games
         // For playoff games, include all scheduled/live games regardless of date
         // Include completed games from the last 30 days to show full bracket
         const statusState = event.status.type.state;
         const thirtyDaysAgo = nowTime - 30 * 24 * 60 * 60 * 1000;
-        
+
         // For playoff games, be more lenient with dates - include all scheduled/live games
         // and completed games from last 30 days
         if (isPlayoff) {
@@ -419,7 +419,7 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
             return true; // Include recently completed playoff games
           }
         }
-        
+
         return false;
       });
 
@@ -434,14 +434,14 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
         const eventSeasonType = event.season?.type;
         const competitionSeasonType = event.competitions[0]?.season?.type;
         const isPlayoffByType = eventSeasonType === 3 || competitionSeasonType === 3;
-        
+
         if (!isPlayoffByType) return false;
-        
+
         const competition = event.competitions[0];
         const gameDate = new Date(competition.date);
         const statusState = event.status.type.state;
         const thirtyDaysAgo = nowTime - 30 * 24 * 60 * 60 * 1000;
-        
+
         // Include all scheduled/live playoff games, and recently completed ones
         if (statusState === 'pre' || statusState === 'in') {
           return true;
@@ -449,10 +449,10 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
         if (statusState === 'post' && gameDate.getTime() >= thirtyDaysAgo) {
           return true;
         }
-        
+
         return false;
       });
-      
+
       if (eventLevelPlayoffs.length > 0) {
         playoffGames = eventLevelPlayoffs;
       } else if (isPlayoffSeason) {
@@ -463,13 +463,13 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
           const gameDate = new Date(competition.date);
           const statusState = event.status.type.state;
           const thirtyDaysAgo = nowTime - 30 * 24 * 60 * 60 * 1000;
-          const isRecentOrUpcoming = (statusState === 'pre' || statusState === 'in') || 
+          const isRecentOrUpcoming = (statusState === 'pre' || statusState === 'in') ||
                                      (statusState === 'post' && gameDate.getTime() >= thirtyDaysAgo);
           return isRecentOrUpcoming;
         });
       }
     }
-    
+
     // Helper function to detect playoff round from notes and week number
     const detectPlayoffRound = (
       notes: Array<{ type?: string; headline?: string }> | undefined,
@@ -478,13 +478,13 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
     ): PlayoffRound | undefined => {
       // Only check if it's a playoff game (season type 3)
       if (seasonType !== 3) return undefined;
-      
+
       // Check notes first (most reliable)
       if (notes && notes.length > 0) {
         const headlineText = notes
           .map(n => n.headline?.toLowerCase() || '')
           .join(' ');
-        
+
         if (headlineText.includes('super bowl')) {
           return 'Super Bowl';
         } else if (headlineText.includes('conference championship') || headlineText.includes('conference title')) {
@@ -495,7 +495,7 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
           return 'Wild Card';
         }
       }
-      
+
       // Fallback to week number if notes don't have round info
       // Week 1 = Wild Card, Week 2 = Divisional, Week 3 = Conference Championship, Week 5 = Super Bowl
       if (weekNumber !== undefined) {
@@ -504,7 +504,7 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
         if (weekNumber === 3) return 'Conference Championship';
         if (weekNumber === 5) return 'Super Bowl';
       }
-      
+
       return undefined;
     };
 
@@ -551,14 +551,14 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
         'Conference Championship': 3,
         'Super Bowl': 4,
       };
-      
+
       const aRound = a.playoffRound ? roundOrder[a.playoffRound] : 0;
       const bRound = b.playoffRound ? roundOrder[b.playoffRound] : 0;
-      
+
       if (aRound !== bRound) {
         return aRound - bRound;
       }
-      
+
       return a.startTime.getTime() - b.startTime.getTime();
     });
 
@@ -576,7 +576,7 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
       dateRange: `${dateStrings[0]} to ${dateStrings[dateStrings.length - 1]}`,
       chunksFetched: chunks.length,
     });
-    
+
     if (uniqueGames.length === 0) {
       console.log('No playoff games found. Sample games:', allGames.slice(0, 5).map(e => ({
         id: e.id,
@@ -588,9 +588,9 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
         notes: e.competitions[0]?.notes?.map(n => n.headline),
         teams: e.competitions[0]?.competitors?.map((c: any) => c.team.displayName),
       })));
-      
+
       // Check if we have any games with season type 3
-      const gamesWithSeasonType3 = allGames.filter(e => 
+      const gamesWithSeasonType3 = allGames.filter(e =>
         e.season?.type === 3 || e.competitions[0]?.season?.type === 3
       );
       console.log(`Games with season type 3: ${gamesWithSeasonType3.length}`);
@@ -723,7 +723,7 @@ export async function fetchTopPerformers(sport: SportType, date?: Date): Promise
 
     // Fetch boxscores for all games with rate limiting (max 20 games, with delays)
     const boxscores: Array<{ event: ESPNGame; boxscoreData: ESPNBoxscoreResponse } | null> = [];
-    
+
     for (let i = 0; i < Math.min(gamesToFetch.length, 20); i++) {
       const event = gamesToFetch[i];
       try {
@@ -781,7 +781,7 @@ export async function fetchTopPerformers(sport: SportType, date?: Date): Promise
       // 2. boxscore.players.statistics (organized by stat category, usually only leaders)
       // 3. gamepackage.boxscore.teams[].statistics
       // 4. gamepackage.boxscore.players.statistics
-      
+
       // First, try boxscore.teams structure (might have all players per team)
       const boxscoreTeams = boxscoreData.boxscore?.teams;
       if (boxscoreTeams && Array.isArray(boxscoreTeams)) {
@@ -791,10 +791,10 @@ export async function fetchTopPerformers(sport: SportType, date?: Date): Promise
             statCategory.athletes?.forEach((athleteData) => {
               const athlete = athleteData.athlete;
               if (!athlete) return;
-              
+
               const athleteName = athlete.displayName;
               if (!athleteName) return;
-              
+
               const stats = athleteData.stats || [];
               const finalTeamAbbr = athlete.team?.abbreviation || teamAbbr;
 
@@ -816,7 +816,7 @@ export async function fetchTopPerformers(sport: SportType, date?: Date): Promise
       }
 
       // Then try boxscore.players.statistics (stat categories, usually only leaders)
-      const playersStats = boxscoreData.boxscore?.players?.statistics || 
+      const playersStats = boxscoreData.boxscore?.players?.statistics ||
                           boxscoreData.gamepackage?.boxscore?.players?.statistics;
 
       if (playersStats && playersStats.length > 0) {
@@ -833,14 +833,14 @@ export async function fetchTopPerformers(sport: SportType, date?: Date): Promise
         // Start with categories that have the most players (likely to have all players)
         sortedStats.forEach((statCategory) => {
           const teamAbbr = statCategory.team?.abbreviation || '';
-          
+
           statCategory.athletes?.forEach((athleteData) => {
             const athlete = athleteData.athlete;
             if (!athlete) return;
-            
+
             const athleteName = athlete.displayName;
             if (!athleteName) return;
-            
+
             const stats = athleteData.stats || [];
             const finalTeamAbbr = athlete.team?.abbreviation || teamAbbr;
 
@@ -854,7 +854,7 @@ export async function fetchTopPerformers(sport: SportType, date?: Date): Promise
             }
 
             const playerEntry = allPlayersMap.get(athleteName)!;
-            
+
             // Store stats array - we'll use the longest/most complete one
             if (stats.length >= 19 && (!playerEntry.statsMap.has('full') || playerEntry.statsMap.get('full')!.length < stats.length)) {
               playerEntry.statsMap.set('full', stats);
@@ -868,15 +868,15 @@ export async function fetchTopPerformers(sport: SportType, date?: Date): Promise
       if (boxscoreData.gamepackage?.boxscore?.teams) {
         boxscoreData.gamepackage.boxscore.teams.forEach((team) => {
           const teamAbbr = team.team?.abbreviation || '';
-          
+
           team.statistics?.forEach((statCategory) => {
             statCategory.athletes?.forEach((athleteData) => {
               const athlete = athleteData.athlete;
               if (!athlete) return;
-              
+
               const athleteName = athlete.displayName;
               if (!athleteName) return;
-              
+
               const stats = athleteData.stats || [];
               const finalTeamAbbr = athlete.team?.abbreviation || teamAbbr;
 
