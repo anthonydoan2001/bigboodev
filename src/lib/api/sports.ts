@@ -1,4 +1,5 @@
 import { trackApiUsage } from '@/lib/api-usage';
+import { db } from '@/lib/db';
 import { GameScore, PlayoffRound, SportType, TopPerformer } from '@/types/sports';
 
 const ESPN_BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports';
@@ -995,6 +996,265 @@ export async function fetchTopPerformers(sport: SportType, date?: Date): Promise
   } catch (error) {
     console.error(`Error fetching ${sport} top performers:`, error);
     return []; // Return empty array instead of throwing
+  }
+}
+
+// Database caching helper functions
+
+/**
+ * Get cached game scores from database
+ */
+export async function getCachedGameScores(sport: SportType, date: Date): Promise<GameScore[]> {
+  try {
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const dateStr = new Date(year, month - 1, day);
+
+    const cachedGames = await db.gameScore.findMany({
+      where: {
+        sport,
+        date: dateStr,
+        OR: [
+          { status: 'final' }, // Final games never expire
+          { status: 'scheduled' }, // Scheduled games refresh daily
+          {
+            status: 'live',
+            expiresAt: {
+              gt: new Date(), // Live games must not be expired
+            },
+          },
+        ],
+      },
+      orderBy: {
+        startTime: 'asc',
+      },
+    });
+
+    // Convert database records to GameScore format
+    return cachedGames.map((game) => ({
+      id: game.gameId,
+      sport: game.sport as SportType,
+      homeTeam: game.homeTeam,
+      awayTeam: game.awayTeam,
+      homeScore: game.homeScore,
+      awayScore: game.awayScore,
+      homeTeamLogo: game.homeTeamLogo || undefined,
+      awayTeamLogo: game.awayTeamLogo || undefined,
+      status: game.status as 'scheduled' | 'live' | 'final',
+      quarter: game.quarter || undefined,
+      timeRemaining: game.timeRemaining || undefined,
+      startTime: game.startTime,
+      playoffRound: (game.playoffRound as PlayoffRound) || undefined,
+      odds: game.odds ? (game.odds as GameScore['odds']) : undefined,
+      topScorer: game.topScorer ? (game.topScorer as GameScore['topScorer']) : undefined,
+    }));
+  } catch (error) {
+    console.error('Error getting cached game scores:', error);
+    return [];
+  }
+}
+
+/**
+ * Cache game scores in database
+ */
+export async function cacheGameScores(sport: SportType, date: Date, games: GameScore[]): Promise<void> {
+  try {
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const dateStr = new Date(year, month - 1, day);
+
+    // Upsert each game
+    for (const game of games) {
+      const expiresAt = game.status === 'live' 
+        ? new Date(Date.now() + 60 * 1000) // Live games expire in 60 seconds
+        : null; // Final and scheduled games don't expire
+
+      await db.gameScore.upsert({
+        where: {
+          gameId_sport_date: {
+            gameId: game.id,
+            sport,
+            date: dateStr,
+          },
+        },
+        create: {
+          gameId: game.id,
+          sport,
+          date: dateStr,
+          homeTeam: game.homeTeam,
+          awayTeam: game.awayTeam,
+          homeScore: game.homeScore,
+          awayScore: game.awayScore,
+          homeTeamLogo: game.homeTeamLogo,
+          awayTeamLogo: game.awayTeamLogo,
+          status: game.status,
+          quarter: game.quarter,
+          timeRemaining: game.timeRemaining,
+          startTime: game.startTime,
+          playoffRound: game.playoffRound,
+          odds: game.odds ? JSON.parse(JSON.stringify(game.odds)) : null,
+          topScorer: game.topScorer ? JSON.parse(JSON.stringify(game.topScorer)) : null,
+          expiresAt,
+        },
+        update: {
+          homeScore: game.homeScore,
+          awayScore: game.awayScore,
+          status: game.status,
+          quarter: game.quarter,
+          timeRemaining: game.timeRemaining,
+          playoffRound: game.playoffRound,
+          odds: game.odds ? JSON.parse(JSON.stringify(game.odds)) : null,
+          topScorer: game.topScorer ? JSON.parse(JSON.stringify(game.topScorer)) : null,
+          expiresAt,
+          lastUpdated: new Date(),
+        },
+      });
+    }
+  } catch (error) {
+    console.error('Error caching game scores:', error);
+    // Don't throw - caching failures shouldn't break the API
+  }
+}
+
+/**
+ * Check if there are live games for a sport and date
+ */
+export async function hasLiveGames(sport: SportType, date: Date): Promise<boolean> {
+  try {
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const dateStr = new Date(year, month - 1, day);
+
+    const liveGameCount = await db.gameScore.count({
+      where: {
+        sport,
+        date: dateStr,
+        status: 'live',
+        expiresAt: {
+          gt: new Date(), // Only count non-expired live games
+        },
+      },
+    });
+
+    return liveGameCount > 0;
+  } catch (error) {
+    console.error('Error checking for live games:', error);
+    return false;
+  }
+}
+
+/**
+ * Clean up expired live game caches
+ */
+export async function cleanupExpiredLiveGames(): Promise<number> {
+  try {
+    const result = await db.gameScore.deleteMany({
+      where: {
+        status: 'live',
+        expiresAt: {
+          lt: new Date(),
+        },
+      },
+    });
+
+    return result.count;
+  } catch (error) {
+    console.error('Error cleaning up expired live games:', error);
+    return 0;
+  }
+}
+
+/**
+ * Get cached top performers from database
+ */
+export async function getCachedTopPerformers(sport: SportType, date: Date): Promise<TopPerformer[]> {
+  try {
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const dateStr = new Date(year, month - 1, day);
+
+    const cachedPerformers = await db.topPerformer.findMany({
+      where: {
+        sport,
+        date: dateStr,
+      },
+      orderBy: {
+        lastUpdated: 'desc',
+      },
+    });
+
+    // Convert database records to TopPerformer format
+    return cachedPerformers.map((performer) => ({
+      name: performer.name,
+      team: performer.team,
+      image: performer.imageUrl || undefined,
+      stats: performer.stats as TopPerformer['stats'],
+    }));
+  } catch (error) {
+    console.error('Error getting cached top performers:', error);
+    return [];
+  }
+}
+
+/**
+ * Check if top performers data is fresh enough
+ */
+export function isPerformersDataFresh(lastUpdated: Date, hasLiveGames: boolean): boolean {
+  const now = new Date();
+  const ageMs = now.getTime() - lastUpdated.getTime();
+  
+  if (hasLiveGames) {
+    // For live games, data must be < 10 minutes old
+    return ageMs < 10 * 60 * 1000;
+  } else {
+    // For completed games, data can be up to 24 hours old
+    return ageMs < 24 * 60 * 60 * 1000;
+  }
+}
+
+/**
+ * Cache top performers in database
+ */
+export async function cacheTopPerformers(sport: SportType, date: Date, performers: TopPerformer[]): Promise<void> {
+  try {
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const dateStr = new Date(year, month - 1, day);
+
+    // Upsert each performer
+    for (const performer of performers) {
+      await db.topPerformer.upsert({
+        where: {
+          sport_date_name: {
+            sport,
+            date: dateStr,
+            name: performer.name,
+          },
+        },
+        create: {
+          sport,
+          date: dateStr,
+          name: performer.name,
+          team: performer.team,
+          imageUrl: performer.image,
+          stats: JSON.parse(JSON.stringify(performer.stats)),
+        },
+        update: {
+          team: performer.team,
+          imageUrl: performer.image,
+          stats: JSON.parse(JSON.stringify(performer.stats)),
+          lastUpdated: new Date(),
+        },
+      });
+    }
+  } catch (error) {
+    console.error('Error caching top performers:', error);
+    // Don't throw - caching failures shouldn't break the API
   }
 }
 

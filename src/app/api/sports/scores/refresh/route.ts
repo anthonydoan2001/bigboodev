@@ -1,0 +1,97 @@
+import { NextResponse } from 'next/server';
+import { fetchScores } from '@/lib/api/sports';
+import { SportType } from '@/types/sports';
+import { withAuthOrCron } from '@/lib/api-auth';
+import { cacheGameScores, cleanupExpiredLiveGames } from '@/lib/api/sports';
+
+/**
+ * API route to refresh game scores from ESPN API and store in database
+ * This should be called by a cron job every 60 seconds
+ * 
+ * Refresh strategy:
+ * - Final games: Store indefinitely (no expiration)
+ * - Scheduled games: Store and refresh daily
+ * - Live games: Store with 60-second expiration
+ */
+export const GET = withAuthOrCron(async (request: Request, auth: { type: 'session' | 'cron'; token: string }) => {
+  try {
+    console.log(`[Sports Scores Refresh] Called by ${auth.type} at ${new Date().toISOString()}`);
+
+    // Check for force parameter (for manual testing)
+    const url = new URL(request.url);
+    const force = url.searchParams.get('force') === 'true';
+    const sportParam = url.searchParams.get('sport') as SportType | null;
+
+    // Clean up expired live games first
+    const deletedCount = await cleanupExpiredLiveGames();
+    if (deletedCount > 0) {
+      console.log(`[Sports Scores Refresh] Cleaned up ${deletedCount} expired live games`);
+    }
+
+    // Determine which sports to refresh
+    const sportsToRefresh: SportType[] = sportParam 
+      ? [sportParam]
+      : ['NBA', 'NFL']; // Refresh both by default
+
+    const results: Array<{ sport: SportType; count: number; statuses: Record<string, number> }> = [];
+    const errors: Array<{ sport: SportType; error: string }> = [];
+
+    // Fetch and cache scores for each sport
+    for (const sport of sportsToRefresh) {
+      try {
+        // For NFL, always use today's date; for other sports, use today
+        const date = sport === 'NFL' ? new Date() : new Date();
+        
+        console.log(`[Sports Scores Refresh] Fetching ${sport} scores for ${date.toISOString().split('T')[0]}`);
+        
+        // Fetch from ESPN API
+        const games = await fetchScores(sport, date);
+        
+        if (games.length === 0) {
+          console.log(`[Sports Scores Refresh] No games found for ${sport}`);
+          results.push({ sport, count: 0, statuses: {} });
+          continue;
+        }
+
+        // Cache games in database
+        await cacheGameScores(sport, date, games);
+
+        // Count games by status
+        const statuses: Record<string, number> = {};
+        games.forEach(game => {
+          statuses[game.status] = (statuses[game.status] || 0) + 1;
+        });
+
+        console.log(`[Sports Scores Refresh] Cached ${games.length} ${sport} games:`, statuses);
+        
+        results.push({
+          sport,
+          count: games.length,
+          statuses,
+        });
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`[Sports Scores Refresh] Error refreshing ${sport}:`, errorMessage);
+        errors.push({ sport, error: errorMessage });
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      results,
+      errors: errors.length > 0 ? errors : undefined,
+      cleanedUpExpired: deletedCount,
+    });
+  } catch (error) {
+    console.error('[Sports Scores Refresh] Fatal error:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    );
+  }
+});
