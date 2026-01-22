@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { fetchTopPerformers, getCachedTopPerformers, cacheTopPerformers, hasLiveGames, isPerformersDataFresh } from '@/lib/api/sports';
-import { SportType } from '@/types/sports';
 import { withAuth } from '@/lib/api-auth';
+import { cacheTopPerformers, fetchTopPerformers, getCachedTopPerformers, hasLiveGames, isPerformersDataFresh } from '@/lib/api/sports';
 import { db } from '@/lib/db';
+import { SportType } from '@/types/sports';
+import { NextRequest, NextResponse } from 'next/server';
 
 export const GET = withAuth(async (request: NextRequest) => {
   try {
@@ -41,7 +41,7 @@ export const GET = withAuth(async (request: NextRequest) => {
 
     // Check database cache first
     const cachedPerformers = await getCachedTopPerformers(sport, queryDate);
-    
+
     // Check if we have cached data and if it's fresh
     if (cachedPerformers.length > 0) {
       // Get the most recent lastUpdated timestamp for this sport/date
@@ -69,8 +69,8 @@ export const GET = withAuth(async (request: NextRequest) => {
 
         if (isFresh) {
           // Return cached data
-          return NextResponse.json({ 
-            sport, 
+          return NextResponse.json({
+            sport,
             performers: cachedPerformers,
             cached: true,
           });
@@ -80,14 +80,14 @@ export const GET = withAuth(async (request: NextRequest) => {
 
     // Cache miss or stale data - fetch from ESPN API
     const performers = await fetchTopPerformers(sport, queryDate);
-    
+
     // Cache the fresh data for future requests (async, don't wait)
     cacheTopPerformers(sport, queryDate, performers).catch(err => {
       console.error('Error caching performers (non-blocking):', err);
     });
-    
-    return NextResponse.json({ 
-      sport, 
+
+    return NextResponse.json({
+      sport,
       performers,
       cached: false,
     });

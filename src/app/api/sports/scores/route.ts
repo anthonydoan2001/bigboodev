@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { fetchScores, fetchAllScores, getCachedGameScores, cacheGameScores } from '@/lib/api/sports';
-import { SportType } from '@/types/sports';
 import { withAuth } from '@/lib/api-auth';
+import { cacheGameScores, fetchAllScores, fetchScores, getCachedGameScores } from '@/lib/api/sports';
+import { SportType } from '@/types/sports';
+import { NextRequest, NextResponse } from 'next/server';
 
 export const GET = withAuth(async (request: NextRequest) => {
   try {
@@ -34,19 +34,19 @@ export const GET = withAuth(async (request: NextRequest) => {
 
       // Check database cache first
       const cachedScores = await getCachedGameScores(sport, queryDate);
-      
+
       // Check if we have sufficient cached data
       // For live games, we need non-expired data; for others, any cached data is fine
       const hasLiveGames = cachedScores.some(game => game.status === 'live');
       const hasFinalGames = cachedScores.some(game => game.status === 'final');
       const hasScheduledGames = cachedScores.some(game => game.status === 'scheduled');
-      
+
       // If we have cached data, return it (cache refresh handles keeping it fresh)
       if (cachedScores.length > 0) {
         // For live games, verify they're not expired (getCachedGameScores already filters expired)
         // If we have any valid cached games, return them
-        return NextResponse.json({ 
-          sport, 
+        return NextResponse.json({
+          sport,
           scores: cachedScores,
           cached: true,
         });
@@ -54,14 +54,14 @@ export const GET = withAuth(async (request: NextRequest) => {
 
       // Cache miss - fetch from ESPN API
       const scores = await fetchScores(sport, queryDate);
-      
+
       // Cache the fresh data for future requests (async, don't wait)
       cacheGameScores(sport, queryDate, scores).catch(err => {
         console.error('Error caching scores (non-blocking):', err);
       });
-      
-      return NextResponse.json({ 
-        sport, 
+
+      return NextResponse.json({
+        sport,
         scores,
         cached: false,
       });
