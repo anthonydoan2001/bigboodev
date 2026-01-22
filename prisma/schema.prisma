@@ -133,7 +133,7 @@ model ApiUsage {
 
 model GameScore {
   id            String   @id @default(cuid()) // Auto-generated ID
-  gameId        String   // ESPN game ID
+  gameId        String   @map("game_id") // ESPN game ID
   sport         String   // 'NBA' | 'NFL'
   date          DateTime  @db.Date // Game date (YYYY-MM-DD)
   homeTeam      String   @map("home_team")
