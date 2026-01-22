@@ -1,12 +1,12 @@
-import { NextResponse } from 'next/server';
-import { fetchTopPerformers, hasLiveGames, cacheTopPerformers } from '@/lib/api/sports';
-import { SportType } from '@/types/sports';
 import { withAuthOrCron } from '@/lib/api-auth';
+import { cacheTopPerformers, fetchTopPerformers, hasLiveGames } from '@/lib/api/sports';
+import { SportType } from '@/types/sports';
+import { NextResponse } from 'next/server';
 
 /**
  * API route to refresh top performers from ESPN API and store in database
  * This should be called by a cron job every 10 minutes
- * 
+ *
  * Refresh strategy:
  * - Only refreshes when live games exist
  * - Stores daily snapshots
@@ -63,12 +63,12 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
       try {
         // For NFL, always use today's date; for other sports, use today
         const date = sport === 'NFL' ? new Date() : today;
-        
+
         console.log(`[Top Performers Refresh] Fetching ${sport} performers for ${date.toISOString().split('T')[0]}`);
-        
+
         // Fetch from ESPN API
         const performers = await fetchTopPerformers(sport, date);
-        
+
         if (performers.length === 0) {
           console.log(`[Top Performers Refresh] No performers found for ${sport}`);
           results.push({ sport, count: 0, hasLiveGames: liveGamesBySport[sport] });
@@ -79,7 +79,7 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
         await cacheTopPerformers(sport, date, performers);
 
         console.log(`[Top Performers Refresh] Cached ${performers.length} ${sport} performers`);
-        
+
         results.push({
           sport,
           count: performers.length,

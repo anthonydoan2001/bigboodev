@@ -1067,7 +1067,7 @@ export async function cacheGameScores(sport: SportType, date: Date, games: GameS
 
     // Upsert each game
     for (const game of games) {
-      const expiresAt = game.status === 'live' 
+      const expiresAt = game.status === 'live'
         ? new Date(Date.now() + 60 * 1000) // Live games expire in 60 seconds
         : null; // Final and scheduled games don't expire
 
@@ -1206,7 +1206,7 @@ export async function getCachedTopPerformers(sport: SportType, date: Date): Prom
 export function isPerformersDataFresh(lastUpdated: Date, hasLiveGames: boolean): boolean {
   const now = new Date();
   const ageMs = now.getTime() - lastUpdated.getTime();
-  
+
   if (hasLiveGames) {
     // For live games, data must be < 10 minutes old
     return ageMs < 10 * 60 * 1000;

@@ -1,13 +1,12 @@
-import { NextResponse } from 'next/server';
-import { fetchScores } from '@/lib/api/sports';
-import { SportType } from '@/types/sports';
 import { withAuthOrCron } from '@/lib/api-auth';
-import { cacheGameScores, cleanupExpiredLiveGames } from '@/lib/api/sports';
+import { cacheGameScores, cleanupExpiredLiveGames, fetchScores } from '@/lib/api/sports';
+import { SportType } from '@/types/sports';
+import { NextResponse } from 'next/server';
 
 /**
  * API route to refresh game scores from ESPN API and store in database
  * This should be called by a cron job every 60 seconds
- * 
+ *
  * Refresh strategy:
  * - Final games: Store indefinitely (no expiration)
  * - Scheduled games: Store and refresh daily
@@ -29,7 +28,7 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
     }
 
     // Determine which sports to refresh
-    const sportsToRefresh: SportType[] = sportParam 
+    const sportsToRefresh: SportType[] = sportParam
       ? [sportParam]
       : ['NBA', 'NFL']; // Refresh both by default
 
@@ -41,12 +40,12 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
       try {
         // For NFL, always use today's date; for other sports, use today
         const date = sport === 'NFL' ? new Date() : new Date();
-        
+
         console.log(`[Sports Scores Refresh] Fetching ${sport} scores for ${date.toISOString().split('T')[0]}`);
-        
+
         // Fetch from ESPN API
         const games = await fetchScores(sport, date);
-        
+
         if (games.length === 0) {
           console.log(`[Sports Scores Refresh] No games found for ${sport}`);
           results.push({ sport, count: 0, statuses: {} });
@@ -63,7 +62,7 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
         });
 
         console.log(`[Sports Scores Refresh] Cached ${games.length} ${sport} games:`, statuses);
-        
+
         results.push({
           sport,
           count: games.length,
