@@ -4,6 +4,9 @@ import { CalendarWidget } from "@/components/dashboard/CalendarWidget";
 import { StocksCryptoWidget } from "@/components/dashboard/StocksCryptoWidget";
 import { WeatherWidget } from "@/components/dashboard/WeatherWidget";
 import { fetchQuote } from "@/lib/api/quote";
+import { fetchWeather } from "@/lib/api/weather";
+import { fetchStockQuotes } from "@/lib/api/stocks";
+import { fetchCryptoQuotesFromDB } from "@/lib/api/crypto";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
@@ -48,6 +51,34 @@ export default function Home() {
     refetchOnWindowFocus: false,
   });
 
+  // Fetch weather data
+  const { isLoading: weatherLoading } = useQuery({
+    queryKey: ['weather'],
+    queryFn: fetchWeather,
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+
+  // Fetch stocks data
+  const { isLoading: stocksLoading } = useQuery({
+    queryKey: ['stockQuotes'],
+    queryFn: fetchStockQuotes,
+    staleTime: 3600000,
+    refetchInterval: 3600000,
+  });
+
+  // Fetch crypto data
+  const { isLoading: cryptoLoading } = useQuery({
+    queryKey: ['cryptoQuotes'],
+    queryFn: fetchCryptoQuotesFromDB,
+    staleTime: 3600000,
+    refetchInterval: 3600000,
+  });
+
+  // Check if all widgets are loading
+  const isLoading = quoteLoading || weatherLoading || stocksLoading || cryptoLoading;
+
   useEffect(() => {
     setGreeting(getGreeting());
     // Update greeting every minute
@@ -57,6 +88,18 @@ export default function Home() {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Show loading state until all widgets are ready
+  if (isLoading) {
+    return (
+      <div className="w-full py-6 px-4 sm:px-6 lg:px-8 min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full py-6 px-4 sm:px-6 lg:px-8 min-h-screen">
@@ -86,13 +129,9 @@ export default function Home() {
 
       {/* Bento-style Dashboard Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 auto-rows-auto gap-4 md:gap-6">
-        {/* Calendar Widget */}
-        <div className="col-span-1 sm:col-span-1 row-span-1">
+        {/* Calendar and Stocks Widgets - Stacked vertically */}
+        <div className="col-span-1 sm:col-span-1 flex flex-col gap-4 md:gap-6">
           <CalendarWidget />
-        </div>
-
-        {/* Stocks & Crypto Widget - Compact width */}
-        <div className="col-span-1 sm:col-span-1 lg:col-span-1 xl:col-span-1 2xl:col-span-1 row-span-1">
           <StocksCryptoWidget />
         </div>
       </div>

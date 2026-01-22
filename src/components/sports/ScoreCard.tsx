@@ -44,10 +44,10 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
   const isFinal = game.status === 'final';
 
   return (
-    <Card className="overflow-hidden border-border/50 hover:border-border transition-colors">
+    <Card className="overflow-hidden border-border/50 hover:border-border transition-colors bg-background">
       <CardContent className="p-0">
         {/* Header */}
-        <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between bg-muted/20">
+        <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between bg-background">
           <div className="flex items-center gap-2">
             <span className="text-caption text-muted-foreground tracking-wide">
               {game.sport}
@@ -60,7 +60,7 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
                   e.stopPropagation();
                   onToggleFavorite(game.id);
                 }}
-                className="p-1 hover:bg-muted rounded-md transition-colors"
+                className="p-1 hover:bg-muted/50 rounded-md transition-colors"
                 title={isHoustonGame ? "Houston team (auto-favorited)" : isFavorite ? "Remove from favorites" : "Add to favorites"}
               >
                 <Star
@@ -79,7 +79,7 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
         </div>
 
         {/* Teams & Scores */}
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-4 bg-background">
           {/* Away Team */}
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -96,12 +96,12 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
                   <div className="w-full h-full rounded-full bg-muted/50" />
                 )}
               </div>
-              <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
                 <span className={`text-body truncate ${isFinal && isAwayWinning ? 'font-bold' : 'font-medium'}`}>
                   {game.awayTeam}
                 </span>
                 {game.odds?.favorite === 'away' && game.status === 'scheduled' && (
-                  <span className="text-caption text-muted-foreground">
+                  <span className="text-caption text-muted-foreground whitespace-nowrap">
                     {game.odds.spread}
                   </span>
                 )}
@@ -128,12 +128,12 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
                   <div className="w-full h-full rounded-full bg-muted/50" />
                 )}
               </div>
-              <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
                 <span className={`text-body truncate ${isFinal && isHomeWinning ? 'font-bold' : 'font-medium'}`}>
                   {game.homeTeam}
                 </span>
                 {game.odds?.favorite === 'home' && game.status === 'scheduled' && (
-                  <span className="text-caption text-muted-foreground">
+                  <span className="text-caption text-muted-foreground whitespace-nowrap">
                     {game.odds.spread}
                   </span>
                 )}
@@ -146,11 +146,11 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
         </div>
 
         {/* Footer Info */}
-        <div className="bg-muted/10 border-t border-border/50">
+        <div className="bg-background border-t border-border/50">
           {/* Game Status / Time */}
           {(game.status === 'live' || game.status === 'final') ? (
             game.odds?.spread ? (
-              <div className="px-4 py-2 flex items-center justify-between text-caption border-b border-border/50 last:border-0 min-h-[33px]">
+              <div className="px-4 py-2 flex items-center justify-between text-caption min-h-[33px]">
                 <span className="text-muted-foreground ml-auto">Spread: {game.odds.spread}</span>
               </div>
             ) : null
@@ -166,7 +166,7 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
 
           {/* Top Scorer Section - Distinct Row */}
           {game.sport === 'NBA' && game.topScorer && (game.status === 'live' || game.status === 'final') && (
-            <div className="px-4 py-2 bg-muted/20 flex items-center justify-between gap-2 text-caption">
+            <div className="px-4 py-2 border-t border-border/50 flex items-center justify-between gap-2 text-caption bg-background">
               <div className="flex items-center gap-2">
                 {game.topScorer.image && (
                   <div className="relative w-6 h-6 rounded-full overflow-hidden bg-background border border-border/50">
