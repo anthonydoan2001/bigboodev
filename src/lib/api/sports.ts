@@ -1006,10 +1006,12 @@ export async function fetchTopPerformers(sport: SportType, date?: Date): Promise
  */
 export async function getCachedGameScores(sport: SportType, date: Date): Promise<GameScore[]> {
   try {
+    // Normalize date to UTC midnight to avoid timezone issues
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const day = date.getDate();
-    const dateStr = new Date(year, month - 1, day);
+    // Create date at UTC midnight to match database DATE type
+    const dateStr = new Date(Date.UTC(year, month - 1, day));
 
     const cachedGames = await db.gameScore.findMany({
       where: {
@@ -1032,7 +1034,7 @@ export async function getCachedGameScores(sport: SportType, date: Date): Promise
     });
 
     // Convert database records to GameScore format
-    return cachedGames.map((game) => ({
+    return cachedGames.map((game): GameScore => ({
       id: game.gameId,
       sport: game.sport as SportType,
       homeTeam: game.homeTeam,
@@ -1060,10 +1062,12 @@ export async function getCachedGameScores(sport: SportType, date: Date): Promise
  */
 export async function cacheGameScores(sport: SportType, date: Date, games: GameScore[]): Promise<void> {
   try {
+    // Normalize date to UTC midnight to avoid timezone issues
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const day = date.getDate();
-    const dateStr = new Date(year, month - 1, day);
+    // Create date at UTC midnight to match database DATE type
+    const dateStr = new Date(Date.UTC(year, month - 1, day));
 
     // Upsert each game
     for (const game of games) {
@@ -1123,10 +1127,12 @@ export async function cacheGameScores(sport: SportType, date: Date, games: GameS
  */
 export async function hasLiveGames(sport: SportType, date: Date): Promise<boolean> {
   try {
+    // Normalize date to UTC midnight to avoid timezone issues
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const day = date.getDate();
-    const dateStr = new Date(year, month - 1, day);
+    // Create date at UTC midnight to match database DATE type
+    const dateStr = new Date(Date.UTC(year, month - 1, day));
 
     const liveGameCount = await db.gameScore.count({
       where: {
@@ -1188,7 +1194,7 @@ export async function getCachedTopPerformers(sport: SportType, date: Date): Prom
     });
 
     // Convert database records to TopPerformer format
-    return cachedPerformers.map((performer) => ({
+    return cachedPerformers.map((performer): TopPerformer => ({
       name: performer.name,
       team: performer.team,
       image: performer.imageUrl || undefined,
@@ -1221,10 +1227,12 @@ export function isPerformersDataFresh(lastUpdated: Date, hasLiveGames: boolean):
  */
 export async function cacheTopPerformers(sport: SportType, date: Date, performers: TopPerformer[]): Promise<void> {
   try {
+    // Normalize date to UTC midnight to avoid timezone issues
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const day = date.getDate();
-    const dateStr = new Date(year, month - 1, day);
+    // Create date at UTC midnight to match database DATE type
+    const dateStr = new Date(Date.UTC(year, month - 1, day));
 
     // Upsert each performer
     for (const performer of performers) {
