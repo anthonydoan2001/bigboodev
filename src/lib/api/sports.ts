@@ -617,6 +617,65 @@ export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameS
   }
 }
 
+type ESPNPlayerStat = {
+  athlete: {
+    displayName: string;
+    headshot?: string;
+    team?: {
+      abbreviation: string;
+    };
+  };
+  stats?: Array<string>;
+};
+
+type ESPNStatistic = {
+  team?: {
+    abbreviation: string;
+  };
+  athletes?: Array<ESPNPlayerStat>;
+};
+
+type ESPNTeamStatistic = {
+  name: string;
+  displayName: string;
+  athletes?: Array<{
+    athlete: {
+      displayName: string;
+      headshot?: string;
+    };
+    stats?: Array<string>;
+  }>;
+};
+
+interface ESPNBoxscoreResponse {
+  boxscore?: {
+    players?: {
+      statistics?: Array<ESPNStatistic>;
+    };
+    teams?: Array<{
+      team?: {
+        abbreviation: string;
+      };
+      statistics?: Array<ESPNStatistic>;
+    }>;
+  };
+  gamepackage?: {
+    boxscore?: {
+      teams?: Array<{
+        team?: {
+          abbreviation: string;
+        };
+        statistics?: Array<ESPNTeamStatistic>;
+      }>;
+      players?: {
+        statistics?: Array<ESPNStatistic>;
+      };
+    };
+  };
+  // Summary endpoint might have different structure
+  [key: string]: any;
+}
+
 export async function fetchTopPerformers(sport: SportType, date?: Date): Promise<TopPerformer[]> {
   try {
     const { path } = SPORT_LEAGUES[sport];
@@ -651,75 +710,286 @@ export async function fetchTopPerformers(sport: SportType, date?: Date): Promise
       return [];
     }
 
+    // Get all completed or live games
+    const gamesToFetch = data.events.filter(
+      (event) => event.status.type.state === 'in' || event.status.type.state === 'post'
+    );
+
+    if (gamesToFetch.length === 0) {
+      return [];
+    }
+
     const performersMap = new Map<string, TopPerformer>();
 
-    // Extract leaders from completed or live games
-    data.events.forEach((event) => {
-      if (event.status.type.state === 'in' || event.status.type.state === 'post') {
-        event.competitions[0].competitors.forEach((competitor) => {
-          if (competitor.leaders) {
-            competitor.leaders.forEach((leaderCategory) => {
-              // Check the category name (e.g., "passing", "rushing", "receiving", "points")
-              const categoryName = leaderCategory.name;
+    // Fetch boxscores for all games with rate limiting (max 20 games, with delays)
+    const boxscores: Array<{ event: ESPNGame; boxscoreData: ESPNBoxscoreResponse } | null> = [];
+    
+    for (let i = 0; i < Math.min(gamesToFetch.length, 20); i++) {
+      const event = gamesToFetch[i];
+      try {
+        // Add small delay to avoid rate limiting (except for first request)
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
 
-              leaderCategory.leaders.forEach((leaderData) => {
-                const athlete = leaderData.athlete;
-                const athleteName = athlete.displayName;
+        // Try summary endpoint first (better structure for all players), fallback to scoreboard
+        const summaryUrl = `${ESPN_BASE_URL}/${path}/summary/${event.id}`;
+        let boxscoreResponse = await fetch(summaryUrl, {
+          cache: 'no-store',
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
 
-                // Get or create performer entry
-                let performer = performersMap.get(athleteName);
-                if (!performer) {
-                  performer = {
-                    name: athleteName,
-                    team: athlete.team?.abbreviation || competitor.team.abbreviation,
-                    image: athlete.headshot,
-                    stats: {},
-                  };
-                  performersMap.set(athleteName, performer);
-                }
+        // If summary fails, try scoreboard endpoint
+        if (!boxscoreResponse.ok) {
+          const boxscoreUrl = `${ESPN_BASE_URL}/${path}/scoreboard/${event.id}`;
+          boxscoreResponse = await fetch(boxscoreUrl, {
+            cache: 'no-store',
+            headers: {
+              'Accept': 'application/json',
+            },
+          });
+        }
 
-                // Parse the stat value
-                const statValue = parseFloat(leaderData.displayValue.replace(/[^\d.-]/g, ''));
-                if (isNaN(statValue)) return;
+        if (!boxscoreResponse.ok) {
+          continue;
+        }
 
-                // Map stats based on sport and category
-                if (sport === 'NBA') {
-                   // For NBA, existing logic works well
-                   if (categoryName === 'points') performer.stats.points = statValue;
-                   if (categoryName === 'rebounds') performer.stats.rebounds = statValue;
-                   if (categoryName === 'assists') performer.stats.assists = statValue;
-                } else if (sport === 'NFL') {
-                   // For NFL, map based on category name
-                   if (categoryName === 'passingYards') performer.stats.passingYards = statValue;
-                   if (categoryName === 'rushingYards') performer.stats.rushingYards = statValue;
-                   if (categoryName === 'receivingYards') performer.stats.receivingYards = statValue;
-                }
+        const boxscoreData: ESPNBoxscoreResponse = await boxscoreResponse.json();
+        boxscores.push({ event, boxscoreData });
+      } catch (error) {
+        console.error(`Error fetching boxscore for game ${event.id}:`, error);
+        continue;
+      }
+    }
 
-                // General mapping fallback
-                const statMapping: Record<string, keyof TopPerformer['stats']> = {
-                  'passing': 'passingYards',
-                  'passingYards': 'passingYards',
-                  'rushing': 'rushingYards',
-                  'rushingYards': 'rushingYards',
-                  'receiving': 'receivingYards',
-                  'receivingYards': 'receivingYards',
-                  'points': 'points',
-                  'rebounds': 'rebounds',
-                  'assists': 'assists',
-                  'blocks': 'blocks',
-                  'steals': 'steals',
-                };
+    // Extract all player stats from boxscores
+    boxscores.forEach((result) => {
+      if (!result) return;
 
-                const mappedStat = statMapping[categoryName];
-                if (mappedStat) {
-                   performer.stats[mappedStat] = statValue;
-                }
-              });
+      const { boxscoreData, event } = result;
+      const competition = event.competitions[0];
+
+      // Collect all unique players across all stat categories
+      // The key insight: we need to iterate through ALL stat categories and collect ALL players
+      // Each stat category might only have leaders, but together they should cover all players
+      const allPlayersMap = new Map<string, { athlete: any; team: string; statsMap: Map<string, string[]> }>();
+
+      // Try multiple structures to find all players
+      // 1. boxscore.teams[].statistics (organized by team, might have all players)
+      // 2. boxscore.players.statistics (organized by stat category, usually only leaders)
+      // 3. gamepackage.boxscore.teams[].statistics
+      // 4. gamepackage.boxscore.players.statistics
+      
+      // First, try boxscore.teams structure (might have all players per team)
+      const boxscoreTeams = boxscoreData.boxscore?.teams;
+      if (boxscoreTeams && Array.isArray(boxscoreTeams)) {
+        boxscoreTeams.forEach((team) => {
+          const teamAbbr = team.team?.abbreviation || '';
+          team.statistics?.forEach((statCategory) => {
+            statCategory.athletes?.forEach((athleteData) => {
+              const athlete = athleteData.athlete;
+              if (!athlete) return;
+              
+              const athleteName = athlete.displayName;
+              if (!athleteName) return;
+              
+              const stats = athleteData.stats || [];
+              const finalTeamAbbr = athlete.team?.abbreviation || teamAbbr;
+
+              if (!allPlayersMap.has(athleteName)) {
+                allPlayersMap.set(athleteName, {
+                  athlete,
+                  team: finalTeamAbbr,
+                  statsMap: new Map(),
+                });
+              }
+
+              const playerEntry = allPlayersMap.get(athleteName)!;
+              if (stats.length >= 19 && (!playerEntry.statsMap.has('full') || playerEntry.statsMap.get('full')!.length < stats.length)) {
+                playerEntry.statsMap.set('full', stats);
+              }
             });
+          });
+        });
+      }
+
+      // Then try boxscore.players.statistics (stat categories, usually only leaders)
+      const playersStats = boxscoreData.boxscore?.players?.statistics || 
+                          boxscoreData.gamepackage?.boxscore?.players?.statistics;
+
+      if (playersStats && playersStats.length > 0) {
+        // For NBA, look for categories that have ALL players (not just leaders)
+        // Categories like "minutes" or "fieldGoalsMade" typically have all players who played
+        // Sort by number of athletes to prioritize categories with more players
+        const sortedStats = [...playersStats].sort((a, b) => {
+          const aCount = a.athletes?.length || 0;
+          const bCount = b.athletes?.length || 0;
+          return bCount - aCount; // Descending order
+        });
+
+        // Iterate through ALL stat categories to collect all players
+        // Start with categories that have the most players (likely to have all players)
+        sortedStats.forEach((statCategory) => {
+          const teamAbbr = statCategory.team?.abbreviation || '';
+          
+          statCategory.athletes?.forEach((athleteData) => {
+            const athlete = athleteData.athlete;
+            if (!athlete) return;
+            
+            const athleteName = athlete.displayName;
+            if (!athleteName) return;
+            
+            const stats = athleteData.stats || [];
+            const finalTeamAbbr = athlete.team?.abbreviation || teamAbbr;
+
+            // Get or create player entry
+            if (!allPlayersMap.has(athleteName)) {
+              allPlayersMap.set(athleteName, {
+                athlete,
+                team: finalTeamAbbr,
+                statsMap: new Map(),
+              });
+            }
+
+            const playerEntry = allPlayersMap.get(athleteName)!;
+            
+            // Store stats array - we'll use the longest/most complete one
+            if (stats.length >= 19 && (!playerEntry.statsMap.has('full') || playerEntry.statsMap.get('full')!.length < stats.length)) {
+              playerEntry.statsMap.set('full', stats);
+            }
+          });
+        });
+
+      }
+
+      // Also try gamepackage.boxscore.teams structure
+      if (boxscoreData.gamepackage?.boxscore?.teams) {
+        boxscoreData.gamepackage.boxscore.teams.forEach((team) => {
+          const teamAbbr = team.team?.abbreviation || '';
+          
+          team.statistics?.forEach((statCategory) => {
+            statCategory.athletes?.forEach((athleteData) => {
+              const athlete = athleteData.athlete;
+              if (!athlete) return;
+              
+              const athleteName = athlete.displayName;
+              if (!athleteName) return;
+              
+              const stats = athleteData.stats || [];
+              const finalTeamAbbr = athlete.team?.abbreviation || teamAbbr;
+
+              if (!allPlayersMap.has(athleteName)) {
+                allPlayersMap.set(athleteName, {
+                  athlete,
+                  team: finalTeamAbbr,
+                  statsMap: new Map(),
+                });
+              }
+
+              const playerEntry = allPlayersMap.get(athleteName)!;
+              if (stats.length >= 19 && (!playerEntry.statsMap.has('full') || playerEntry.statsMap.get('full')!.length < stats.length)) {
+                playerEntry.statsMap.set('full', stats);
+              }
+            });
+          });
+        });
+      }
+
+      // Process all collected players from all sources (only once, at the end)
+      if (allPlayersMap.size > 0) {
+        allPlayersMap.forEach((playerData, athleteName) => {
+          const stats = playerData.statsMap.get('full') || [];
+          const athlete = playerData.athlete;
+
+          // Get or create performer entry
+          let performer = performersMap.get(athleteName);
+          if (!performer) {
+            performer = {
+              name: athleteName,
+              team: playerData.team,
+              image: athlete.headshot,
+              stats: {},
+            };
+            performersMap.set(athleteName, performer);
+          }
+
+          // Parse stats based on sport
+          if (sport === 'NBA') {
+            // NBA stats array order: MIN, FGM, FGA, FG%, 3PM, 3PA, 3P%, FTM, FTA, FT%, OREB, DREB, REB, AST, STL, BLK, TO, PF, PTS
+            if (stats.length >= 19) {
+              const points = parseFloat(stats[18] || '0') || 0;
+              const rebounds = parseFloat(stats[12] || '0') || 0;
+              const assists = parseFloat(stats[13] || '0') || 0;
+              const blocks = parseFloat(stats[15] || '0') || 0;
+              const steals = parseFloat(stats[14] || '0') || 0;
+
+              if (points > 0) performer.stats.points = (performer.stats.points || 0) + points;
+              if (rebounds > 0) performer.stats.rebounds = (performer.stats.rebounds || 0) + rebounds;
+              if (assists > 0) performer.stats.assists = (performer.stats.assists || 0) + assists;
+              if (blocks > 0) performer.stats.blocks = (performer.stats.blocks || 0) + blocks;
+              if (steals > 0) performer.stats.steals = (performer.stats.steals || 0) + steals;
+            }
+          } else if (sport === 'NFL') {
+            // NFL stats parsing would go here
           }
         });
       }
     });
+
+    // If we didn't get any performers from boxscores, fall back to leaders data
+    if (performersMap.size === 0) {
+      data.events.forEach((event) => {
+        if (event.status.type.state === 'in' || event.status.type.state === 'post') {
+          event.competitions[0].competitors.forEach((competitor) => {
+            if (competitor.leaders) {
+              competitor.leaders.forEach((leaderCategory) => {
+                const categoryName = leaderCategory.name;
+
+                leaderCategory.leaders.forEach((leaderData) => {
+                  const athlete = leaderData.athlete;
+                  const athleteName = athlete.displayName;
+
+                  let performer = performersMap.get(athleteName);
+                  if (!performer) {
+                    performer = {
+                      name: athleteName,
+                      team: athlete.team?.abbreviation || competitor.team.abbreviation,
+                      image: athlete.headshot,
+                      stats: {},
+                    };
+                    performersMap.set(athleteName, performer);
+                  }
+
+                  const statValue = parseFloat(leaderData.displayValue.replace(/[^\d.-]/g, ''));
+                  if (isNaN(statValue)) return;
+
+                  const statMapping: Record<string, keyof TopPerformer['stats']> = {
+                    'passing': 'passingYards',
+                    'passingYards': 'passingYards',
+                    'rushing': 'rushingYards',
+                    'rushingYards': 'rushingYards',
+                    'receiving': 'receivingYards',
+                    'receivingYards': 'receivingYards',
+                    'points': 'points',
+                    'rebounds': 'rebounds',
+                    'assists': 'assists',
+                    'blocks': 'blocks',
+                    'steals': 'steals',
+                  };
+
+                  const mappedStat = statMapping[categoryName];
+                  if (mappedStat) {
+                    performer.stats[mappedStat] = statValue;
+                  }
+                });
+              });
+            }
+          });
+        }
+      });
+    }
 
     return Array.from(performersMap.values());
   } catch (error) {
