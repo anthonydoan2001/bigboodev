@@ -45,10 +45,11 @@ export const GET = withAuth(async (request: NextRequest) => {
     // Check if we have cached data and if it's fresh
     if (cachedPerformers.length > 0) {
       // Get the most recent lastUpdated timestamp for this sport/date
+      // Normalize date to UTC midnight to avoid timezone issues
       const year = queryDate.getFullYear();
       const month = queryDate.getMonth() + 1;
       const day = queryDate.getDate();
-      const dateStr = new Date(year, month - 1, day);
+      const dateStr = new Date(Date.UTC(year, month - 1, day));
 
       const mostRecent = await db.topPerformer.findFirst({
         where: {

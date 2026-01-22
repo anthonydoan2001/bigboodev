@@ -21,6 +21,12 @@ if (process.env.NODE_ENV === 'development') {
   if (!('collection' in db)) {
     console.warn('⚠️  Prisma client missing collection model. Please restart the dev server after running: npx prisma generate');
   }
+  if (!('gameScore' in db)) {
+    console.warn('⚠️  Prisma client missing gameScore model. Please restart the dev server after running: npx prisma generate');
+  }
+  if (!('topPerformer' in db)) {
+    console.warn('⚠️  Prisma client missing topPerformer model. Please restart the dev server after running: npx prisma generate');
+  }
 }
 
 
