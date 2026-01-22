@@ -878,7 +878,7 @@ export async function fetchTopPerformers(sport: SportType, date?: Date): Promise
               if (!athleteName) return;
 
               const stats = athleteData.stats || [];
-              const finalTeamAbbr = athlete.team?.abbreviation || teamAbbr;
+              const finalTeamAbbr = teamAbbr;
 
               if (!allPlayersMap.has(athleteName)) {
                 allPlayersMap.set(athleteName, {
