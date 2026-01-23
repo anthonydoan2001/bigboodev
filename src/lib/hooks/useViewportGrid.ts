@@ -153,7 +153,7 @@ export function useViewportGrid({
       containerRef.current.style.setProperty('--item-width', `${cardWidth}px`);
       containerRef.current.style.setProperty('gap', `${estimate.gap}px`);
       containerRef.current.style.width = '100%';
-      
+
       // Update state immediately to match CSS fallback - prevents layout shift
       setItemWidth(cardWidth);
       setColumns(estimatedColumns);

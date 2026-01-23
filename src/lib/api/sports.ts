@@ -938,7 +938,9 @@ export async function cacheTopPerformers(sport: SportType, date: Date, performer
 export async function fetchStandings(sport: SportType): Promise<TeamStanding[]> {
   try {
     const { path } = SPORT_LEAGUES[sport];
-    const url = `${ESPN_BASE_URL}/${path}/standings`;
+    // Note: Standings endpoint uses /apis/v2/ instead of /apis/site/v2/
+    const standingsBaseUrl = 'https://site.api.espn.com/apis/v2/sports';
+    const url = `${standingsBaseUrl}/${path}/standings`;
 
     const response = await fetch(url, {
       cache: 'no-store',
@@ -971,7 +973,9 @@ export async function fetchStandings(sport: SportType): Promise<TeamStanding[]> 
         const isWestern = conferenceName.toLowerCase().includes('west');
 
         if (conference.standings && conference.standings.entries) {
-          conference.standings.entries.forEach((entry: any, index: number) => {
+          const conferenceTeams: TeamStanding[] = [];
+
+          conference.standings.entries.forEach((entry: any) => {
             const team = entry.team;
             const stats = entry.stats;
 
@@ -981,8 +985,8 @@ export async function fetchStandings(sport: SportType): Promise<TeamStanding[]> 
             const winPercent = stats.find((s: any) => s.name === 'winPercent')?.value || 0;
             const streak = stats.find((s: any) => s.name === 'streak')?.displayValue || '-';
 
-            standings.push({
-              rank: index + 1,
+            conferenceTeams.push({
+              rank: 0, // Will be assigned after sorting
               team: team.displayName || team.name,
               teamLogo: team.logos?.[0]?.href,
               wins: parseInt(wins),
@@ -991,6 +995,15 @@ export async function fetchStandings(sport: SportType): Promise<TeamStanding[]> 
               streak: streak,
               conference: isEastern ? 'Eastern' : isWestern ? 'Western' : 'Eastern',
             });
+          });
+
+          // Sort by win percentage (descending) - highest win % = rank 1
+          conferenceTeams.sort((a, b) => b.winPercentage - a.winPercentage);
+
+          // Assign ranks after sorting
+          conferenceTeams.forEach((team, index) => {
+            team.rank = index + 1;
+            standings.push(team);
           });
         }
       });
