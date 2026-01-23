@@ -45,16 +45,16 @@ export function SearchResultCard({
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
   const menuIdRef = useRef(`menu-${result.id}-${Math.random().toString(36).substr(2, 9)}`);
-  
+
   useEffect(() => {
     if (open && position.x > 0 && position.y > 0) {
       const positionMenu = () => {
         const menuElements = document.querySelectorAll('[data-slot="dropdown-menu-content"]');
         if (menuElements.length === 0) return;
-        
+
         // Get the last one (most recently opened)
         const menuElement = Array.from(menuElements)[menuElements.length - 1] as HTMLElement;
-        
+
         if (menuElement) {
           // Force position to mouse location
           menuElement.style.position = 'fixed';
@@ -67,19 +67,19 @@ export function SearchResultCard({
           menuElement.style.setProperty('--radix-dropdown-menu-content-transform-origin', 'var(--radix-popper-transform-origin)');
         }
       };
-      
+
       // Use multiple attempts to catch the menu when it appears
       const timeout1 = setTimeout(positionMenu, 0);
       const timeout2 = setTimeout(positionMenu, 10);
       const timeout3 = setTimeout(positionMenu, 50);
       const timeout4 = setTimeout(positionMenu, 100);
-      
+
       // Also use MutationObserver to catch when menu is added to DOM
       const observer = new MutationObserver(() => {
         positionMenu();
       });
       observer.observe(document.body, { childList: true, subtree: true });
-      
+
       return () => {
         clearTimeout(timeout1);
         clearTimeout(timeout2);
@@ -109,7 +109,7 @@ export function SearchResultCard({
       };
     }
   }, [open]);
-  
+
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
       <div className="group relative flex flex-col w-full h-full transition-all duration-500 ease-out" style={{ width: '100%', minWidth: 0 }}>
@@ -252,7 +252,7 @@ export function SearchResultCard({
             {result.title}
           </h3>
         </div>
-        
+
         <DropdownMenuContent
           align="end"
           onCloseAutoFocus={(e) => e.preventDefault()}

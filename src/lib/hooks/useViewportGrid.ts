@@ -158,32 +158,32 @@ export function useViewportGrid({
       // Only run on client side
       if (typeof window === 'undefined') return;
       if (!containerRef.current || isCalculatingRef.current) return;
-      
+
       // Check multiple width sources for more reliable measurement
       const rect = containerRef.current.getBoundingClientRect();
       const clientWidth = containerRef.current.clientWidth;
       const offsetWidth = containerRef.current.offsetWidth;
-      
+
       // Use the largest valid width (offsetWidth is most reliable for flex containers)
       let containerWidth = Math.max(rect.width, clientWidth, offsetWidth);
-      
+
       // Get current viewport height to detect height changes
       const currentHeight = typeof window !== 'undefined' ? window.innerHeight : 0;
-      
+
       // Recalculate if width OR height changed significantly (within 10px threshold)
       // This ensures itemsPerPage updates when viewport height changes
       const widthChanged = Math.abs(containerWidth - lastWidthRef.current) >= 10;
       const heightChanged = Math.abs(currentHeight - lastHeightRef.current) >= 10;
-      
+
       // Skip only if BOTH width and height haven't changed significantly AND we've already initialized
       // UNLESS forceRecalculate is true (used by window resize handler)
       if (!forceRecalculate && !widthChanged && !heightChanged && lastWidthRef.current > 0 && hasInitializedRef.current) {
         return;
       }
-      
+
       // Run calculation immediately on first load to prevent flash of large cards
       // No delay needed - CSS fallback handles initial layout
-      
+
       // If container width is still too small, try to get a better measurement
       if (containerWidth < 200) {
         const parent = containerRef.current.parentElement;
@@ -195,45 +195,45 @@ export function useViewportGrid({
             containerWidth = parentWidth;
           }
         }
-        
+
         // If still too small, wait for proper sizing
         if (containerWidth < 200) {
           return;
         }
       }
-      
+
       isCalculatingRef.current = true;
       lastWidthRef.current = containerWidth;
       if (typeof window !== 'undefined') {
         lastHeightRef.current = window.innerHeight;
       }
-      
+
       // Responsive breakpoints
       const isMobile = containerWidth < 640; // sm breakpoint
       const isTablet = containerWidth >= 640 && containerWidth < 1024; // md breakpoint
 
       // Responsive gap based on screen size - more compact
       const responsiveGap = isMobile ? Math.max(gap - 4, 6) : isTablet ? Math.max(gap - 2, 8) : gap;
-      
+
       // Responsive card sizes based on screen size - 20% larger
       const responsiveMinWidth = isMobile ? Math.min(minCardWidth, 120) : isTablet ? Math.min(minCardWidth, 144) : minCardWidth;
       const responsiveMaxWidth = isMobile ? Math.min(maxCardWidth, 192) : isTablet ? Math.min(maxCardWidth, 240) : maxCardWidth;
-      
+
       // Responsive header/footer heights for mobile - more compact
       const responsiveHeaderHeight = isMobile ? Math.max(headerHeight - 50, 100) : isTablet ? Math.max(headerHeight - 20, 130) : headerHeight;
       const responsiveFooterHeight = isMobile ? Math.max(footerHeight - 30, 40) : isTablet ? Math.max(footerHeight - 15, 50) : footerHeight;
-      
+
       // Calculate available viewport height
       const viewportHeight = window.innerHeight;
       const availableHeight = viewportHeight - responsiveHeaderHeight - responsiveFooterHeight;
-      
+
       // Calculate how many columns fit
       const maxItemsWithMaxWidth = Math.floor((containerWidth + responsiveGap) / (responsiveMaxWidth + responsiveGap));
       const maxItemsWithMinWidth = Math.floor((containerWidth + responsiveGap) / (responsiveMinWidth + responsiveGap));
-      
+
       // Find optimal column count (prefer larger cards)
       let targetColumns = Math.max(1, maxItemsWithMaxWidth);
-      
+
       if (maxItemsWithMinWidth > maxItemsWithMaxWidth) {
         // Try to find sweet spot - responsive preferred width, 20% larger
         const preferredWidth = isMobile ? 156 : isTablet ? 180 : 192; // 20% increase
@@ -242,18 +242,18 @@ export function useViewportGrid({
           targetColumns = preferredItems;
         }
       }
-      
+
       // Calculate card width
       const totalGaps = responsiveGap * (targetColumns - 1);
       let calculatedWidth = Math.floor((containerWidth - totalGaps) / targetColumns);
       calculatedWidth = Math.max(responsiveMinWidth, Math.min(responsiveMaxWidth, calculatedWidth));
-      
+
       // Calculate card height based on aspect ratio
       const cardImageHeight = calculatedWidth * cardAspectRatio;
       // Total card height includes image + text below - more compact
       const responsiveTextHeight = isMobile ? Math.max(textHeightBelowCard - 15, 35) : isTablet ? Math.max(textHeightBelowCard - 10, 40) : textHeightBelowCard;
       const totalCardHeight = cardImageHeight + responsiveTextHeight;
-      
+
       // Calculate how many rows fit in available height
       // Use minimal buffer to maximize items per page while preventing cut-off
       const rowHeight = totalCardHeight + responsiveGap;
@@ -261,7 +261,7 @@ export function useViewportGrid({
       const buffer = isMobile ? 10 : isTablet ? 15 : 20;
       const maxRows = Math.floor((availableHeight - buffer) / rowHeight);
       const targetRows = Math.max(1, maxRows);
-      
+
       // Calculate items per page - dynamically calculated, no hard limits
       // This will vary based on viewport size: larger screens = more items, smaller screens = fewer items
       const totalItems = targetColumns * targetRows;
@@ -285,7 +285,7 @@ export function useViewportGrid({
       setColumns(targetColumns);
       setRows(targetRows);
       setItemsPerPage(totalItems);
-      
+
       // Set CSS variables and apply grid layout dynamically
       if (containerRef.current) {
         // Disable transitions on first calculation to prevent visible shift
@@ -334,23 +334,23 @@ export function useViewportGrid({
       // Only run on client side
       if (typeof window === 'undefined') return;
       if (!containerRef.current) return;
-      
+
       const width1 = Math.max(
         containerRef.current.getBoundingClientRect().width,
         containerRef.current.clientWidth,
         containerRef.current.offsetWidth
       );
-      
+
       // Check again after a short delay to ensure width is stable
       setTimeout(() => {
         if (!containerRef.current) return;
-        
+
         const width2 = Math.max(
           containerRef.current.getBoundingClientRect().width,
           containerRef.current.clientWidth,
           containerRef.current.offsetWidth
         );
-        
+
         // If width is stable (within 5px), proceed with calculation
         if (Math.abs(width1 - width2) < 5 && width1 >= 200) {
           calculateGrid();
@@ -366,7 +366,7 @@ export function useViewportGrid({
     const resizeObserver = new ResizeObserver((entries) => {
       // Only recalculate if we've already initialized and container size actually changed
       if (!hasInitializedRef.current) return;
-      
+
       // Debounce resize calculations to prevent excessive recalculations
       if (resizeTimeout) clearTimeout(resizeTimeout);
       resizeTimeout = setTimeout(() => {
@@ -375,19 +375,19 @@ export function useViewportGrid({
         });
       }, 200); // Wait 200ms after resize stops to prevent flickering
     });
-    
+
     // Set CSS fallback immediately and whenever container becomes available
     const setupFallbackAndObserver = () => {
       if (containerRef.current) {
         setCSSFallback();
-        
+
         if (!containerRef.current.dataset.observed) {
           resizeObserver.observe(containerRef.current);
           containerRef.current.dataset.observed = 'true';
         }
       }
     };
-    
+
     // Set up fallback immediately - client-side only to prevent hydration errors
     // Set CSS fallback synchronously if container exists
     if (containerRef.current) {
@@ -401,7 +401,7 @@ export function useViewportGrid({
       }
     };
     requestAnimationFrame(checkAndSet);
-    
+
     // Set up CSS fallback immediately - synchronously
     if (containerRef.current) {
       setCSSFallback();
