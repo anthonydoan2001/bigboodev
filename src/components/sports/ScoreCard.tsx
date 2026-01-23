@@ -22,13 +22,34 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
   const getStatusBadge = () => {
     switch (game.status) {
       case 'live':
+        // Format quarter and time display
+        let displayText = '';
+        if (game.quarter && game.timeRemaining) {
+          const quarter = game.quarter;
+          const timeRemaining = game.timeRemaining.trim();
+          
+          // Check if it's 0.0 (end of quarter)
+          if (timeRemaining === '0.0' || timeRemaining === '0:00') {
+            // Special case for Q2 0.0 → Halftime
+            if (quarter === 'Q2') {
+              displayText = 'Halftime';
+            } else {
+              // For other quarters, show "End of QX"
+              displayText = `End of ${quarter}`;
+            }
+          } else {
+            // Normal time remaining
+            displayText = `${quarter} ${timeRemaining}`;
+          }
+        } else if (game.quarter) {
+          displayText = game.quarter;
+        } else {
+          displayText = 'LIVE';
+        }
+        
         return (
           <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-500 text-caption font-semibold tabular-nums">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-            </span>
-            {game.quarter} {game.timeRemaining}
+            {displayText}
           </div>
         );
       case 'final':
