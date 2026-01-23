@@ -75,10 +75,12 @@ export default function SportsPage() {
   const [selectedSport, setSelectedSport] = useState<SportType | 'FAVORITES'>('NBA');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
 
-  // Load favorites on mount
+  // Load favorites and set mounted flag on mount
   useEffect(() => {
     setFavorites(getFavorites());
+    setIsMounted(true);
   }, []);
 
   const showPerformers = selectedSport === 'NBA'; // Only show performers for NBA
@@ -101,7 +103,7 @@ export default function SportsPage() {
     queryFn: () => fetchScores(selectedSport as SportType, dateForScores),
     staleTime: 0, // Always consider data stale so refetchInterval works properly
     refetchOnWindowFocus: false,
-    enabled: shouldFetchScores,
+    enabled: shouldFetchScores && isMounted,
     refetchInterval: (data) => {
       // If there are live games, refresh every minute
       if (Array.isArray(data) && data.some(game => game.status === 'live')) {
@@ -125,7 +127,7 @@ export default function SportsPage() {
     },
     staleTime: 0, // Always consider data stale so refetchInterval works properly
     refetchOnWindowFocus: false,
-    enabled: isFavoritesView,
+    enabled: isFavoritesView && isMounted,
     refetchInterval: (data) => {
       // If there are live games, refresh every minute
       if (Array.isArray(data) && data.some(game => game.status === 'live')) {
@@ -172,7 +174,7 @@ export default function SportsPage() {
     },
     staleTime: 0, // Always consider data stale so refetchInterval works properly
     refetchOnWindowFocus: false,
-    enabled: selectedSport === 'NBA', // Only for NBA
+    enabled: selectedSport === 'NBA' && isMounted, // Only for NBA and after mount
     refetchInterval: (data) => {
       // Refresh performers if there are live games
       const hasLiveGames = Array.isArray(scores) && scores.some(game => game.status === 'live');
@@ -199,7 +201,7 @@ export default function SportsPage() {
     },
     staleTime: 0, // Always consider data stale so refetchInterval works properly
     refetchOnWindowFocus: false,
-    enabled: selectedSport === 'NFL', // Only for NFL
+    enabled: selectedSport === 'NFL' && isMounted, // Only for NFL and after mount
     refetchInterval: (data) => {
       // If there are live games, refresh every minute
       if (Array.isArray(data) && data.some(game => game.status === 'live')) {
@@ -212,7 +214,7 @@ export default function SportsPage() {
 
   // Determine which games to show
   const currentScores = isFavoritesView ? favoriteQueries.data : scores;
-  const currentLoading = isFavoritesView ? favoriteQueries.isLoading : scoresLoading;
+  const currentLoading = !isMounted || (isFavoritesView ? favoriteQueries.isLoading : scoresLoading);
   const currentError = isFavoritesView ? favoriteQueries.error : scoresError;
 
   // Helper function to check if a completed game is older than 24 hours
@@ -341,7 +343,7 @@ export default function SportsPage() {
             <TabsContent value="scores" className="mt-6">
               {selectedSport === 'NFL' ? (
                 // For NFL, show loading state from playoff games query
-                upcomingGamesLoading ? (
+                (!isMounted || upcomingGamesLoading) ? (
                   <div className="px-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                       {Array.from({ length: 8 }).map((_, i) => (
@@ -427,7 +429,7 @@ export default function SportsPage() {
             {showPerformers && (
               <TabsContent value="performers" className="mt-6">
                 <div className="max-w-7xl mx-auto">
-                  {performersLoading ? (
+                  {(!isMounted || performersLoading) ? (
                     <TopPerformersSkeleton />
                   ) : performersError ? (
                     <Card>
@@ -447,7 +449,7 @@ export default function SportsPage() {
             {showUpcomingGames && (
               <TabsContent value="upcoming" className="mt-6">
                 <div className="max-w-7xl mx-auto px-4">
-                  {upcomingGamesLoading ? (
+                  {(!isMounted || upcomingGamesLoading) ? (
                     <div className="space-y-4">
                       {Array.from({ length: 3 }).map((_, i) => (
                         <Card key={i}>

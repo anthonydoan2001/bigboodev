@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { Clock, Star } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 interface ScoreCardProps {
   game: GameScore;
@@ -12,6 +13,12 @@ interface ScoreCardProps {
 }
 
 export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }: ScoreCardProps) {
+  // Track hydration to avoid server/client mismatch with date formatting
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
   const getStatusBadge = () => {
     switch (game.status) {
       case 'live':
@@ -30,10 +37,15 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
         return (
           <div className="flex items-center gap-1 text-caption text-muted-foreground">
             <Clock className="w-3 h-3" />
-            {game.startTime.toLocaleTimeString('en-US', {
-              hour: 'numeric',
-              minute: '2-digit',
-            })}
+            {isHydrated ? (
+              game.startTime.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+              })
+            ) : (
+              // Show static placeholder during SSR to avoid hydration mismatch
+              <span className="opacity-0">12:00 PM</span>
+            )}
           </div>
         );
     }
@@ -156,11 +168,16 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
             ) : null
           ) : (
             <div className="px-4 py-3 text-center text-caption text-muted-foreground">
-              {game.startTime.toLocaleDateString('en-US', {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-              })}
+              {isHydrated ? (
+                game.startTime.toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric',
+                })
+              ) : (
+                // Show static placeholder during SSR to avoid hydration mismatch
+                <span className="opacity-0">Monday, January 1</span>
+              )}
             </div>
           )}
 
