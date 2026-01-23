@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useState, useEffect } from 'react';
 
 interface DateNavigatorProps {
   selectedDate: Date;
@@ -7,6 +8,11 @@ interface DateNavigatorProps {
 }
 
 export function DateNavigator({ selectedDate, onDateChange }: DateNavigatorProps) {
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
   const handlePrevDay = () => {
     const newDate = new Date(selectedDate);
     newDate.setDate(newDate.getDate() - 1);
@@ -41,8 +47,8 @@ export function DateNavigator({ selectedDate, onDateChange }: DateNavigatorProps
         <ChevronLeft className="h-5 w-5" />
       </Button>
 
-      <span className="text-xl font-semibold min-w-[140px] text-center tracking-tight">
-        {formatDate(selectedDate)}
+      <span className="text-xl font-semibold min-w-[140px] text-center tracking-tight" suppressHydrationWarning>
+        {isHydrated ? formatDate(selectedDate) : '\u00A0'}
       </span>
 
       <Button
