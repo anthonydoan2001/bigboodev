@@ -96,12 +96,12 @@ export default function SportsPage() {
     refetchOnWindowFocus: false,
     enabled: shouldFetchScores && isMounted,
     refetchInterval: (data) => {
-      // If there are live games, refresh every minute
+      // Only auto-refresh if there are live games - refresh every 30 seconds
       if (Array.isArray(data) && data.some(game => game.status === 'live')) {
-        return 60000; // 1 minute for live games
+        return 30000; // 30 seconds for live games
       }
-      // Otherwise, check every 2 minutes to catch games transitioning to live
-      return 120000; // 2 minutes for scheduled/final games
+      // No auto-refresh for scheduled/final games - user can manually refresh
+      return false;
     },
   });
 
@@ -120,12 +120,12 @@ export default function SportsPage() {
     refetchOnWindowFocus: false,
     enabled: isFavoritesView && isMounted,
     refetchInterval: (data) => {
-      // If there are live games, refresh every minute
+      // Only auto-refresh if there are live games - refresh every 30 seconds
       if (Array.isArray(data) && data.some(game => game.status === 'live')) {
-        return 60000; // 1 minute for live games
+        return 30000; // 30 seconds for live games
       }
-      // Otherwise, check every 2 minutes to catch games transitioning to live
-      return 120000; // 2 minutes for scheduled/final games
+      // No auto-refresh for scheduled/final games - user can manually refresh
+      return false;
     },
   });
 
@@ -167,13 +167,13 @@ export default function SportsPage() {
     refetchOnWindowFocus: false,
     enabled: selectedSport === 'NBA' && isMounted, // Only for NBA and after mount
     refetchInterval: (data) => {
-      // Refresh performers if there are live games
+      // Only auto-refresh performers if there are live games - refresh every 30 seconds
       const hasLiveGames = Array.isArray(scores) && scores.some(game => game.status === 'live');
       if (hasLiveGames) {
-        return 60000; // 1 minute for live games
+        return 30000; // 30 seconds for live games
       }
-      // Otherwise, check every 5 minutes (performers update less frequently)
-      return 300000; // 5 minutes for completed/scheduled games
+      // No auto-refresh for completed/scheduled games - user can manually refresh
+      return false;
     },
   });
 
@@ -226,7 +226,7 @@ export default function SportsPage() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
               </div>
-              <span className="font-medium">Live • Auto-updating every minute</span>
+              <span className="font-medium">Live • Auto-updating every 30 seconds</span>
             </div>
           )}
         </div>
