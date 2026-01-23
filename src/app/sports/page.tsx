@@ -13,8 +13,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { autoFavoriteHoustonGames, getFavorites, isHoustonGame, toggleFavorite as toggleFavoriteInStorage } from '@/lib/favorites';
 import { GameScore, SportType, TeamStanding, TopPerformer } from '@/types/sports';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { getAuthHeaders } from '@/lib/api-client';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 async function fetchScores(sport: SportType, date: Date) {
   // Format date in local timezone as YYYY-MM-DD
@@ -78,21 +79,76 @@ async function fetchStandings(sport: SportType) {
   return data.standings as TeamStanding[];
 }
 
-export default function SportsPage() {
+function SportsPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
-  const [selectedSport, setSelectedSport] = useState<SportType | 'FAVORITES'>('NBA');
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
+  // Get initial values from URL or use defaults
+  const urlTab = searchParams.get('tab') || 'games';
+  const urlSport = searchParams.get('sport') || 'NBA';
+  const urlDate = searchParams.get('date');
+
+  const [selectedSport, setSelectedSport] = useState<SportType | 'FAVORITES'>(
+    (urlSport === 'FAVORITES' || urlSport === 'NBA') ? urlSport : 'NBA'
+  );
+  const [selectedTab, setSelectedTab] = useState<string>(
+    ['games', 'performers', 'standings'].includes(urlTab) ? urlTab : 'games'
+  );
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    if (urlDate) {
+      const parsedDate = new Date(urlDate);
+      return isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+    }
+    return new Date();
+  });
   const [favorites, setFavorites] = useState<string[]>([]);
   const [isMounted, setIsMounted] = useState(false);
 
   // Track previous game statuses to detect when games finish
   const previousGameStatuses = useRef<Map<string, 'scheduled' | 'live' | 'final'>>(new Map());
 
-  // Load favorites and set mounted flag on mount
+  // Sync URL params with state on mount
   useEffect(() => {
     setFavorites(getFavorites());
     setIsMounted(true);
   }, []);
+
+  // Update URL when state changes
+  const updateURL = (params: { sport?: string; tab?: string; date?: string }) => {
+    const currentParams = new URLSearchParams(searchParams.toString());
+
+    if (params.sport !== undefined) {
+      currentParams.set('sport', params.sport);
+    }
+    if (params.tab !== undefined) {
+      currentParams.set('tab', params.tab);
+    }
+    if (params.date !== undefined) {
+      currentParams.set('date', params.date);
+    }
+
+    router.push(`/sports?${currentParams.toString()}`, { scroll: false });
+  };
+
+  // Handle sport change
+  const handleSportChange = (sport: SportType | 'FAVORITES') => {
+    setSelectedSport(sport);
+    updateURL({ sport });
+  };
+
+  // Handle tab change
+  const handleTabChange = (tab: string) => {
+    setSelectedTab(tab);
+    updateURL({ tab });
+  };
+
+  // Handle date change
+  const handleDateChange = (date: Date) => {
+    setSelectedDate(date);
+    const dateStr = date.toISOString().split('T')[0];
+    updateURL({ date: dateStr });
+  };
 
   const showPerformers = selectedSport === 'NBA'; // Only show performers for NBA
   const isFavoritesView = selectedSport === 'FAVORITES';
@@ -273,11 +329,11 @@ export default function SportsPage() {
           <div className="flex flex-col md:flex-row gap-4 items-center w-full xl:w-auto">
             <SportFilter
               selectedSport={selectedSport}
-              onSportChange={setSelectedSport}
+              onSportChange={handleSportChange}
             />
             <DateNavigator
               selectedDate={selectedDate}
-              onDateChange={setSelectedDate}
+              onDateChange={handleDateChange}
             />
           </div>
 
@@ -337,9 +393,9 @@ export default function SportsPage() {
             )}
           </div>
         ) : (
-          <Tabs defaultValue="scores" className="w-full">
+          <Tabs value={selectedTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="w-full max-w-2xl mx-auto grid grid-cols-3 bg-muted/50 p-1">
-              <TabsTrigger value="scores" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <TabsTrigger value="games" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
                 Games
               </TabsTrigger>
               <TabsTrigger value="performers" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
@@ -350,7 +406,7 @@ export default function SportsPage() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="scores" className="mt-6">
+            <TabsContent value="games" className="mt-6">
               {currentLoading ? (
                   <div className="px-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -432,5 +488,31 @@ export default function SportsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function SportsPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto py-8 px-8 min-h-screen max-w-full">
+        <div className="w-full space-y-6">
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+            <div className="flex flex-col md:flex-row gap-4 items-center w-full xl:w-auto">
+              <div className="h-10 bg-muted rounded w-64 animate-pulse"></div>
+              <div className="h-10 bg-muted rounded w-48 animate-pulse"></div>
+            </div>
+          </div>
+          <div className="mt-6 px-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="h-64 bg-muted rounded animate-pulse"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <SportsPageContent />
+    </Suspense>
   );
 }
