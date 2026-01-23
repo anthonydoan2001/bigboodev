@@ -69,7 +69,7 @@ export function KanbanBoard({
 
   const renderColumn = (status: TaskStatus, tasks: TaskWithNote[], title: string) => {
     const isDraggedOver = draggedOverColumn === status;
-    
+
     return (
       <div className="flex-1 min-w-0 flex flex-col">
         <Card className={cn('h-full flex flex-col', isDraggedOver && 'ring-2 ring-primary')}>

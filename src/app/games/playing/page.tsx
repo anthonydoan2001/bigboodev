@@ -1,17 +1,15 @@
 'use client';
 
-import { useSearchParams, useRouter } from 'next/navigation';
-import { useMemo, useEffect, Suspense, useState } from 'react';
+import { GameCard } from '@/components/games/GameCard';
+import { GamesNav } from '@/components/games/GamesNav';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { GamesNav } from '@/components/games/GamesNav';
-import { GameCard } from '@/components/games/GameCard';
-import { CardSkeleton } from '@/components/watchlist/CardSkeleton';
 import { useGames } from '@/lib/hooks/useGames';
 import { useGamesMutations } from '@/lib/hooks/useGamesMutations';
 import { useViewportGrid } from '@/lib/hooks/useViewportGrid';
 import { Loader2 } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
@@ -23,7 +21,7 @@ function PlayingContent() {
 
   const { playingGames, isLoading } = useGames();
   const { deleteMutation, markPlayedMutation } = useGamesMutations();
-  
+
   const { containerRef, itemsPerPage, isReady } = useViewportGrid({
     headerHeight: 160, // Nav + spacing
     footerHeight: 0, // No footer - pagination is in header
@@ -65,7 +63,7 @@ function PlayingContent() {
   // Only redirect if we've mounted AND grid is ready to prevent initial flash
   useEffect(() => {
     if (!hasMounted || !isReady) return;
-    
+
     if (totalPages > 0 && page > totalPages) {
       // Current page is invalid, redirect to last valid page
       const params = new URLSearchParams();

@@ -1,6 +1,6 @@
 'use client';
 
-import { TaskWithNote } from '@/types/tasks';
+import { TaskWithNote, TaskPriority } from '@/types/tasks';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PriorityBadge } from './PriorityBadge';
@@ -65,8 +65,8 @@ export function TaskCard({ task, onEdit, onDelete, isDragging }: TaskCardProps) 
 
         {/* Metadata */}
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <PriorityBadge priority={task.priority} />
-          
+          <PriorityBadge priority={task.priority as TaskPriority} />
+
           {task.category && (
             <div className="flex items-center gap-1 text-muted-foreground">
               <Tag className="h-3 w-3" />

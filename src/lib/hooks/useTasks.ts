@@ -4,7 +4,7 @@ import { getAuthHeaders } from '@/lib/api-client';
 
 export function useTasks(filters?: TaskFilters) {
   const queryParams = new URLSearchParams();
-  
+
   if (filters?.status && filters.status.length > 0) {
     queryParams.set('status', filters.status.join(','));
   }

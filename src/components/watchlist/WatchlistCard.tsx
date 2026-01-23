@@ -21,29 +21,29 @@ interface WatchlistCardProps {
   hideStatusBadge?: boolean;
 }
 
-export function WatchlistCard({ 
-  item, 
-  onDelete, 
-  onMarkWatched, 
-  onMarkWatching, 
-  disableContextMenu = false, 
-  hideStatusBadge = false 
+export function WatchlistCard({
+  item,
+  onDelete,
+  onMarkWatched,
+  onMarkWatching,
+  disableContextMenu = false,
+  hideStatusBadge = false
 }: WatchlistCardProps) {
   const isWatched = item.status === 'WATCHED';
   const isWatching = item.status === 'WATCHING';
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const menuIdRef = useRef(`menu-${item.id}-${Math.random().toString(36).substr(2, 9)}`);
-  
+
   useEffect(() => {
     if (open && position.x > 0 && position.y > 0) {
       const positionMenu = () => {
         const menuElements = document.querySelectorAll('[data-slot="dropdown-menu-content"]');
         if (menuElements.length === 0) return;
-        
+
         // Get the last one (most recently opened)
         const menuElement = Array.from(menuElements)[menuElements.length - 1] as HTMLElement;
-        
+
         if (menuElement) {
           // Force position to mouse location
           menuElement.style.position = 'fixed';
@@ -56,19 +56,19 @@ export function WatchlistCard({
           menuElement.style.setProperty('--radix-dropdown-menu-content-transform-origin', 'var(--radix-popper-transform-origin)');
         }
       };
-      
+
       // Use multiple attempts to catch the menu when it appears
       const timeout1 = setTimeout(positionMenu, 0);
       const timeout2 = setTimeout(positionMenu, 10);
       const timeout3 = setTimeout(positionMenu, 50);
       const timeout4 = setTimeout(positionMenu, 100);
-      
+
       // Also use MutationObserver to catch when menu is added to DOM
       const observer = new MutationObserver(() => {
         positionMenu();
       });
       observer.observe(document.body, { childList: true, subtree: true });
-      
+
       return () => {
         clearTimeout(timeout1);
         clearTimeout(timeout2);
@@ -98,7 +98,7 @@ export function WatchlistCard({
       };
     }
   }, [open]);
-  
+
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
       <div className="group relative space-y-2 w-full flex flex-col" style={{ width: '100%', maxWidth: 'var(--item-max-width, 100%)', minWidth: 0 }}>
@@ -184,8 +184,8 @@ export function WatchlistCard({
               </div>
             </div>
           </div>
-        <DropdownMenuContent 
-          align="end" 
+        <DropdownMenuContent
+          align="end"
           onCloseAutoFocus={(e) => e.preventDefault()}
           className="w-48 p-1 bg-background/80 backdrop-blur-xl border-border/50 shadow-xl rounded-xl"
         >
@@ -202,7 +202,7 @@ export function WatchlistCard({
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
-        
+
         <div className="space-y-1 w-full min-w-0 flex-shrink-0 overflow-visible">
           {(item.year || item.episodes) && (
             <div className="flex items-center gap-1.5 text-caption text-muted-foreground">
@@ -216,8 +216,8 @@ export function WatchlistCard({
             </div>
           )}
           <h3
-            className="text-body-sm font-semibold leading-snug text-foreground/90" 
-            style={{ 
+            className="text-body-sm font-semibold leading-snug text-foreground/90"
+            style={{
               width: '100%',
               minWidth: 0,
               wordBreak: 'break-word',
@@ -228,7 +228,7 @@ export function WatchlistCard({
               display: 'block',
               maxWidth: '100%',
               hyphens: 'auto'
-            }} 
+            }}
             title={item.title}
           >
             {item.title}
