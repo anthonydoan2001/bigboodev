@@ -1,9 +1,9 @@
-import { GameScore } from '@/types/sports';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import Image from 'next/image';
+import { Card, CardContent } from '@/components/ui/card';
+import { GameScore } from '@/types/sports';
 import { Clock, Star } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { useEffect, useState } from 'react';
 
 interface ScoreCardProps {
   game: GameScore;
@@ -27,7 +27,7 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
         if (game.quarter && game.timeRemaining) {
           const quarter = game.quarter;
           const timeRemaining = game.timeRemaining.trim();
-          
+
           // Check if it's 0.0 (end of quarter)
           if (timeRemaining === '0.0' || timeRemaining === '0:00') {
             // Special case for Q2 0.0 → Halftime
@@ -46,7 +46,7 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
         } else {
           displayText = 'LIVE';
         }
-        
+
         return (
           <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-500 text-caption font-semibold tabular-nums">
             {displayText}
