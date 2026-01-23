@@ -6,12 +6,14 @@ import { ScoreCardSkeleton } from '@/components/sports/ScoreCardSkeleton';
 import { SportFilter } from '@/components/sports/SportFilter';
 import { TopPerformersView } from '@/components/sports/TopPerformersView';
 import { TopPerformersSkeleton } from '@/components/sports/TopPerformersSkeleton';
+import { Standings } from '@/components/sports/Standings';
+import { StandingsSkeleton } from '@/components/sports/StandingsSkeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { autoFavoriteHoustonGames, getFavorites, isHoustonGame, toggleFavorite as toggleFavoriteInStorage } from '@/lib/favorites';
-import { GameScore, SportType, TopPerformer } from '@/types/sports';
-import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { GameScore, SportType, TeamStanding, TopPerformer } from '@/types/sports';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState, useRef } from 'react';
 import { getAuthHeaders } from '@/lib/api-client';
 
 async function fetchScores(sport: SportType, date: Date) {
@@ -63,11 +65,28 @@ async function fetchTopPerformers(sport: SportType, date: Date) {
   return data.performers as TopPerformer[];
 }
 
+async function fetchStandings(sport: SportType) {
+  const response = await fetch(`/api/sports/standings?sport=${sport}`, {
+    headers: getAuthHeaders(),
+    credentials: 'include',
+    cache: 'no-store',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch standings');
+  }
+  const data = await response.json();
+  return data.standings as TeamStanding[];
+}
+
 export default function SportsPage() {
+  const queryClient = useQueryClient();
   const [selectedSport, setSelectedSport] = useState<SportType | 'FAVORITES'>('NBA');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [favorites, setFavorites] = useState<string[]>([]);
   const [isMounted, setIsMounted] = useState(false);
+
+  // Track previous game statuses to detect when games finish
+  const previousGameStatuses = useRef<Map<string, 'scheduled' | 'live' | 'final'>>(new Map());
 
   // Load favorites and set mounted flag on mount
   useEffect(() => {
@@ -177,6 +196,23 @@ export default function SportsPage() {
     },
   });
 
+  const {
+    data: standings,
+    isLoading: standingsLoading,
+    error: standingsError,
+  } = useQuery({
+    queryKey: ['standings', selectedSport],
+    queryFn: () => {
+      // Type guard: ensure selectedSport is a valid SportType
+      if (selectedSport === 'FAVORITES') {
+        throw new Error('Cannot fetch standings for FAVORITES');
+      }
+      return fetchStandings(selectedSport);
+    },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    refetchOnWindowFocus: false,
+    enabled: selectedSport === 'NBA' && isMounted, // Only for NBA and after mount
+  });
 
   // Determine which games to show
   const currentScores = isFavoritesView ? favoriteQueries.data : scores;
@@ -203,6 +239,32 @@ export default function SportsPage() {
   const hasLiveGames = Array.isArray(gamesToShow) && gamesToShow.some(game => game.status === 'live');
   const isAutoRefreshing = hasLiveGames && (scoresFetching || favoriteQueries.isFetching);
 
+  // Detect when games finish and update standings
+  useEffect(() => {
+    if (!currentScores || !isMounted) return;
+
+    let gamesJustFinished = false;
+
+    currentScores.forEach(game => {
+      const previousStatus = previousGameStatuses.current.get(game.id);
+
+      // Detect if a game just finished (live -> final)
+      if (previousStatus === 'live' && game.status === 'final') {
+        console.log(`[Standings Update] Game finished: ${game.awayTeam} vs ${game.homeTeam}`);
+        gamesJustFinished = true;
+      }
+
+      // Update the tracked status
+      previousGameStatuses.current.set(game.id, game.status);
+    });
+
+    // If any games just finished, invalidate standings to trigger refresh
+    if (gamesJustFinished && selectedSport === 'NBA') {
+      console.log('[Standings Update] Refreshing standings due to finished games');
+      queryClient.invalidateQueries({ queryKey: ['standings', selectedSport] });
+    }
+  }, [currentScores, isMounted, selectedSport, queryClient]);
+
   return (
     <div className="container mx-auto py-8 px-8 min-h-screen max-w-full">
       <div className="w-full space-y-6">
@@ -226,7 +288,6 @@ export default function SportsPage() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
               </div>
-              <span className="font-medium">Live • Auto-updating every 30 seconds</span>
             </div>
           )}
         </div>
@@ -277,15 +338,16 @@ export default function SportsPage() {
           </div>
         ) : (
           <Tabs defaultValue="scores" className="w-full">
-            <TabsList className={`w-full max-w-md mx-auto grid ${showPerformers ? 'grid-cols-2' : 'grid-cols-1'} bg-muted/50 p-1`}>
+            <TabsList className="w-full max-w-2xl mx-auto grid grid-cols-3 bg-muted/50 p-1">
               <TabsTrigger value="scores" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
                 Games
               </TabsTrigger>
-              {showPerformers && (
-                <TabsTrigger value="performers" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                  Top Performers
-                </TabsTrigger>
-              )}
+              <TabsTrigger value="performers" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                Top Performers
+              </TabsTrigger>
+              <TabsTrigger value="standings" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                Standings
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="scores" className="mt-6">
@@ -330,25 +392,41 @@ export default function SportsPage() {
                 )}
             </TabsContent>
 
-            {showPerformers && (
-              <TabsContent value="performers" className="mt-6">
-                <div className="max-w-7xl mx-auto">
-                  {(!isMounted || performersLoading) ? (
-                    <TopPerformersSkeleton />
-                  ) : performersError ? (
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="text-center text-body-sm text-destructive">
-                          Error loading top performers. Please try again.
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    <TopPerformersView performers={performers || []} sport={selectedSport} />
-                  )}
-                </div>
-              </TabsContent>
-            )}
+            <TabsContent value="performers" className="mt-6">
+              <div className="max-w-7xl mx-auto">
+                {(!isMounted || performersLoading) ? (
+                  <TopPerformersSkeleton />
+                ) : performersError ? (
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="text-center text-body-sm text-destructive">
+                        Error loading top performers. Please try again.
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <TopPerformersView performers={performers || []} sport={selectedSport} />
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="standings" className="mt-6">
+              <div className="max-w-7xl mx-auto px-4">
+                {(!isMounted || standingsLoading) ? (
+                  <StandingsSkeleton />
+                ) : standingsError ? (
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="text-center text-body-sm text-destructive">
+                        Error loading standings. Please try again.
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Standings standings={standings || []} />
+                )}
+              </div>
+            </TabsContent>
 
           </Tabs>
         )}

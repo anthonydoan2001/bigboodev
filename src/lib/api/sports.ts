@@ -1,6 +1,6 @@
 import { trackApiUsage } from '@/lib/api-usage';
 import { db } from '@/lib/db';
-import { GameScore, PlayoffRound, SportType, TopPerformer } from '@/types/sports';
+import { GameScore, PlayoffRound, SportType, TeamStanding, TopPerformer } from '@/types/sports';
 
 const ESPN_BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports';
 
@@ -929,6 +929,77 @@ export async function cacheTopPerformers(sport: SportType, date: Date, performer
   } catch (error) {
     console.error('Error caching top performers:', error);
     // Don't throw - caching failures shouldn't break the API
+  }
+}
+
+/**
+ * Fetch NBA standings from ESPN API
+ */
+export async function fetchStandings(sport: SportType): Promise<TeamStanding[]> {
+  try {
+    const { path } = SPORT_LEAGUES[sport];
+    const url = `${ESPN_BASE_URL}/${path}/standings`;
+
+    const response = await fetch(url, {
+      cache: 'no-store',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
+    await trackApiUsage('espn', {
+      endpoint: `/${path}/standings`,
+      success: response.ok,
+      statusCode: response.status,
+    });
+
+    if (!response.ok) {
+      console.error(`ESPN API error: ${response.status} ${response.statusText}`);
+      throw new Error(`ESPN API returned ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // ESPN standings structure: data.children contains conferences
+    // Each conference has standings array with team entries
+    const standings: TeamStanding[] = [];
+
+    if (data.children && Array.isArray(data.children)) {
+      data.children.forEach((conference: any) => {
+        const conferenceName = conference.name;
+        const isEastern = conferenceName.toLowerCase().includes('east');
+        const isWestern = conferenceName.toLowerCase().includes('west');
+
+        if (conference.standings && conference.standings.entries) {
+          conference.standings.entries.forEach((entry: any, index: number) => {
+            const team = entry.team;
+            const stats = entry.stats;
+
+            // Find specific stats
+            const wins = stats.find((s: any) => s.name === 'wins')?.value || 0;
+            const losses = stats.find((s: any) => s.name === 'losses')?.value || 0;
+            const winPercent = stats.find((s: any) => s.name === 'winPercent')?.value || 0;
+            const streak = stats.find((s: any) => s.name === 'streak')?.displayValue || '-';
+
+            standings.push({
+              rank: index + 1,
+              team: team.displayName || team.name,
+              teamLogo: team.logos?.[0]?.href,
+              wins: parseInt(wins),
+              losses: parseInt(losses),
+              winPercentage: parseFloat(winPercent),
+              streak: streak,
+              conference: isEastern ? 'Eastern' : isWestern ? 'Western' : 'Eastern',
+            });
+          });
+        }
+      });
+    }
+
+    return standings;
+  } catch (error) {
+    console.error(`Error fetching ${sport} standings:`, error);
+    return []; // Return empty array instead of throwing
   }
 }
 
