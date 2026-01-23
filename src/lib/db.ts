@@ -27,6 +27,12 @@ if (process.env.NODE_ENV === 'development') {
   if (!('topPerformer' in db)) {
     console.warn('⚠️  Prisma client missing topPerformer model. Please restart the dev server after running: npx prisma generate');
   }
+  if (!('task' in db)) {
+    console.warn('⚠️  Prisma client missing task model. Please restart the dev server after running: npx prisma generate');
+  }
+  if (!('note' in db)) {
+    console.warn('⚠️  Prisma client missing note model. Please restart the dev server after running: npx prisma generate');
+  }
 }
 
 

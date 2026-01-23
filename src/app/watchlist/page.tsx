@@ -7,15 +7,13 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useMemo, useState, useEffect, useRef, Suspense } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { WatchlistNav } from '@/components/watchlist/WatchlistNav';
 import { Carousel } from '@/components/watchlist/Carousel';
 import { WatchlistCard } from '@/components/watchlist/WatchlistCard';
 import { SearchResultCard } from '@/components/watchlist/SearchResultCard';
-import { CardSkeleton } from '@/components/watchlist/CardSkeleton';
 import { UniversalSearchResult } from '@/app/api/watchlist/search/universal/route';
-import { ListVideo } from 'lucide-react';
+import { ListVideo, Loader2 } from 'lucide-react';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { useWatchlistMutations } from '@/lib/hooks/useWatchlistMutations';
 import { useViewportGrid } from '@/lib/hooks/useViewportGrid';
@@ -269,8 +267,32 @@ function WatchlistContent() {
 
   const totalSearchPages = Math.ceil(filteredSearchResults.length / searchItemsPerPage);
 
-  // Adjust page when itemsPerPage changes (e.g., on window resize)
+  // Track if this is the initial mount to prevent unnecessary redirects
+  const [hasMounted, setHasMounted] = useState(false);
+  const [isSearchStable, setIsSearchStable] = useState(false);
+
   useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  // Wait for search grid to stabilize before showing content
+  useEffect(() => {
+    if (searchGridReady && !searchLoading && searchQuery.length > 0) {
+      // Small delay to ensure grid has fully calculated and stabilized
+      const timer = setTimeout(() => {
+        setIsSearchStable(true);
+      }, 150);
+      return () => clearTimeout(timer);
+    } else {
+      setIsSearchStable(false);
+    }
+  }, [searchGridReady, searchLoading, searchQuery]);
+
+  // Adjust page when itemsPerPage changes (e.g., on window resize)
+  // Only redirect if we've mounted AND grid is ready to prevent initial flash
+  useEffect(() => {
+    if (!hasMounted || !searchGridReady) return;
+
     if (totalSearchPages > 0 && searchPage > totalSearchPages) {
       // Current page is invalid, redirect to last valid page
       const params = new URLSearchParams();
@@ -285,7 +307,7 @@ function WatchlistContent() {
       params.set('page', totalSearchPages.toString());
       router.replace(`/watchlist?${params.toString()}`);
     }
-  }, [searchItemsPerPage, totalSearchPages, searchPage, searchQuery, searchFilter, router]);
+  }, [searchItemsPerPage, totalSearchPages, searchPage, searchQuery, searchFilter, router, hasMounted, searchGridReady]);
 
   const handleFilterChange = (newFilter: 'all' | 'anime' | 'movie' | 'show') => {
     const params = new URLSearchParams(searchParams.toString());
@@ -311,6 +333,9 @@ function WatchlistContent() {
 
   const showingSearch = searchQuery.length > 0;
 
+  // Show loading overlay for search until grid is ready and stable
+  const showSearchLoading = showingSearch && (searchLoading || !searchGridReady || !isSearchStable);
+
   return (
     <div className={`w-full py-2 sm:py-3 md:py-4 px-2 sm:px-3 md:px-4 lg:px-6 ${showingSearch ? 'h-screen flex flex-col overflow-hidden' : 'min-h-screen'}`}>
       <div className={`w-full space-y-2 sm:space-y-3 md:space-y-4 ${showingSearch ? 'flex flex-col h-full' : ''}`}>
@@ -318,7 +343,14 @@ function WatchlistContent() {
 
         {/* Content */}
         {showingSearch ? (
-          <div className="flex flex-col flex-1 min-h-0 space-y-4">
+          <div className="flex flex-col flex-1 min-h-0 space-y-4 relative">
+            {/* Loading Overlay for Search */}
+            {showSearchLoading && (
+              <div className="absolute inset-0 z-50 bg-background flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            )}
+
             <div className="flex flex-col flex-1 min-h-0 space-y-4">
               {/* Search Filters */}
               <div className="flex items-center justify-between min-h-[36px] flex-shrink-0">
@@ -393,13 +425,7 @@ function WatchlistContent() {
               {/* Search Results - Grid Layout - NO SCROLL */}
               <div className="flex-1 min-h-0 w-full overflow-hidden">
                 <div ref={searchContainerRef} className="watchlist-grid w-full h-full overflow-hidden" style={{ gridAutoRows: 'min-content' }}>
-                  {searchLoading || !searchGridReady ? (
-                    Array.from({ length: searchItemsPerPage || 18 }).map((_, i) => (
-                      <div key={`skeleton-${i}`} style={{ width: '100%', minWidth: 0 }}>
-                        <CardSkeleton />
-                      </div>
-                    ))
-                  ) : paginatedSearchResults.length > 0 ? (
+                  {paginatedSearchResults.length > 0 ? (
                     paginatedSearchResults.map((result) => {
                       const alreadyInList = isInWatchlist(result.externalId, result.type);
                       const itemWatched = isWatched(result.externalId, result.type);
@@ -428,7 +454,7 @@ function WatchlistContent() {
               </div>
 
               {/* Empty States */}
-              {!searchLoading && searchGridReady && paginatedSearchResults.length === 0 && (
+              {paginatedSearchResults.length === 0 && (
                 searchResults.length > 0 ? (
                   <Card>
                     <CardContent className="p-12 text-center text-body text-muted-foreground">
@@ -448,17 +474,8 @@ function WatchlistContent() {
         ) : (
           <div className="space-y-8">
             {listLoading ? (
-              <div className="space-y-8">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="space-y-4">
-                    <Skeleton className="h-8 w-48 rounded-lg" />
-                    <div className="flex gap-4 overflow-hidden">
-                      {Array.from({ length: 8 }).map((_, j) => (
-                        <CardSkeleton key={j} />
-                      ))}
-                    </div>
-                  </div>
-                ))}
+              <div className="w-full min-h-[400px] flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
             ) : watchlistItems.length > 0 ? (
               <>
@@ -466,7 +483,7 @@ function WatchlistContent() {
                 {randomizedWatchlist.length > 0 && (
                   <Carousel title="Watchlist" icon={<ListVideo className="h-4 w-4" />}>
                     {randomizedWatchlist.map((item) => (
-                      <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 200px)' }}>
+                      <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 160px)' }}>
                         <WatchlistCard
                           item={item}
                           onDelete={() => deleteMutation.mutate(item.id)}
@@ -488,7 +505,7 @@ function WatchlistContent() {
                     showMoreLink={allAnime.length > 21 ? '/watchlist/anime' : undefined}
                   >
                     {animeList.map((item) => (
-                      <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 200px)' }}>
+                      <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 160px)' }}>
                         <WatchlistCard
                           item={item}
                           onDelete={() => deleteMutation.mutate(item.id)}
@@ -510,7 +527,7 @@ function WatchlistContent() {
                     showMoreLink={allMovies.length > 21 ? '/watchlist/movie' : undefined}
                   >
                     {moviesList.map((item) => (
-                      <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 200px)' }}>
+                      <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 160px)' }}>
                         <WatchlistCard
                           item={item}
                           onDelete={() => deleteMutation.mutate(item.id)}
@@ -532,7 +549,7 @@ function WatchlistContent() {
                     showMoreLink={allShows.length > 21 ? '/watchlist/show' : undefined}
                   >
                     {showsList.map((item) => (
-                      <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 200px)' }}>
+                      <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 160px)' }}>
                         <WatchlistCard
                           item={item}
                           onDelete={() => deleteMutation.mutate(item.id)}
@@ -565,15 +582,8 @@ export default function WatchlistPage() {
       <div className="w-full h-screen flex flex-col py-8 px-4 md:px-6 lg:px-8 overflow-hidden">
         <div className="w-full flex flex-col h-full space-y-6">
           <div className="h-10 w-full bg-muted animate-pulse rounded flex-shrink-0" />
-          <div className="flex flex-col flex-1 min-h-0 space-y-4">
-            <div className="h-8 w-48 bg-muted animate-pulse rounded flex-shrink-0" />
-            <div className="h-full flex-1 overflow-hidden">
-              <div className="grid gap-4 h-full grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
-                {Array.from({ length: 16 }).map((_, i) => (
-                  <CardSkeleton key={i} />
-                ))}
-              </div>
-            </div>
+          <div className="flex-1 min-h-0 w-full flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         </div>
       </div>

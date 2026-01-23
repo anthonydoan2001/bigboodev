@@ -114,6 +114,20 @@ function SportsPageContent() {
     setIsMounted(true);
   }, []);
 
+  // Ensure date is in URL for games/performers tabs
+  useEffect(() => {
+    const urlTab = searchParams.get('tab') || 'games';
+    const urlDate = searchParams.get('date');
+
+    // Add today's date to URL if missing and we're on games or performers tab
+    if (isMounted && !urlDate && urlTab !== 'standings') {
+      const dateStr = selectedDate.toISOString().split('T')[0];
+      const currentParams = new URLSearchParams(searchParams.toString());
+      currentParams.set('date', dateStr);
+      router.push(`/sports?${currentParams.toString()}`, { scroll: false });
+    }
+  }, [isMounted, searchParams, router, selectedDate]);
+
   // Sync state with URL params when they change (e.g., browser back/forward)
   useEffect(() => {
     const urlTab = searchParams.get('tab') || 'games';
@@ -132,8 +146,8 @@ function SportsPageContent() {
       setSelectedTab(newTab);
     }
 
-    // Update date if different
-    if (urlDate) {
+    // Update date if different (only for games/performers tabs)
+    if (urlDate && newTab !== 'standings') {
       const parsedDate = new Date(urlDate);
       if (!isNaN(parsedDate.getTime())) {
         const currentDateStr = selectedDate.toISOString().split('T')[0];
@@ -146,7 +160,7 @@ function SportsPageContent() {
   }, [searchParams]); // Re-run when URL params change
 
   // Update URL when state changes
-  const updateURL = (params: { sport?: string; tab?: string; date?: string }) => {
+  const updateURL = (params: { sport?: string; tab?: string; date?: string; removeDate?: boolean }) => {
     const currentParams = new URLSearchParams(searchParams.toString());
 
     if (params.sport !== undefined) {
@@ -157,6 +171,9 @@ function SportsPageContent() {
     }
     if (params.date !== undefined) {
       currentParams.set('date', params.date);
+    }
+    if (params.removeDate) {
+      currentParams.delete('date');
     }
 
     router.push(`/sports?${currentParams.toString()}`, { scroll: false });
@@ -171,7 +188,13 @@ function SportsPageContent() {
   // Handle tab change
   const handleTabChange = (tab: string) => {
     setSelectedTab(tab);
-    updateURL({ tab });
+    // Remove date from URL for standings tab, add it back for games/performers
+    if (tab === 'standings') {
+      updateURL({ tab, removeDate: true });
+    } else {
+      const dateStr = selectedDate.toISOString().split('T')[0];
+      updateURL({ tab, date: dateStr });
+    }
   };
 
   // Handle date change
@@ -393,10 +416,13 @@ function SportsPageContent() {
               selectedSport={selectedSport}
               onSportChange={handleSportChange}
             />
-            <DateNavigator
-              selectedDate={selectedDate}
-              onDateChange={handleDateChange}
-            />
+            {/* Only show date navigator for games and performers tabs */}
+            {selectedTab !== 'standings' && (
+              <DateNavigator
+                selectedDate={selectedDate}
+                onDateChange={handleDateChange}
+              />
+            )}
           </div>
 
         </div>

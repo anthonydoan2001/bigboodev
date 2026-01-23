@@ -102,9 +102,9 @@ export function TopItemCard({
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
       <div className="group relative w-full flex flex-col" style={{ width: 'var(--item-width, 100%)', maxWidth: 'var(--item-width, 100%)', minWidth: 0, overflow: 'visible' }}>
-        <div 
+        <div
           ref={cardRef}
-          className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20 cursor-context-menu w-full"
+          className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted transition-all duration-300 cursor-context-menu w-full group-hover:scale-[1.02]"
           onContextMenu={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -121,21 +121,15 @@ export function TopItemCard({
           <DropdownMenuTrigger asChild className="hidden">
             <div />
           </DropdownMenuTrigger>
-          
-          {/* Tooltip */}
-          <div className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full mb-2 z-50 px-2.5 py-1.5 bg-black/90 text-white text-xs font-medium rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none max-w-[200px] break-words text-center">
-            {item.title}
-            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black/90"></div>
-          </div>
 
-          <div className="relative aspect-[2/3] overflow-hidden rounded-xl w-full">
+          <div className="relative aspect-[2/3] overflow-hidden rounded-xl w-full shadow-lg ring-1 ring-black/10 group-hover:shadow-2xl group-hover:ring-primary/30 transition-all duration-300">
             {item.image ? (
               <Image
                 src={item.image}
                 alt={item.title}
                 fill
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-                sizes="(max-width: 768px) 33vw, (max-width: 1024px) 20vw, var(--item-width, 200px)"
+                className="object-cover transition-transform duration-500 group-hover:scale-110"
+                sizes="(max-width: 768px) 33vw, (max-width: 1024px) 20vw, var(--item-width, 160px)"
                 style={{ objectFit: 'cover' }}
               />
             ) : (

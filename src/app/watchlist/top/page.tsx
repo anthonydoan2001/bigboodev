@@ -131,7 +131,7 @@ function TopContent() {
                         const itemWatching = isWatching(item.externalId, item.type);
                         const itemId = getWatchlistItemId(item.externalId, item.type);
                         return (
-                          <div key={item.id} className="flex-shrink-0 snap-start overflow-visible" style={{ width: 'var(--item-width, 200px)', minWidth: 0 }}>
+                          <div key={item.id} className="flex-shrink-0 snap-start overflow-visible" style={{ width: 'var(--item-width, 160px)', minWidth: 0 }}>
                             <TopItemCard
                               item={item}
                               onAdd={() => addMutation.mutate({
@@ -189,7 +189,7 @@ function TopContent() {
                         const itemWatching = isWatching(item.externalId, item.type);
                         const itemId = getWatchlistItemId(item.externalId, item.type);
                         return (
-                          <div key={item.id} className="flex-shrink-0 snap-start overflow-visible" style={{ width: 'var(--item-width, 200px)', minWidth: 0 }}>
+                          <div key={item.id} className="flex-shrink-0 snap-start overflow-visible" style={{ width: 'var(--item-width, 160px)', minWidth: 0 }}>
                             <TopItemCard
                               item={item}
                               onAdd={() => addMutation.mutate({
@@ -247,7 +247,7 @@ function TopContent() {
                         const itemWatching = isWatching(item.externalId, item.type);
                         const itemId = getWatchlistItemId(item.externalId, item.type);
                         return (
-                          <div key={item.id} className="flex-shrink-0 snap-start overflow-visible" style={{ width: 'var(--item-width, 200px)', minWidth: 0 }}>
+                          <div key={item.id} className="flex-shrink-0 snap-start overflow-visible" style={{ width: 'var(--item-width, 160px)', minWidth: 0 }}>
                             <TopItemCard
                               item={item}
                               onAdd={() => addMutation.mutate({
