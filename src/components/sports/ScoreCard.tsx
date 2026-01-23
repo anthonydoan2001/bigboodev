@@ -34,18 +34,20 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
       case 'final':
         return <span className="text-caption font-semibold text-muted-foreground">FINAL</span>;
       case 'scheduled':
+        // Use suppressHydrationWarning for time that varies between server/client
         return (
           <div className="flex items-center gap-1 text-caption text-muted-foreground">
             <Clock className="w-3 h-3" />
-            {isHydrated ? (
-              game.startTime.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-              })
-            ) : (
-              // Show static placeholder during SSR to avoid hydration mismatch
-              <span className="opacity-0">12:00 PM</span>
-            )}
+            <span suppressHydrationWarning>
+              {isHydrated ? (
+                game.startTime.toLocaleTimeString('en-US', {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })
+              ) : (
+                '\u00A0' // Non-breaking space to maintain layout
+              )}
+            </span>
           </div>
         );
     }
@@ -168,16 +170,17 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
             ) : null
           ) : (
             <div className="px-4 py-3 text-center text-caption text-muted-foreground">
-              {isHydrated ? (
-                game.startTime.toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  month: 'long',
-                  day: 'numeric',
-                })
-              ) : (
-                // Show static placeholder during SSR to avoid hydration mismatch
-                <span className="opacity-0">Monday, January 1</span>
-              )}
+              <span suppressHydrationWarning>
+                {isHydrated ? (
+                  game.startTime.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric',
+                  })
+                ) : (
+                  '\u00A0' // Non-breaking space to maintain layout
+                )}
+              </span>
             </div>
           )}
 
