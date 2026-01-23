@@ -1,6 +1,6 @@
 'use client';
 
-import { TaskWithNote } from '@/types/tasks';
+import { TaskWithNote, TaskPriority } from '@/types/tasks';
 import { Button } from '@/components/ui/button';
 import { PriorityBadge } from './PriorityBadge';
 import { Trash2, Edit2, Calendar, Tag, FileText, Link2 } from 'lucide-react';
@@ -30,7 +30,7 @@ export function TaskRow({ task, onEdit, onDelete }: TaskRowProps) {
         </div>
       </td>
       <td className="p-3">
-        <PriorityBadge priority={task.priority} />
+        <PriorityBadge priority={task.priority as TaskPriority} />
       </td>
       <td className="p-3">
         {task.dueDate ? (

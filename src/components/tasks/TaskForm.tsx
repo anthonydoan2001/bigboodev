@@ -1,15 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { TaskWithNote, CreateTaskInput, UpdateTaskInput, TaskStatus, TaskPriority } from '@/types/tasks';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { useQuery } from '@tanstack/react-query';
 import { getAuthHeaders } from '@/lib/api-client';
+import { CreateTaskInput, TaskPriority, TaskStatus, TaskWithNote, UpdateTaskInput } from '@/types/tasks';
+import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 
 interface TaskFormProps {
   task?: TaskWithNote | null;
@@ -68,7 +68,7 @@ export function TaskForm({ task, open, onOpenChange, onSubmit, isSubmitting }: T
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!title.trim()) {
       alert('Title is required');
       return;
