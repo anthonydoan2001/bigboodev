@@ -5,11 +5,13 @@ const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY || 'd5hhjthr01qqequ2hnigd5hh
 const FINNHUB_BASE_URL = 'https://finnhub.io/api/v1';
 const STOCKS_TO_TRACK = ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'TSLA', 'AMZN', 'META'];
 
-// Log API key status (without exposing the full key)
-if (!process.env.FINNHUB_API_KEY) {
-  console.warn('⚠️  FINNHUB_API_KEY not found in environment variables, using fallback key');
-} else {
-  console.log('✅ Using FINNHUB_API_KEY from environment variables');
+// Log API key status (without exposing the full key) - only on server
+if (typeof window === 'undefined') {
+  if (!process.env.FINNHUB_API_KEY) {
+    console.warn('⚠️  FINNHUB_API_KEY not found in environment variables, using fallback key');
+  } else {
+    console.log('✅ Using FINNHUB_API_KEY from environment variables');
+  }
 }
 
 export const STOCK_SYMBOLS = STOCKS_TO_TRACK;
