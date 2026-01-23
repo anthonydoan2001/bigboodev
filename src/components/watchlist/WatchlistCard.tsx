@@ -102,8 +102,8 @@ export function WatchlistCard({
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
       <div className="group relative space-y-2 w-full flex flex-col" style={{ width: '100%', maxWidth: 'var(--item-max-width, 100%)', minWidth: 0 }}>
-        <div 
-          className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20 cursor-context-menu"
+        <div
+          className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted transition-all duration-300 cursor-context-menu group-hover:scale-[1.02]"
           onContextMenu={(e) => {
             if (disableContextMenu) return;
             e.preventDefault();
@@ -122,20 +122,15 @@ export function WatchlistCard({
           <DropdownMenuTrigger asChild className="hidden">
             <div />
           </DropdownMenuTrigger>
-            {/* Tooltip */}
-            <div className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full mb-2 z-50 px-2.5 py-1.5 bg-black/90 text-white text-caption rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none max-w-[200px] break-words text-center">
-              {item.title}
-              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black/90"></div>
-            </div>
 
-            <div className="relative aspect-[2/3] overflow-hidden rounded-xl">
+            <div className="relative aspect-[2/3] overflow-hidden rounded-xl shadow-lg ring-1 ring-black/10 group-hover:shadow-2xl group-hover:ring-primary/30 transition-all duration-300">
               {item.imageUrl ? (
                 <Image
                   src={item.imageUrl}
                   alt={item.title}
                   fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  sizes="(max-width: 768px) 33vw, (max-width: 1024px) 20vw, var(--item-width, 200px)"
+                  className="object-cover transition-transform duration-500 group-hover:scale-110"
+                  sizes="(max-width: 768px) 33vw, (max-width: 1024px) 20vw, var(--item-width, 160px)"
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center bg-secondary text-muted-foreground">

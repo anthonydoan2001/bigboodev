@@ -1,16 +1,15 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useMemo, Suspense, useEffect } from 'react';
+import { useMemo, Suspense, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { WatchlistNav } from '@/components/watchlist/WatchlistNav';
 import { GridCard } from '@/components/watchlist/GridCard';
-import { CardSkeleton } from '@/components/watchlist/CardSkeleton';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { useWatchlistMutations } from '@/lib/hooks/useWatchlistMutations';
 import { useViewportGrid } from '@/lib/hooks/useViewportGrid';
+import { Loader2 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
@@ -48,8 +47,32 @@ function WatchingContent() {
 
   const totalPages = Math.ceil(filteredWatchingItems.length / itemsPerPage);
 
-  // Adjust page when itemsPerPage changes (e.g., on window resize)
+  // Track if this is the initial mount to prevent unnecessary redirects
+  const [hasMounted, setHasMounted] = useState(false);
+  const [isStable, setIsStable] = useState(false);
+
   useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  // Wait for grid to stabilize before showing content
+  useEffect(() => {
+    if (isReady && !isLoading) {
+      // Small delay to ensure grid has fully calculated and stabilized
+      const timer = setTimeout(() => {
+        setIsStable(true);
+      }, 150);
+      return () => clearTimeout(timer);
+    } else {
+      setIsStable(false);
+    }
+  }, [isReady, isLoading]);
+
+  // Adjust page when itemsPerPage changes (e.g., on window resize)
+  // Only redirect if we've mounted AND grid is ready to prevent initial flash
+  useEffect(() => {
+    if (!hasMounted || !isReady) return;
+
     if (totalPages > 0 && page > totalPages) {
       // Current page is invalid, redirect to last valid page
       const params = new URLSearchParams();
@@ -59,7 +82,7 @@ function WatchingContent() {
       params.set('page', totalPages.toString());
       router.replace(`/watchlist/watching?${params.toString()}`);
     }
-  }, [itemsPerPage, totalPages, page, filter, router]);
+  }, [itemsPerPage, totalPages, page, filter, router, hasMounted, isReady]);
 
   const handleFilterChange = (newFilter: 'all' | 'anime' | 'movie' | 'show') => {
     const params = new URLSearchParams();
@@ -77,8 +100,25 @@ function WatchingContent() {
     router.push(`/watchlist/watching?${params.toString()}`);
   };
 
+  // Show loading overlay until grid is ready, stable, and data is loaded
+  const showLoading = isLoading || !isReady || !isStable;
+
   return (
-    <div className="w-full h-screen flex flex-col py-2 sm:py-3 md:py-4 px-2 sm:px-3 md:px-4 lg:px-6 overflow-hidden">
+    <div className="w-full h-screen flex flex-col py-2 sm:py-3 md:py-4 px-2 sm:px-3 md:px-4 lg:px-6 overflow-hidden relative">
+      {/* Loading Overlay */}
+      {showLoading && (
+        <div className="absolute inset-0 z-50 bg-background flex flex-col py-2 sm:py-3 md:py-4 px-2 sm:px-3 md:px-4 lg:px-6">
+          <div className="w-full flex flex-col h-full space-y-2 sm:space-y-3 md:space-y-4">
+            <Suspense fallback={<div className="h-10 w-full bg-muted animate-pulse rounded flex-shrink-0" />}>
+              <WatchlistNav />
+            </Suspense>
+            <div className="flex-1 min-h-0 w-full flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="w-full flex flex-col h-full space-y-2 sm:space-y-3 md:space-y-4">
         <Suspense fallback={<div className="h-10 w-full bg-muted animate-pulse rounded flex-shrink-0" />}>
           <WatchlistNav />
@@ -154,7 +194,7 @@ function WatchingContent() {
           </div>
 
           {/* Watching Results - Grid Layout - NO SCROLL */}
-          {isLoading || !isReady || paginatedWatchingItems.length > 0 ? (
+          {paginatedWatchingItems.length > 0 ? (
             <div className="flex-1 min-h-0 w-full overflow-hidden">
               <div
                 ref={containerRef}
@@ -163,24 +203,16 @@ function WatchingContent() {
                   gridAutoRows: 'min-content'
                 }}
               >
-                {isLoading || !isReady ? (
-                  Array.from({ length: itemsPerPage || 18 }).map((_, i) => (
-                    <div key={`skeleton-${i}`} style={{ width: '100%', minWidth: 0 }}>
-                      <CardSkeleton />
-                    </div>
-                  ))
-                ) : (
-                  paginatedWatchingItems.map((item) => (
-                    <div key={item.id} style={{ width: '100%', minWidth: 0 }}>
-                      <GridCard
-                        item={item}
-                        onDelete={() => deleteMutation.mutate(item.id)}
-                        onMarkWatched={() => markWatchedMutation.mutate({ id: item.id })}
-                        hideStatusBadge={true}
-                      />
-                    </div>
-                  ))
-                )}
+                {paginatedWatchingItems.map((item) => (
+                  <div key={item.id} style={{ width: '100%', minWidth: 0 }}>
+                    <GridCard
+                      item={item}
+                      onDelete={() => deleteMutation.mutate(item.id)}
+                      onMarkWatched={() => markWatchedMutation.mutate({ id: item.id })}
+                      hideStatusBadge={true}
+                    />
+                  </div>
+                ))}
               </div>
             </div>
           ) : watchingItems.length > 0 ? (
@@ -206,18 +238,11 @@ function WatchingContent() {
 export default function WatchingPage() {
   return (
     <Suspense fallback={
-      <div className="w-full py-8 px-4 md:px-6 lg:px-8 min-h-screen">
-        <div className="w-full space-y-6">
-          <div className="h-10 w-full bg-muted animate-pulse rounded" />
-          <div className="space-y-4">
-            <Skeleton className="h-8 w-48 rounded-lg" />
-            <div className="grid gap-x-4 gap-y-6">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <div key={i} style={{ width: 'var(--item-width, 200px)' }}>
-                  <CardSkeleton />
-                </div>
-              ))}
-            </div>
+      <div className="w-full h-screen flex flex-col py-8 px-4 md:px-6 lg:px-8 overflow-hidden">
+        <div className="w-full flex flex-col h-full space-y-6">
+          <div className="h-10 w-full bg-muted animate-pulse rounded flex-shrink-0" />
+          <div className="flex-1 min-h-0 w-full flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         </div>
       </div>

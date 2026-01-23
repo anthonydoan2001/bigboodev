@@ -1,15 +1,15 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useMemo, useEffect, Suspense } from 'react';
+import { useMemo, useEffect, useState, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { WatchlistNav } from '@/components/watchlist/WatchlistNav';
 import { GridCard } from '@/components/watchlist/GridCard';
-import { CardSkeleton } from '@/components/watchlist/CardSkeleton';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { useWatchlistMutations } from '@/lib/hooks/useWatchlistMutations';
 import { useViewportGrid } from '@/lib/hooks/useViewportGrid';
+import { Loader2 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
@@ -44,15 +44,37 @@ function MovieContent() {
 
   const totalPages = Math.ceil(movieItems.length / itemsPerPage);
 
+  // Track if this is the initial mount to prevent unnecessary redirects
+  const [hasMounted, setHasMounted] = useState(false);
+  const [isStable, setIsStable] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  // Wait for grid to stabilize before movieing content
+  useEffect(() => {
+    if (isReady && !isLoading) {
+      const timer = setTimeout(() => {
+        setIsStable(true);
+      }, 150);
+      return () => clearTimeout(timer);
+    } else {
+      setIsStable(false);
+    }
+  }, [isReady, isLoading]);
+
   // Adjust page when itemsPerPage changes (e.g., on window resize)
   useEffect(() => {
+    if (!hasMounted || !isReady) return;
+
     if (totalPages > 0 && page > totalPages) {
       // Current page is invalid, redirect to last valid page
       const params = new URLSearchParams(searchParams.toString());
       params.set('page', totalPages.toString());
       router.replace(`/watchlist/movie?${params.toString()}`);
     }
-  }, [itemsPerPage, totalPages, page, searchParams, router]);
+  }, [itemsPerPage, totalPages, page, searchParams, router, hasMounted, isReady]);
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -60,15 +82,32 @@ function MovieContent() {
     router.push(`/watchlist/movie?${params.toString()}`);
   };
 
+  // Show loading overlay until grid is ready, stable, and data is loaded
+  const movieLoading = isLoading || !isReady || !isStable;
+
   return (
-    <div className="w-full h-screen flex flex-col py-4 sm:py-6 md:py-8 px-3 sm:px-4 md:px-6 lg:px-8 overflow-hidden">
+    <div className="w-full h-screen flex flex-col py-4 sm:py-6 md:py-8 px-3 sm:px-4 md:px-6 lg:px-8 overflow-hidden relative">
+      {/* Loading Overlay */}
+      {movieLoading && (
+        <div className="absolute inset-0 z-50 bg-background flex flex-col py-4 sm:py-6 md:py-8 px-3 sm:px-4 md:px-6 lg:px-8">
+          <div className="w-full flex flex-col h-full space-y-4 sm:space-y-6">
+            <Suspense fallback={<div className="h-10 w-full bg-muted animate-pulse rounded flex-shrink-0" />}>
+              <WatchlistNav />
+            </Suspense>
+            <div className="flex-1 min-h-0 w-full flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="w-full flex flex-col h-full space-y-4 sm:space-y-6">
         <Suspense fallback={<div className="h-10 w-full bg-muted animate-pulse rounded flex-shrink-0" />}>
           <WatchlistNav />
         </Suspense>
 
         <div className="flex flex-col flex-1 min-h-0 space-y-3 sm:space-y-4">
-          {/* Pagination Controls - Always show structure to prevent layout shift */}
+          {/* Pagination Controls - Always movie structure to prevent layout shift */}
           <div className="flex items-center justify-between min-h-[32px] sm:min-h-[36px] flex-shrink-0">
             <div></div>
             {totalPages > 1 && (
@@ -98,18 +137,8 @@ function MovieContent() {
             )}
           </div>
 
-          {/* Movie Results - Grid Layout - NO SCROLL */}
-          {isLoading || !isReady ? (
-            <div className="flex-1 min-h-0 w-full overflow-hidden">
-              <div ref={containerRef} className="watchlist-grid w-full h-full overflow-hidden" style={{ gridAutoRows: 'min-content' }}>
-                {Array.from({ length: itemsPerPage || 18 }).map((_, i) => (
-                  <div key={i} style={{ width: '100%', minWidth: 0 }}>
-                    <CardSkeleton />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : paginatedMovieItems.length > 0 ? (
+          {/* TV Show Results - Grid Layout - NO SCROLL */}
+          {paginatedMovieItems.length > 0 ? (
             <div className="flex-1 min-h-0 w-full overflow-hidden">
               <div ref={containerRef} className="watchlist-grid w-full h-full overflow-hidden" style={{ gridAutoRows: 'min-content' }}>
                 {paginatedMovieItems.map((item) => (
@@ -138,20 +167,14 @@ function MovieContent() {
   );
 }
 
-export default function MoviePage() {
+export default function ShowPage() {
   return (
     <Suspense fallback={
-      <div className="w-full py-8 px-4 md:px-6 lg:px-8 min-h-screen">
-        <div className="w-full space-y-6">
-          <div className="h-10 w-full bg-muted animate-pulse rounded" />
-          <div className="space-y-4">
-            <div className="grid gap-x-4 gap-y-6">
-              {Array.from({ length: 24 }).map((_, i) => (
-                <div key={i} style={{ width: 'var(--item-width, 200px)' }}>
-                  <CardSkeleton />
-                </div>
-              ))}
-            </div>
+      <div className="w-full h-screen flex flex-col py-8 px-4 md:px-6 lg:px-8 overflow-hidden">
+        <div className="w-full flex flex-col h-full space-y-6">
+          <div className="h-10 w-full bg-muted animate-pulse rounded flex-shrink-0" />
+          <div className="flex-1 min-h-0 w-full flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         </div>
       </div>
