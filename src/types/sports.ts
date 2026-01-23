@@ -1,4 +1,4 @@
-export type SportType = 'NBA' | 'NFL';
+export type SportType = 'NBA';
 
 export type PlayoffRound = 'Wild Card' | 'Divisional' | 'Conference Championship' | 'Super Bowl';
 

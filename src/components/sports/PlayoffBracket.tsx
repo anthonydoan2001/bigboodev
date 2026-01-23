@@ -123,7 +123,7 @@ export function generateAllPlayoffGames(games: GameScore[]): GameScore[] {
           
           result.push({
             id: `placeholder-div-${conference}-${i}`,
-            sport: 'NFL',
+            sport: 'NBA',
             homeTeam: winner2.team,
             awayTeam: winner1.team,
             homeScore: 0,
@@ -170,7 +170,7 @@ export function generateAllPlayoffGames(games: GameScore[]): GameScore[] {
       
       result.push({
         id: `placeholder-champ-${conference}`,
-        sport: 'NFL',
+        sport: 'NBA',
         homeTeam: winners[1].team,
         awayTeam: winners[0].team,
         homeScore: 0,
@@ -215,7 +215,7 @@ export function generateAllPlayoffGames(games: GameScore[]): GameScore[] {
     
     allSuperBowl.push({
       id: 'placeholder-superbowl',
-      sport: 'NFL',
+      sport: 'NBA',
       homeTeam: nfcChampion, // NFC is typically home team
       awayTeam: afcChampion,
       homeScore: 0,
@@ -404,7 +404,7 @@ const HARDCODED_WILD_CARD_GAMES: GameScore[] = [
   // AFC Wild Card Games
   {
     id: 'hardcoded-wc-afc-1',
-    sport: 'NFL',
+    sport: 'NBA',
     homeTeam: 'Pittsburgh Steelers',
     awayTeam: 'Houston Texans',
     homeScore: 6,
@@ -417,7 +417,7 @@ const HARDCODED_WILD_CARD_GAMES: GameScore[] = [
   },
   {
     id: 'hardcoded-wc-afc-2',
-    sport: 'NFL',
+    sport: 'NBA',
     homeTeam: 'New England Patriots',
     awayTeam: 'Los Angeles Chargers',
     homeScore: 16,
@@ -430,7 +430,7 @@ const HARDCODED_WILD_CARD_GAMES: GameScore[] = [
   },
   {
     id: 'hardcoded-wc-afc-3',
-    sport: 'NFL',
+    sport: 'NBA',
     homeTeam: 'Jacksonville Jaguars',
     awayTeam: 'Buffalo Bills',
     homeScore: 24,
@@ -444,7 +444,7 @@ const HARDCODED_WILD_CARD_GAMES: GameScore[] = [
   // NFC Wild Card Games
   {
     id: 'hardcoded-wc-nfc-1',
-    sport: 'NFL',
+    sport: 'NBA',
     homeTeam: 'Philadelphia Eagles',
     awayTeam: 'San Francisco 49ers',
     homeScore: 19,
@@ -457,7 +457,7 @@ const HARDCODED_WILD_CARD_GAMES: GameScore[] = [
   },
   {
     id: 'hardcoded-wc-nfc-2',
-    sport: 'NFL',
+    sport: 'NBA',
     homeTeam: 'Chicago Bears',
     awayTeam: 'Green Bay Packers',
     homeScore: 31,
@@ -470,7 +470,7 @@ const HARDCODED_WILD_CARD_GAMES: GameScore[] = [
   },
   {
     id: 'hardcoded-wc-nfc-3',
-    sport: 'NFL',
+    sport: 'NBA',
     homeTeam: 'Carolina Panthers',
     awayTeam: 'Los Angeles Rams',
     homeScore: 31,

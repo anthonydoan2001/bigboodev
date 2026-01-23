@@ -22,18 +22,15 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
     const sportParam = url.searchParams.get('sport') as SportType | null;
 
     const today = new Date();
-    const sportsToCheck: SportType[] = sportParam ? [sportParam] : ['NBA', 'NFL'];
+    const sportsToCheck: SportType[] = sportParam ? [sportParam] : ['NBA'];
 
     // Check if there are live games
     const liveGamesBySport: Record<SportType, boolean> = {
       NBA: false,
-      NFL: false,
     };
 
     for (const sport of sportsToCheck) {
-      // For NFL, always use today's date; for other sports, use today
-      const date = sport === 'NFL' ? new Date() : today;
-      liveGamesBySport[sport] = await hasLiveGames(sport, date);
+      liveGamesBySport[sport] = await hasLiveGames(sport, today);
     }
 
     const hasAnyLiveGames = Object.values(liveGamesBySport).some(hasLive => hasLive);
@@ -61,13 +58,10 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
       }
 
       try {
-        // For NFL, always use today's date; for other sports, use today
-        const date = sport === 'NFL' ? new Date() : today;
-
-        console.log(`[Top Performers Refresh] Fetching ${sport} performers for ${date.toISOString().split('T')[0]}`);
+        console.log(`[Top Performers Refresh] Fetching ${sport} performers for ${today.toISOString().split('T')[0]}`);
 
         // Fetch from ESPN API
-        const performers = await fetchTopPerformers(sport, date);
+        const performers = await fetchTopPerformers(sport, today);
 
         if (performers.length === 0) {
           console.log(`[Top Performers Refresh] No performers found for ${sport}`);
@@ -76,7 +70,7 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
         }
 
         // Cache performers in database
-        await cacheTopPerformers(sport, date, performers);
+        await cacheTopPerformers(sport, today, performers);
 
         console.log(`[Top Performers Refresh] Cached ${performers.length} ${sport} performers`);
 

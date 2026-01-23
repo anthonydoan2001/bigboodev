@@ -17,7 +17,7 @@ export const GET = withAuth(async (request: NextRequest) => {
     }
 
     // Validate sport type
-    const validSports: SportType[] = ['NBA', 'NFL'];
+    const validSports: SportType[] = ['NBA'];
     if (!validSports.includes(sport)) {
       return NextResponse.json(
         { error: 'Invalid sport type' },

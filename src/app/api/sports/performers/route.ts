@@ -1,6 +1,5 @@
 import { withAuth } from '@/lib/api-auth';
-import { cacheTopPerformers, fetchTopPerformers, getCachedTopPerformers, hasLiveGames, isPerformersDataFresh } from '@/lib/api/sports';
-import { db } from '@/lib/db';
+import { fetchTopPerformers } from '@/lib/api/sports';
 import { SportType } from '@/types/sports';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -32,7 +31,7 @@ export const GET = withAuth(async (request: NextRequest) => {
     }
 
     // Validate sport type
-    const validSports: SportType[] = ['NBA', 'NFL'];
+    const validSports: SportType[] = ['NBA'];
     if (!validSports.includes(sport)) {
       return NextResponse.json(
         { error: 'Invalid sport type' },
@@ -40,56 +39,12 @@ export const GET = withAuth(async (request: NextRequest) => {
       );
     }
 
-    // For NFL, always use today's date
-    const queryDate = sport === 'NFL' ? new Date() : (date || new Date());
+    // Use provided date or today
+    const queryDate = date || new Date();
 
-    // Check database cache first
-    const cachedPerformers = await getCachedTopPerformers(sport, queryDate);
-
-    // Check if we have cached data and if it's fresh
-    if (cachedPerformers.length > 0) {
-      // Get the most recent lastUpdated timestamp for this sport/date
-      // Normalize date to UTC midnight to avoid timezone issues
-      const year = queryDate.getFullYear();
-      const month = queryDate.getMonth() + 1;
-      const day = queryDate.getDate();
-      const dateStr = new Date(Date.UTC(year, month - 1, day));
-
-      const mostRecent = await db.topPerformer.findFirst({
-        where: {
-          sport,
-          date: dateStr,
-        },
-        orderBy: {
-          lastUpdated: 'desc',
-        },
-        select: {
-          lastUpdated: true,
-        },
-      });
-
-      if (mostRecent) {
-        const hasLive = await hasLiveGames(sport, queryDate);
-        const isFresh = isPerformersDataFresh(mostRecent.lastUpdated, hasLive);
-
-        if (isFresh) {
-          // Return cached data
-          return NextResponse.json({
-            sport,
-            performers: cachedPerformers,
-            cached: true,
-          });
-        }
-      }
-    }
-
-    // Cache miss or stale data - fetch from ESPN API
+    // Always fetch fresh data from ESPN (no database caching for live data)
+    // This ensures live performer stats are always up-to-date
     const performers = await fetchTopPerformers(sport, queryDate);
-
-    // Cache the fresh data for future requests (async, don't wait)
-    cacheTopPerformers(sport, queryDate, performers).catch(err => {
-      console.error('Error caching performers (non-blocking):', err);
-    });
 
     return NextResponse.json({
       sport,
