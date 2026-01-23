@@ -103,7 +103,12 @@ export default function SportsPage() {
     refetchOnWindowFocus: false,
     enabled: shouldFetchScores,
     refetchInterval: (data) => {
-      return Array.isArray(data) && data.some(game => game.status === 'live') ? 60000 : false;
+      // If there are live games, refresh every minute
+      if (Array.isArray(data) && data.some(game => game.status === 'live')) {
+        return 60000; // 1 minute for live games
+      }
+      // Otherwise, check every 2 minutes to catch games transitioning to live
+      return 120000; // 2 minutes for scheduled/final games
     },
   });
 
@@ -122,7 +127,12 @@ export default function SportsPage() {
     refetchOnWindowFocus: false,
     enabled: isFavoritesView,
     refetchInterval: (data) => {
-      return Array.isArray(data) && data.some(game => game.status === 'live') ? 60000 : false;
+      // If there are live games, refresh every minute
+      if (Array.isArray(data) && data.some(game => game.status === 'live')) {
+        return 60000; // 1 minute for live games
+      }
+      // Otherwise, check every 2 minutes to catch games transitioning to live
+      return 120000; // 2 minutes for scheduled/final games
     },
   });
 
@@ -164,9 +174,13 @@ export default function SportsPage() {
     refetchOnWindowFocus: false,
     enabled: selectedSport === 'NBA', // Only for NBA
     refetchInterval: (data) => {
-      // Also refresh performers for live games
+      // Refresh performers if there are live games
       const hasLiveGames = Array.isArray(scores) && scores.some(game => game.status === 'live');
-      return hasLiveGames ? 60000 : false;
+      if (hasLiveGames) {
+        return 60000; // 1 minute for live games
+      }
+      // Otherwise, check every 5 minutes (performers update less frequently)
+      return 300000; // 5 minutes for completed/scheduled games
     },
   });
 
@@ -174,6 +188,7 @@ export default function SportsPage() {
     data: upcomingGames,
     isLoading: upcomingGamesLoading,
     error: upcomingGamesError,
+    isFetching: upcomingGamesFetching,
   } = useQuery({
     queryKey: ['upcoming-playoff-games', selectedSport],
     queryFn: () => {
@@ -182,9 +197,17 @@ export default function SportsPage() {
       }
       return fetchUpcomingPlayoffGames(selectedSport);
     },
-    staleTime: 3600000, // Cache for 1 hour
+    staleTime: 0, // Always consider data stale so refetchInterval works properly
     refetchOnWindowFocus: false,
     enabled: selectedSport === 'NFL', // Only for NFL
+    refetchInterval: (data) => {
+      // If there are live games, refresh every minute
+      if (Array.isArray(data) && data.some(game => game.status === 'live')) {
+        return 60000; // 1 minute for live games
+      }
+      // Otherwise, check every 2 minutes to catch games transitioning to live
+      return 120000; // 2 minutes for scheduled/final games
+    },
   });
 
   // Determine which games to show
@@ -221,7 +244,7 @@ export default function SportsPage() {
 
   // Check if there are any live games
   const hasLiveGames = Array.isArray(gamesToShow) && gamesToShow.some(game => game.status === 'live');
-  const isAutoRefreshing = hasLiveGames && (scoresFetching || favoriteQueries.isFetching);
+  const isAutoRefreshing = hasLiveGames && (scoresFetching || favoriteQueries.isFetching || upcomingGamesFetching);
 
   return (
     <div className="container mx-auto py-8 px-8 min-h-screen max-w-full">
