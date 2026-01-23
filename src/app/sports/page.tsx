@@ -204,6 +204,7 @@ function SportsPageContent() {
     refetchInterval: (data) => {
       // Only auto-refresh if there are live games - refresh every 30 seconds
       if (Array.isArray(data) && data.some(game => game.status === 'live')) {
+        console.log('[Scores Refresh] Live games detected, refreshing in 30 seconds');
         return 30000; // 30 seconds for live games
       }
       // No auto-refresh for scheduled/final games - user can manually refresh
@@ -228,6 +229,7 @@ function SportsPageContent() {
     refetchInterval: (data) => {
       // Only auto-refresh if there are live games - refresh every 30 seconds
       if (Array.isArray(data) && data.some(game => game.status === 'live')) {
+        console.log('[Favorites Refresh] Live games detected, refreshing in 30 seconds');
         return 30000; // 30 seconds for live games
       }
       // No auto-refresh for scheduled/final games - user can manually refresh
@@ -276,6 +278,7 @@ function SportsPageContent() {
       // Only auto-refresh performers if there are live games - refresh every 30 seconds
       const hasLiveGames = Array.isArray(scores) && scores.some(game => game.status === 'live');
       if (hasLiveGames) {
+        console.log('[Performers Refresh] Live games detected, refreshing in 30 seconds');
         return 30000; // 30 seconds for live games
       }
       // No auto-refresh for completed/scheduled games - user can manually refresh
