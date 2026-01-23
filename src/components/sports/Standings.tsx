@@ -38,9 +38,7 @@ export function Standings({ standings }: StandingsProps) {
                 return (
                   <tr
                     key={team.team}
-                    className={`border-b border-border/30 hover:bg-muted/20 transition-colors ${
-                      index < 6 ? 'bg-green-500/5' : index < 10 ? 'bg-blue-500/5' : ''
-                    }`}
+                    className="border-b border-border/30 hover:bg-muted/20 transition-colors"
                   >
                     <td className="px-4 py-3 text-body-sm font-semibold text-muted-foreground">
                       {team.rank}
@@ -92,20 +90,6 @@ export function Standings({ standings }: StandingsProps) {
               })}
             </tbody>
           </table>
-        </div>
-
-        {/* Legend */}
-        <div className="px-4 py-3 border-t border-border/50 bg-muted/10 text-caption text-muted-foreground">
-          <div className="flex flex-wrap gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-500/20 border border-green-500/30 rounded"></div>
-              <span>Top 6 (Guaranteed Playoffs)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-blue-500/20 border border-blue-500/30 rounded"></div>
-              <span>7-10 (Play-In Tournament)</span>
-            </div>
-          </div>
         </div>
       </CardContent>
     </Card>
