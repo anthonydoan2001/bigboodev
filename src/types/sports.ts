@@ -48,3 +48,14 @@ export interface TopPerformer {
   };
 }
 
+export interface TeamStanding {
+  rank: number;
+  team: string;
+  teamLogo?: string;
+  wins: number;
+  losses: number;
+  winPercentage: number;
+  streak: string; // e.g., "W3" or "L2"
+  conference: 'Eastern' | 'Western';
+}
+
