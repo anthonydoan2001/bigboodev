@@ -214,7 +214,10 @@ function SportsPageContent() {
     staleTime: 0, // Always consider data stale so refetchInterval works properly
     refetchOnWindowFocus: false,
     enabled: shouldFetchScores && isMounted,
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
+      // In React Query v5, refetchInterval callback receives the query object
+      const data = query.state.data;
+
       console.log('[Scores Refresh] Checking interval...', {
         hasData: !!data,
         isArray: Array.isArray(data),
@@ -248,10 +251,13 @@ function SportsPageContent() {
     staleTime: 0, // Always consider data stale so refetchInterval works properly
     refetchOnWindowFocus: false,
     enabled: isFavoritesView && isMounted,
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
+      // In React Query v5, refetchInterval callback receives the query object
+      const data = query.state.data;
+
       // Only auto-refresh if there are live games - refresh every 30 seconds
       if (Array.isArray(data) && data.some(game => game.status === 'live')) {
-        console.log('[Favorites Refresh] Live games detected, refreshing in 30 seconds');
+        console.log('[Favorites Refresh] ✅ Live games detected, refreshing in 30 seconds');
         return 30000; // 30 seconds for live games
       }
       // No auto-refresh for scheduled/final games - user can manually refresh
@@ -296,11 +302,11 @@ function SportsPageContent() {
     staleTime: 0, // Always consider data stale so refetchInterval works properly
     refetchOnWindowFocus: false,
     enabled: selectedSport === 'NBA' && isMounted, // Only for NBA and after mount
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
       // Only auto-refresh performers if there are live games - refresh every 30 seconds
       const hasLiveGames = Array.isArray(scores) && scores.some(game => game.status === 'live');
       if (hasLiveGames) {
-        console.log('[Performers Refresh] Live games detected, refreshing in 30 seconds');
+        console.log('[Performers Refresh] ✅ Live games detected, refreshing in 30 seconds');
         return 30000; // 30 seconds for live games
       }
       // No auto-refresh for completed/scheduled games - user can manually refresh
