@@ -180,3 +180,41 @@ model TopPerformer {
   @@index([sport, lastUpdated])
   @@map("top_performers")
 }
+
+model Note {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tasks Task[]
+
+  @@index([createdAt])
+  @@map("notes")
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  description String?   @db.Text
+  status      String    @default("TODO") // 'TODO' | 'IN_PROGRESS' | 'DONE'
+  priority    String    @default("MEDIUM") // 'LOW' | 'MEDIUM' | 'HIGH'
+  dueDate     DateTime? @map("due_date") @db.Date
+  category    String?
+  notes       String?   @db.Text // Inline notes
+  noteId      String?   @map("note_id")
+  position    Int       @default(0) // For kanban ordering within status
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  note Note? @relation(fields: [noteId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([status, position])
+  @@index([category])
+  @@index([priority])
+  @@index([dueDate])
+  @@index([createdAt])
+  @@map("tasks")
+}

@@ -98,9 +98,9 @@ export function GridCard({
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
-      <div className="group relative flex flex-col w-full h-full transition-all duration-500 ease-out" style={{ width: '100%', minWidth: 0 }}>
+      <div className="group relative flex flex-col w-full h-full transition-all duration-300 ease-out" style={{ width: '100%', minWidth: 0 }}>
         <div
-          className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-md transition-all duration-300 ease-out group-hover:shadow-xl group-hover:ring-2 group-hover:ring-primary/30 cursor-context-menu w-full"
+          className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted transition-all duration-300 ease-out cursor-context-menu w-full group-hover:scale-[1.02]"
           onContextMenu={(e) => {
             if (disableContextMenu) return;
             e.preventDefault();
@@ -119,13 +119,7 @@ export function GridCard({
             <div />
           </DropdownMenuTrigger>
 
-          {/* Tooltip */}
-          <div className="absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-full mb-1 z-50 px-2 py-1 bg-black/95 text-white text-xs font-medium rounded-md shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none max-w-[200px] break-words text-center">
-            {item.title}
-            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black/95"></div>
-          </div>
-
-          <div className="relative aspect-[2/3] overflow-hidden rounded-xl bg-muted">
+          <div className="relative aspect-[2/3] overflow-hidden rounded-xl bg-muted shadow-lg ring-1 ring-black/10 group-hover:shadow-2xl group-hover:ring-primary/30 transition-all duration-300">
             {item.imageUrl ? (
               <Image
                 src={item.imageUrl}
