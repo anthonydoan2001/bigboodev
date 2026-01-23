@@ -3,6 +3,10 @@ import { fetchUpcomingPlayoffGames } from '@/lib/api/sports';
 import { SportType } from '@/types/sports';
 import { withAuth } from '@/lib/api-auth';
 
+// Force dynamic rendering - don't cache this route
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const GET = withAuth(async (request: NextRequest) => {
   try {
     const searchParams = request.nextUrl.searchParams;

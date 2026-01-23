@@ -3,6 +3,10 @@ import { cacheGameScores, fetchAllScores, fetchScores, getCachedGameScores } fro
 import { SportType } from '@/types/sports';
 import { NextRequest, NextResponse } from 'next/server';
 
+// Force dynamic rendering - don't cache this route
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const GET = withAuth(async (request: NextRequest) => {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -45,11 +49,17 @@ export const GET = withAuth(async (request: NextRequest) => {
       if (cachedScores.length > 0) {
         // For live games, verify they're not expired (getCachedGameScores already filters expired)
         // If we have any valid cached games, return them
-        return NextResponse.json({
+        const response = NextResponse.json({
           sport,
           scores: cachedScores,
           cached: true,
+          timestamp: new Date().toISOString(),
         });
+        // Add cache control headers to prevent browser/CDN caching
+        response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        response.headers.set('Pragma', 'no-cache');
+        response.headers.set('Expires', '0');
+        return response;
       }
 
       // Cache miss - fetch from ESPN API
@@ -60,17 +70,28 @@ export const GET = withAuth(async (request: NextRequest) => {
         console.error('Error caching scores (non-blocking):', err);
       });
 
-      return NextResponse.json({
+      const response = NextResponse.json({
         sport,
         scores,
         cached: false,
+        timestamp: new Date().toISOString(),
       });
+      // Add cache control headers to prevent browser/CDN caching
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      response.headers.set('Pragma', 'no-cache');
+      response.headers.set('Expires', '0');
+      return response;
     }
 
     // If no sport specified, fetch all
     // For this case, we'll fetch from API (could optimize later with cache)
     const allScores = await fetchAllScores();
-    return NextResponse.json(allScores);
+    const response = NextResponse.json(allScores);
+    // Add cache control headers to prevent browser/CDN caching
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    return response;
   } catch (error) {
     console.error('Error in scores API:', error);
     return NextResponse.json(
