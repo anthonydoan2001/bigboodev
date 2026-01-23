@@ -114,6 +114,37 @@ function SportsPageContent() {
     setIsMounted(true);
   }, []);
 
+  // Sync state with URL params when they change (e.g., browser back/forward)
+  useEffect(() => {
+    const urlTab = searchParams.get('tab') || 'games';
+    const urlSport = searchParams.get('sport') || 'NBA';
+    const urlDate = searchParams.get('date');
+
+    // Update sport if different
+    const newSport = (urlSport === 'FAVORITES' || urlSport === 'NBA') ? urlSport : 'NBA';
+    if (newSport !== selectedSport) {
+      setSelectedSport(newSport as SportType | 'FAVORITES');
+    }
+
+    // Update tab if different
+    const newTab = ['games', 'performers', 'standings'].includes(urlTab) ? urlTab : 'games';
+    if (newTab !== selectedTab) {
+      setSelectedTab(newTab);
+    }
+
+    // Update date if different
+    if (urlDate) {
+      const parsedDate = new Date(urlDate);
+      if (!isNaN(parsedDate.getTime())) {
+        const currentDateStr = selectedDate.toISOString().split('T')[0];
+        const urlDateStr = parsedDate.toISOString().split('T')[0];
+        if (currentDateStr !== urlDateStr) {
+          setSelectedDate(parsedDate);
+        }
+      }
+    }
+  }, [searchParams]); // Re-run when URL params change
+
   // Update URL when state changes
   const updateURL = (params: { sport?: string; tab?: string; date?: string }) => {
     const currentParams = new URLSearchParams(searchParams.toString());
