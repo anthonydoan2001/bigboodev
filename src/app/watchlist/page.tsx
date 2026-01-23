@@ -34,7 +34,7 @@ function WatchlistContent() {
   // Stable randomized order - only created once per page load
   const randomizedOrderRef = useRef<Map<string, number>>(new Map());
   const hasInitializedRef = useRef(false);
-  
+
   // Separate refs for anime, movies, and shows randomization
   const animeOrderRef = useRef<Map<string, number>>(new Map());
   const moviesOrderRef = useRef<Map<string, number>>(new Map());
@@ -87,12 +87,12 @@ function WatchlistContent() {
       });
       hasInitializedRef.current = true;
     }
-    
+
     if (!hasInitializedRef.current) return watchlistItems;
-    
+
     const watchlistOrders = Array.from(randomizedOrderRef.current.values()).filter(v => v < 10000);
     const maxWatchlistOrder = watchlistOrders.length > 0 ? Math.max(...watchlistOrders) : -1;
-    
+
     const itemsWithOrder = watchlistItems
       .map(item => {
         let order = randomizedOrderRef.current.get(item.id);
@@ -103,7 +103,7 @@ function WatchlistContent() {
         return { item, order };
       })
       .sort((a, b) => a.order - b.order);
-    
+
     // Limit to 21 items for the main watchlist section
     return itemsWithOrder.map(({ item }) => item).slice(0, 21);
   }, [watchlistItems]);
@@ -126,9 +126,9 @@ function WatchlistContent() {
       });
       hasInitializedAnimeRef.current = true;
     }
-    
+
     if (!hasInitializedAnimeRef.current || allAnime.length === 0) return allAnime.slice(0, 21);
-    
+
     const itemsWithOrder = allAnime
       .map(item => {
         let order = animeOrderRef.current.get(item.id);
@@ -140,7 +140,7 @@ function WatchlistContent() {
         return { item, order };
       })
       .sort((a, b) => a.order - b.order);
-    
+
     return itemsWithOrder.map(({ item }) => item).slice(0, 21);
   }, [allAnime, listLoading]);
 
@@ -157,9 +157,9 @@ function WatchlistContent() {
       });
       hasInitializedMoviesRef.current = true;
     }
-    
+
     if (!hasInitializedMoviesRef.current || allMovies.length === 0) return allMovies.slice(0, 21);
-    
+
     const itemsWithOrder = allMovies
       .map(item => {
         let order = moviesOrderRef.current.get(item.id);
@@ -171,7 +171,7 @@ function WatchlistContent() {
         return { item, order };
       })
       .sort((a, b) => a.order - b.order);
-    
+
     return itemsWithOrder.map(({ item }) => item).slice(0, 21);
   }, [allMovies, listLoading]);
 
@@ -188,9 +188,9 @@ function WatchlistContent() {
       });
       hasInitializedShowsRef.current = true;
     }
-    
+
     if (!hasInitializedShowsRef.current || allShows.length === 0) return allShows.slice(0, 21);
-    
+
     const itemsWithOrder = allShows
       .map(item => {
         let order = showsOrderRef.current.get(item.id);
@@ -202,16 +202,16 @@ function WatchlistContent() {
         return { item, order };
       })
       .sort((a, b) => a.order - b.order);
-    
+
     return itemsWithOrder.map(({ item }) => item).slice(0, 21);
   }, [allShows, listLoading]);
 
   // Filter out items without images or ratings from search results
   const searchResults: UniversalSearchResult[] = (searchData?.results || []).filter(
-    (result: UniversalSearchResult) => 
-      result.image && 
-      result.image.trim() !== '' && 
-      result.rating && 
+    (result: UniversalSearchResult) =>
+      result.image &&
+      result.image.trim() !== '' &&
+      result.rating &&
       result.rating > 0
   );
 
@@ -480,9 +480,9 @@ function WatchlistContent() {
 
                 {/* Anime Section */}
                 {animeList.length > 0 && (
-                  <Carousel 
-                    title="Anime" 
-                    count={animeList.length} 
+                  <Carousel
+                    title="Anime"
+                    count={animeList.length}
                     totalCount={allAnime.length}
                     icon={<ListVideo className="h-4 w-4" />}
                     showMoreLink={allAnime.length > 21 ? '/watchlist/anime' : undefined}
@@ -502,9 +502,9 @@ function WatchlistContent() {
 
                 {/* Movies Section */}
                 {moviesList.length > 0 && (
-                  <Carousel 
-                    title="Movies" 
-                    count={moviesList.length} 
+                  <Carousel
+                    title="Movies"
+                    count={moviesList.length}
                     totalCount={allMovies.length}
                     icon={<ListVideo className="h-4 w-4" />}
                     showMoreLink={allMovies.length > 21 ? '/watchlist/movie' : undefined}
@@ -524,9 +524,9 @@ function WatchlistContent() {
 
                 {/* TV Shows Section */}
                 {showsList.length > 0 && (
-                  <Carousel 
-                    title="TV Shows" 
-                    count={showsList.length} 
+                  <Carousel
+                    title="TV Shows"
+                    count={showsList.length}
                     totalCount={allShows.length}
                     icon={<ListVideo className="h-4 w-4" />}
                     showMoreLink={allShows.length > 21 ? '/watchlist/show' : undefined}

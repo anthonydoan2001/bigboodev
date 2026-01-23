@@ -60,9 +60,9 @@ function StockCard({ quote }: { quote: StockQuote }) {
   const arrowIcon = isPositive ? ArrowUp : ArrowDown;
 
   return (
-    <div className="flex items-center justify-between py-1.5 px-1.5 md:px-2 hover:bg-white/5 dark:hover:bg-white/10 transition-colors rounded-md gap-2 md:gap-3">
+    <div className="flex items-center justify-between py-2.5 px-2.5 md:px-3 hover:bg-white/5 dark:hover:bg-white/10 transition-colors rounded-md gap-3 md:gap-4">
       {/* Left side: Logo, Ticker, Company Name */}
-      <div className="flex items-center gap-2 md:gap-2.5 min-w-0 flex-shrink">
+      <div className="flex items-center gap-2.5 md:gap-3 min-w-0 flex-shrink">
         {/* Logo */}
         <div className="relative w-8 h-8 md:w-10 md:h-10 flex-shrink-0 rounded-full bg-background/50 flex items-center justify-center overflow-hidden ring-1 ring-border/20">
           {quote.logoUrl ? (
@@ -90,13 +90,13 @@ function StockCard({ quote }: { quote: StockQuote }) {
       </div>
 
       {/* Right side: Price and Change */}
-      <div className="flex flex-col items-end flex-shrink-0 gap-0.5">
+      <div className="flex flex-col items-end flex-shrink-0 gap-1">
         <span className="font-bold font-mono text-lg md:text-xl leading-none whitespace-nowrap">{formatPrice(quote.currentPrice)}</span>
-        <span className={cn("text-xs md:text-sm font-mono font-medium flex items-center gap-0.5 leading-none whitespace-nowrap", changeColor)}>
+        <span className={cn("text-[11px] md:text-xs font-mono font-medium flex items-center gap-0.5 leading-none whitespace-nowrap", changeColor)}>
           {isPositive ? (
-            <ArrowUp className="h-3 w-3 md:h-4 md:w-4" />
+            <ArrowUp className="h-3 w-3" />
           ) : (
-            <ArrowDown className="h-3 w-3 md:h-4 md:w-4" />
+            <ArrowDown className="h-3 w-3" />
           )}
           {formatPercentChange(quote.percentChange)}
         </span>
@@ -147,7 +147,7 @@ export function StocksWidget() {
   return (
     <Card className="col-span-1 w-full max-w-full !py-0 bg-background/40 backdrop-blur-md border-white/10 shadow-none">
       <CardContent className="!px-3 !py-3">
-        <div className="space-y-0.5">
+        <div className="space-y-1">
           {data.quotes.map((quote) => (
             <StockCard key={quote.symbol} quote={quote} />
           ))}

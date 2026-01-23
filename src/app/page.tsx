@@ -38,9 +38,26 @@ function getTodayDateString(): string {
   return `${year}-${month}-${day}`;
 }
 
+// Format time with AM/PM and seconds
+function formatTime(date: Date): { time: string; period: string } {
+  const houstonTime = new Date(date.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+  let hours = houstonTime.getHours();
+  const minutes = houstonTime.getMinutes();
+  const seconds = houstonTime.getSeconds();
+  const period = hours >= 12 ? 'PM' : 'AM';
+
+  // Convert to 12-hour format
+  hours = hours % 12;
+  hours = hours ? hours : 12; // 0 should be 12
+
+  const formattedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  return { time: formattedTime, period };
+}
+
 export default function Home() {
   const [greeting, setGreeting] = useState("Good Morning");
   const [todayDate] = useState(() => getTodayDateString());
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   // Fetch quote with daily refresh - query key includes date so it refreshes daily
   const { data: quote, isLoading: quoteLoading } = useQuery({
@@ -81,12 +98,22 @@ export default function Home() {
 
   useEffect(() => {
     setGreeting(getGreeting());
+    setCurrentTime(new Date());
+
     // Update greeting every minute
-    const interval = setInterval(() => {
+    const greetingInterval = setInterval(() => {
       setGreeting(getGreeting());
     }, 60000);
 
-    return () => clearInterval(interval);
+    // Update time every second
+    const timeInterval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => {
+      clearInterval(greetingInterval);
+      clearInterval(timeInterval);
+    };
   }, []);
 
   // Show loading state until all widgets are ready
@@ -101,6 +128,8 @@ export default function Home() {
     );
   }
 
+  const { time, period } = formatTime(currentTime);
+
   return (
     <div className="w-full py-6 px-4 sm:px-6 lg:px-8 min-h-screen">
       {/* Header Section with Weather */}
@@ -112,7 +141,16 @@ export default function Home() {
 
         {/* Right: Greeting & Quote */}
         <div className="space-y-3 flex-1">
-          <h1 className="text-display-lg">{greeting}, Big Boo</h1>
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="text-display-lg">{greeting}, Big Boo</h1>
+
+            {/* Time Display */}
+            <div className="flex items-baseline gap-1.5 font-mono flex-shrink-0">
+              <span className="text-3xl md:text-4xl font-bold tabular-nums">{time}</span>
+              <span className="text-lg md:text-xl font-semibold text-muted-foreground">{period}</span>
+            </div>
+          </div>
+
           {quoteLoading ? (
             <div className="h-8 w-3/4 max-w-2xl bg-muted/20 animate-pulse rounded-md" />
           ) : quote ? (
@@ -129,9 +167,13 @@ export default function Home() {
 
       {/* Bento-style Dashboard Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 auto-rows-auto gap-4 md:gap-6">
-        {/* Calendar and Stocks Widgets - Stacked vertically */}
-        <div className="col-span-1 sm:col-span-1 flex flex-col gap-4 md:gap-6">
+        {/* Calendar Widget */}
+        <div className="col-span-1">
           <CalendarWidget />
+        </div>
+
+        {/* Stocks & Crypto Widget */}
+        <div className="col-span-1">
           <StocksCryptoWidget />
         </div>
       </div>

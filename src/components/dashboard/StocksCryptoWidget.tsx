@@ -60,7 +60,7 @@ function StockCard({ quote }: { quote: StockQuote }) {
   const changeColor = isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
 
   return (
-    <div className="flex items-center justify-between py-2.5 px-3 border-b border-border/40 last:border-0">
+    <div className="flex items-center justify-between py-3 px-3.5 border-b border-border/40 last:border-0">
       {/* Left side: Logo & Ticker */}
       <div className="flex items-center gap-3 min-w-0 flex-1">
         {/* Logo */}
@@ -88,12 +88,12 @@ function StockCard({ quote }: { quote: StockQuote }) {
       </div>
 
       {/* Right: Change */}
-      <div className="flex items-center gap-1 flex-shrink-0 min-w-[85px] justify-end">
-        <span className={cn("text-body-sm font-mono font-medium flex items-center gap-0.5 tabular-nums", changeColor)}>
+      <div className="flex items-center gap-1 flex-shrink-0 min-w-[80px] justify-end">
+        <span className={cn("text-[11px] md:text-xs font-mono font-medium flex items-center gap-0.5 tabular-nums", changeColor)}>
           {isPositive ? (
-            <ArrowUp className="h-3.5 w-3.5" />
+            <ArrowUp className="h-3 w-3" />
           ) : (
-            <ArrowDown className="h-3.5 w-3.5" />
+            <ArrowDown className="h-3 w-3" />
           )}
           {formatPercentChange(quote.percentChange)}
         </span>
@@ -108,7 +108,7 @@ function CryptoCard({ crypto }: { crypto: CryptoQuote }) {
   const changeColor = isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
 
   return (
-    <div className="flex items-center justify-between py-2.5 px-3 border-b border-border/40 last:border-0">
+    <div className="flex items-center justify-between py-3 px-3.5 border-b border-border/40 last:border-0">
       {/* Left side: Logo & Symbol */}
       <div className="flex items-center gap-3 min-w-0 flex-1">
         {/* Logo */}
@@ -136,12 +136,12 @@ function CryptoCard({ crypto }: { crypto: CryptoQuote }) {
       </div>
 
       {/* Right: Change */}
-      <div className="flex items-center gap-1 flex-shrink-0 min-w-[85px] justify-end">
-        <span className={cn("text-body-sm font-mono font-medium flex items-center gap-0.5 tabular-nums", changeColor)}>
+      <div className="flex items-center gap-1 flex-shrink-0 min-w-[80px] justify-end">
+        <span className={cn("text-[11px] md:text-xs font-mono font-medium flex items-center gap-0.5 tabular-nums", changeColor)}>
           {isPositive ? (
-            <ArrowUp className="h-3.5 w-3.5" />
+            <ArrowUp className="h-3 w-3" />
           ) : (
-            <ArrowDown className="h-3.5 w-3.5" />
+            <ArrowDown className="h-3 w-3" />
           )}
           {formatPercentChange(crypto.percentChange24h)}
         </span>
