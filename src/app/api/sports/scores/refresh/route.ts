@@ -30,21 +30,20 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
     // Determine which sports to refresh
     const sportsToRefresh: SportType[] = sportParam
       ? [sportParam]
-      : ['NBA', 'NFL']; // Refresh both by default
+      : ['NBA']; // Refresh NBA by default
 
     const results: Array<{ sport: SportType; count: number; statuses: Record<string, number> }> = [];
     const errors: Array<{ sport: SportType; error: string }> = [];
 
+    const today = new Date();
+
     // Fetch and cache scores for each sport
     for (const sport of sportsToRefresh) {
       try {
-        // For NFL, always use today's date; for other sports, use today
-        const date = sport === 'NFL' ? new Date() : new Date();
-
-        console.log(`[Sports Scores Refresh] Fetching ${sport} scores for ${date.toISOString().split('T')[0]}`);
+        console.log(`[Sports Scores Refresh] Fetching ${sport} scores for ${today.toISOString().split('T')[0]}`);
 
         // Fetch from ESPN API
-        const games = await fetchScores(sport, date);
+        const games = await fetchScores(sport, today);
 
         if (games.length === 0) {
           console.log(`[Sports Scores Refresh] No games found for ${sport}`);
@@ -53,7 +52,7 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
         }
 
         // Cache games in database
-        await cacheGameScores(sport, date, games);
+        await cacheGameScores(sport, today, games);
 
         // Count games by status
         const statuses: Record<string, number> = {};

@@ -1,5 +1,5 @@
 import { withAuth } from '@/lib/api-auth';
-import { cacheGameScores, fetchAllScores, fetchScores, getCachedGameScores } from '@/lib/api/sports';
+import { fetchAllScores, fetchScores } from '@/lib/api/sports';
 import { SportType } from '@/types/sports';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -25,7 +25,7 @@ export const GET = withAuth(async (request: NextRequest) => {
 
     if (sport) {
       // Validate sport type
-      const validSports: SportType[] = ['NBA', 'NFL'];
+      const validSports: SportType[] = ['NBA'];
       if (!validSports.includes(sport)) {
         return NextResponse.json(
           { error: 'Invalid sport type' },
@@ -33,42 +33,12 @@ export const GET = withAuth(async (request: NextRequest) => {
         );
       }
 
-      // For NFL, always use today's date
-      const queryDate = sport === 'NFL' ? new Date() : (date || new Date());
+      // Use provided date or today
+      const queryDate = date || new Date();
 
-      // Check database cache first
-      const cachedScores = await getCachedGameScores(sport, queryDate);
-
-      // Check if we have sufficient cached data
-      // For live games, we need non-expired data; for others, any cached data is fine
-      const hasLiveGames = cachedScores.some(game => game.status === 'live');
-      const hasFinalGames = cachedScores.some(game => game.status === 'final');
-      const hasScheduledGames = cachedScores.some(game => game.status === 'scheduled');
-
-      // If we have cached data, return it (cache refresh handles keeping it fresh)
-      if (cachedScores.length > 0) {
-        // For live games, verify they're not expired (getCachedGameScores already filters expired)
-        // If we have any valid cached games, return them
-        const response = NextResponse.json({
-          sport,
-          scores: cachedScores,
-          cached: true,
-          timestamp: new Date().toISOString(),
-        });
-        // Add cache control headers to prevent browser/CDN caching
-        response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-        response.headers.set('Pragma', 'no-cache');
-        response.headers.set('Expires', '0');
-        return response;
-      }
-
-      // Cache miss - fetch from ESPN API
+      // Always fetch fresh data from ESPN (no database caching for live data)
+      // This ensures live scores are always up-to-date
       const scores = await fetchScores(sport, queryDate);
-
-      // Cache the fresh data for future requests (async, don't wait)
-      cacheGameScores(sport, queryDate, scores).catch(err => {
-        console.error('Error caching scores (non-blocking):', err);
-      });
 
       const response = NextResponse.json({
         sport,

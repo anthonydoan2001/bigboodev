@@ -6,7 +6,6 @@ import { ScoreCardSkeleton } from '@/components/sports/ScoreCardSkeleton';
 import { SportFilter } from '@/components/sports/SportFilter';
 import { TopPerformersView } from '@/components/sports/TopPerformersView';
 import { TopPerformersSkeleton } from '@/components/sports/TopPerformersSkeleton';
-import { PlayoffBracket, generateAllPlayoffGames } from '@/components/sports/PlayoffBracket';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { autoFavoriteHoustonGames, getFavorites, isHoustonGame, toggleFavorite as toggleFavoriteInStorage } from '@/lib/favorites';
@@ -64,23 +63,6 @@ async function fetchTopPerformers(sport: SportType, date: Date) {
   return data.performers as TopPerformer[];
 }
 
-async function fetchUpcomingPlayoffGames(sport: SportType) {
-  const response = await fetch(`/api/sports/playoffs?sport=${sport}`, {
-    headers: getAuthHeaders(),
-    credentials: 'include',
-    cache: 'no-store', // Don't cache - we need fresh data for live games
-  });
-  if (!response.ok) {
-    throw new Error('Failed to fetch upcoming playoff games');
-  }
-  const data = await response.json();
-  // Convert date strings back to Date objects (same as fetchScores)
-  return data.games.map((game: any) => ({
-    ...game,
-    startTime: new Date(game.startTime),
-  })) as GameScore[];
-}
-
 export default function SportsPage() {
   const [selectedSport, setSelectedSport] = useState<SportType | 'FAVORITES'>('NBA');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -94,14 +76,13 @@ export default function SportsPage() {
   }, []);
 
   const showPerformers = selectedSport === 'NBA'; // Only show performers for NBA
-  const showUpcomingGames = selectedSport === 'NFL'; // Show upcoming games for NFL
   const isFavoritesView = selectedSport === 'FAVORITES';
 
   // For favorites view, we need to fetch all sports and filter by favorites
   const shouldFetchScores = selectedSport !== 'FAVORITES';
 
-  // For NFL, always use today's date; for other sports, use selectedDate
-  const dateForScores = selectedSport === 'NFL' ? new Date() : selectedDate;
+  // Use selected date for scores
+  const dateForScores = selectedDate;
 
   const {
     data: scores,
@@ -125,13 +106,13 @@ export default function SportsPage() {
   });
 
   // Fetch all sports for favorites view
-  const allSports: SportType[] = ['NBA', 'NFL'];
+  const allSports: SportType[] = ['NBA'];
 
   const favoriteQueries = useQuery({
     queryKey: ['all-scores', selectedDate.toDateString()],
     queryFn: async () => {
       const results = await Promise.all(
-        allSports.map(sport => fetchScores(sport, sport === 'NFL' ? new Date() : selectedDate))
+        allSports.map(sport => fetchScores(sport, selectedDate))
       );
       return results.flat();
     },
@@ -196,31 +177,6 @@ export default function SportsPage() {
     },
   });
 
-  const {
-    data: upcomingGames,
-    isLoading: upcomingGamesLoading,
-    error: upcomingGamesError,
-    isFetching: upcomingGamesFetching,
-  } = useQuery({
-    queryKey: ['upcoming-playoff-games', selectedSport],
-    queryFn: () => {
-      if (selectedSport === 'FAVORITES') {
-        throw new Error('Cannot fetch playoff games for FAVORITES');
-      }
-      return fetchUpcomingPlayoffGames(selectedSport);
-    },
-    staleTime: 0, // Always consider data stale so refetchInterval works properly
-    refetchOnWindowFocus: false,
-    enabled: selectedSport === 'NFL' && isMounted, // Only for NFL and after mount
-    refetchInterval: (data) => {
-      // If there are live games, refresh every minute
-      if (Array.isArray(data) && data.some(game => game.status === 'live')) {
-        return 60000; // 1 minute for live games
-      }
-      // Otherwise, check every 2 minutes to catch games transitioning to live
-      return 120000; // 2 minutes for scheduled/final games
-    },
-  });
 
   // Determine which games to show
   const currentScores = isFavoritesView ? favoriteQueries.data : scores;
@@ -237,26 +193,15 @@ export default function SportsPage() {
     return hoursSinceGame > 24;
   };
 
-  // For NFL, use all playoff games with winners advancing
-  // For other sports, use regular scores
-  let gamesToShow: GameScore[] = [];
-  if (selectedSport === 'NFL' && !isFavoritesView) {
-    // Use playoff games with winners advancing, but exclude completed games older than 24 hours
-    if (upcomingGames) {
-      const allPlayoffGames = generateAllPlayoffGames(upcomingGames);
-      gamesToShow = allPlayoffGames.filter(game => !isCompletedGameOld(game));
-    }
-  } else {
-    // Filter games for favorites or use regular scores, exclude completed games older than 24 hours
-    const filteredScores = isFavoritesView
-      ? currentScores?.filter(game => favorites.includes(game.id))
-      : currentScores;
-    gamesToShow = (filteredScores || []).filter(game => !isCompletedGameOld(game));
-  }
+  // Filter games for favorites or use regular scores, exclude completed games older than 24 hours
+  const filteredScores = isFavoritesView
+    ? currentScores?.filter(game => favorites.includes(game.id))
+    : currentScores;
+  const gamesToShow = (filteredScores || []).filter(game => !isCompletedGameOld(game));
 
   // Check if there are any live games
   const hasLiveGames = Array.isArray(gamesToShow) && gamesToShow.some(game => game.status === 'live');
-  const isAutoRefreshing = hasLiveGames && (scoresFetching || favoriteQueries.isFetching || upcomingGamesFetching);
+  const isAutoRefreshing = hasLiveGames && (scoresFetching || favoriteQueries.isFetching);
 
   return (
     <div className="container mx-auto py-8 px-8 min-h-screen max-w-full">
@@ -268,12 +213,10 @@ export default function SportsPage() {
               selectedSport={selectedSport}
               onSportChange={setSelectedSport}
             />
-            {selectedSport !== 'NFL' && (
-              <DateNavigator
-                selectedDate={selectedDate}
-                onDateChange={setSelectedDate}
-              />
-            )}
+            <DateNavigator
+              selectedDate={selectedDate}
+              onDateChange={setSelectedDate}
+            />
           </div>
 
           {/* Live Update Indicator */}
@@ -334,7 +277,7 @@ export default function SportsPage() {
           </div>
         ) : (
           <Tabs defaultValue="scores" className="w-full">
-            <TabsList className={`w-full max-w-md mx-auto grid ${showPerformers || showUpcomingGames ? 'grid-cols-2' : 'grid-cols-1'} bg-muted/50 p-1`}>
+            <TabsList className={`w-full max-w-md mx-auto grid ${showPerformers ? 'grid-cols-2' : 'grid-cols-1'} bg-muted/50 p-1`}>
               <TabsTrigger value="scores" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
                 Games
               </TabsTrigger>
@@ -343,58 +286,10 @@ export default function SportsPage() {
                   Top Performers
                 </TabsTrigger>
               )}
-              {showUpcomingGames && (
-                <TabsTrigger value="upcoming" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                  Playoff Bracket
-                </TabsTrigger>
-              )}
             </TabsList>
 
             <TabsContent value="scores" className="mt-6">
-              {selectedSport === 'NFL' ? (
-                // For NFL, show loading state from playoff games query
-                (!isMounted || upcomingGamesLoading) ? (
-                  <div className="px-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {Array.from({ length: 8 }).map((_, i) => (
-                        <ScoreCardSkeleton key={i} />
-                      ))}
-                    </div>
-                  </div>
-                ) : upcomingGamesError ? (
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="text-center text-body-sm text-destructive">
-                        Error loading playoff games. Please try again.
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : !gamesToShow || gamesToShow.length === 0 ? (
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="text-center text-body-sm text-muted-foreground">
-                        No playoff games found for {selectedSport}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="px-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {gamesToShow.map((game) => (
-                        <ScoreCard
-                          key={game.id}
-                          game={game}
-                          isFavorite={favorites.includes(game.id)}
-                          onToggleFavorite={handleToggleFavorite}
-                          isHoustonGame={isHoustonGame(game.homeTeam, game.awayTeam)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )
-              ) : (
-                // For other sports, use regular scores
-                currentLoading ? (
+              {currentLoading ? (
                   <div className="px-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                       {Array.from({ length: 8 }).map((_, i) => (
@@ -432,8 +327,7 @@ export default function SportsPage() {
                       ))}
                     </div>
                   </div>
-                )
-              )}
+                )}
             </TabsContent>
 
             {showPerformers && (
@@ -456,36 +350,6 @@ export default function SportsPage() {
               </TabsContent>
             )}
 
-            {showUpcomingGames && (
-              <TabsContent value="upcoming" className="mt-6">
-                <div className="max-w-7xl mx-auto px-4">
-                  {(!isMounted || upcomingGamesLoading) ? (
-                    <div className="space-y-4">
-                      {Array.from({ length: 3 }).map((_, i) => (
-                        <Card key={i}>
-                          <CardContent className="p-6">
-                            <div className="animate-pulse space-y-3">
-                              <div className="h-4 bg-muted rounded w-1/4"></div>
-                              <div className="h-20 bg-muted rounded"></div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : upcomingGamesError ? (
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="text-center text-body-sm text-destructive">
-                          Error loading playoff bracket. Please try again.
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    <PlayoffBracket games={upcomingGames || []} />
-                  )}
-                </div>
-              </TabsContent>
-            )}
           </Tabs>
         )}
       </div>
