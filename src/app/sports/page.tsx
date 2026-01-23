@@ -25,11 +25,19 @@ async function fetchScores(sport: SportType, date: Date) {
   const response = await fetch(`/api/sports/scores?sport=${sport}&date=${dateStr}`, {
     headers: getAuthHeaders(),
     credentials: 'include',
+    cache: 'no-store', // Don't cache - we need fresh data for live games
   });
   if (!response.ok) {
     throw new Error('Failed to fetch scores');
   }
   const data = await response.json();
+  // Log fetch for debugging
+  console.log(`[Sports] Fetched ${sport} scores:`, {
+    count: data.scores?.length || 0,
+    cached: data.cached,
+    timestamp: data.timestamp,
+    hasLive: data.scores?.some((g: any) => g.status === 'live'),
+  });
   // Convert date strings back to Date objects
   return data.scores.map((game: any) => ({
     ...game,
@@ -47,6 +55,7 @@ async function fetchTopPerformers(sport: SportType, date: Date) {
   const response = await fetch(`/api/sports/performers?sport=${sport}&date=${dateStr}`, {
     headers: getAuthHeaders(),
     credentials: 'include',
+    cache: 'no-store', // Don't cache - we need fresh data for live games
   });
   if (!response.ok) {
     throw new Error('Failed to fetch top performers');
@@ -59,6 +68,7 @@ async function fetchUpcomingPlayoffGames(sport: SportType) {
   const response = await fetch(`/api/sports/playoffs?sport=${sport}`, {
     headers: getAuthHeaders(),
     credentials: 'include',
+    cache: 'no-store', // Don't cache - we need fresh data for live games
   });
   if (!response.ok) {
     throw new Error('Failed to fetch upcoming playoff games');
