@@ -21,7 +21,7 @@ function ShowContent() {
 
   const { watchlistItems, isLoading } = useWatchlist();
   const { deleteMutation, markWatchedMutation, markWatchingMutation } = useWatchlistMutations();
-  
+
   const { containerRef, itemsPerPage, isReady } = useViewportGrid({
     headerHeight: 140, // Nav + spacing (no filters)
     footerHeight: 0, // No footer - pagination is in header

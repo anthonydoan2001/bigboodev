@@ -23,7 +23,7 @@ function WatchingContent() {
 
   const { watchingItems, isLoading } = useWatchlist();
   const { deleteMutation, markWatchedMutation } = useWatchlistMutations();
-  
+
   const { containerRef, itemsPerPage, isReady } = useViewportGrid({
     headerHeight: 160, // Nav + filters + spacing
     footerHeight: 0, // No footer - pagination is in header
