@@ -26,10 +26,10 @@ export function Carousel({ children, title, count, icon, showMoreLink, totalCoun
 
   const calculateItemWidth = () => {
     if (!scrollRef.current) return;
-    
+
     const containerWidth = scrollRef.current.clientWidth;
     if (containerWidth === 0) return; // Not yet rendered
-    
+
     // Responsive gap based on screen size
     const isMobile = containerWidth < 640; // sm breakpoint
     const isTablet = containerWidth >= 640 && containerWidth < 1024; // md breakpoint
@@ -38,16 +38,16 @@ export function Carousel({ children, title, count, icon, showMoreLink, totalCoun
     // Responsive poster sizes - smaller cards for more compact layout
     const minWidth = isMobile ? 120 : isTablet ? 160 : 170;
     const maxWidth = isMobile ? 160 : isTablet ? 220 : 280;
-    
+
     // Calculate how many items can fit with maximum width
     const maxItemsWithMaxWidth = Math.floor((containerWidth + gap) / (maxWidth + gap));
-    
+
     // Calculate how many items can fit with minimum width
     const maxItemsWithMinWidth = Math.floor((containerWidth + gap) / (minWidth + gap));
-    
+
     // Prefer larger posters - aim for good balance
     let targetItems = Math.max(1, maxItemsWithMaxWidth);
-    
+
     // If we can fit more items, try to find a sweet spot
     if (maxItemsWithMinWidth > maxItemsWithMaxWidth) {
       // Aim for comfortable poster size that allows titles to wrap
@@ -57,14 +57,14 @@ export function Carousel({ children, title, count, icon, showMoreLink, totalCoun
         targetItems = preferredItems;
       }
     }
-    
+
     // Calculate width to fit exactly that many items
     const totalGaps = gap * (targetItems - 1);
     let calculatedWidth = Math.floor((containerWidth - totalGaps) / targetItems);
-    
+
     // Clamp to min/max bounds
     calculatedWidth = Math.max(minWidth, Math.min(maxWidth, calculatedWidth));
-    
+
     // Verify: ensure the calculated width fits perfectly
     const totalWidth = (calculatedWidth * targetItems) + (gap * (targetItems - 1));
     if (totalWidth <= containerWidth + 2) { // Allow 2px tolerance for rounding
@@ -78,7 +78,7 @@ export function Carousel({ children, title, count, icon, showMoreLink, totalCoun
       const adjustedGaps = gap * (adjustedItems - 1);
       const adjustedWidth = Math.floor((containerWidth - adjustedGaps) / adjustedItems);
       const finalWidth = Math.max(minWidth, Math.min(maxWidth, adjustedWidth));
-      
+
       setItemWidth(finalWidth);
       if (scrollRef.current) {
         scrollRef.current.style.setProperty('--item-width', `${finalWidth}px`);

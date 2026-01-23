@@ -11,7 +11,7 @@ function getIdFromUrl(url: string): string | null {
 export const PATCH = withAuth(async (request: Request, sessionToken: string) => {
   try {
     const id = getIdFromUrl(request.url);
-    
+
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
@@ -49,11 +49,11 @@ export const PATCH = withAuth(async (request: Request, sessionToken: string) => 
 export const DELETE = withAuth(async (request: Request, sessionToken: string) => {
   try {
     const id = getIdFromUrl(request.url);
-    
+
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
-    
+
     await db.task.delete({
       where: { id },
     });

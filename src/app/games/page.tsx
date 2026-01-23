@@ -3,21 +3,19 @@
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-import { useSearchParams, useRouter } from 'next/navigation';
-import { useMemo, useEffect, Suspense, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import { GamesNav } from '@/components/games/GamesNav';
 import { GameCard } from '@/components/games/GameCard';
+import { GamesNav } from '@/components/games/GamesNav';
 import { SearchResultCard } from '@/components/games/SearchResultCard';
-import { CardSkeleton } from '@/components/watchlist/CardSkeleton';
-import { GameSearchResult } from '@/types/games';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { useGames } from '@/lib/hooks/useGames';
 import { useGamesMutations } from '@/lib/hooks/useGamesMutations';
 import { useViewportGrid } from '@/lib/hooks/useViewportGrid';
+import { GameSearchResult } from '@/types/games';
+import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 
 function GamesContent() {
   const router = useRouter();
@@ -48,10 +46,10 @@ function GamesContent() {
 
   // Filter out items without images or ratings from search results
   const searchResults: GameSearchResult[] = (searchData?.results || []).filter(
-    (result: GameSearchResult) => 
-      result.image && 
-      result.image.trim() !== '' && 
-      result.rating && 
+    (result: GameSearchResult) =>
+      result.image &&
+      result.image.trim() !== '' &&
+      result.rating &&
       result.rating > 0
   );
 
@@ -131,7 +129,7 @@ function GamesContent() {
   useEffect(() => {
     const gridReady = showingSearch ? searchGridReady : listGridReady;
     const isLoading = showingSearch ? searchLoading : listLoading;
-    
+
     if (gridReady && !isLoading) {
       // Small delay to ensure grid has fully calculated and stabilized
       const timer = setTimeout(() => {
@@ -147,7 +145,7 @@ function GamesContent() {
   // Only redirect if we've mounted AND grid is ready to prevent initial flash
   useEffect(() => {
     if (!hasMounted || !searchGridReady) return;
-    
+
     if (showingSearch && totalSearchPages > 0 && searchPage > totalSearchPages) {
       // Current page is invalid, redirect to last valid page
       const params = new URLSearchParams();
@@ -163,7 +161,7 @@ function GamesContent() {
   // Only redirect if we've mounted AND grid is ready to prevent initial flash
   useEffect(() => {
     if (!hasMounted || !listGridReady) return;
-    
+
     if (!showingSearch && totalListPages > 0 && listPage > totalListPages) {
       // Current page is invalid, redirect to last valid page
       const params = new URLSearchParams();
