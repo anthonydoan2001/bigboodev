@@ -190,6 +190,19 @@ function SportsPageContent() {
   // Use selected date for scores
   const dateForScores = selectedDate;
 
+  // Debug: Log query states
+  useEffect(() => {
+    console.log('[Query State]', {
+      selectedSport,
+      selectedTab,
+      isMounted,
+      shouldFetchScores,
+      isFavoritesView,
+      scoresQueryEnabled: shouldFetchScores && isMounted,
+      favoritesQueryEnabled: isFavoritesView && isMounted,
+    });
+  }, [selectedSport, selectedTab, isMounted, shouldFetchScores, isFavoritesView]);
+
   const {
     data: scores,
     isLoading: scoresLoading,
@@ -202,11 +215,20 @@ function SportsPageContent() {
     refetchOnWindowFocus: false,
     enabled: shouldFetchScores && isMounted,
     refetchInterval: (data) => {
+      console.log('[Scores Refresh] Checking interval...', {
+        hasData: !!data,
+        isArray: Array.isArray(data),
+        dataLength: Array.isArray(data) ? data.length : 0,
+        hasLive: Array.isArray(data) ? data.some(game => game.status === 'live') : false,
+      });
+
       // Only auto-refresh if there are live games - refresh every 30 seconds
       if (Array.isArray(data) && data.some(game => game.status === 'live')) {
-        console.log('[Scores Refresh] Live games detected, refreshing in 30 seconds');
+        console.log('[Scores Refresh] ✅ Live games detected, refreshing in 30 seconds');
         return 30000; // 30 seconds for live games
       }
+
+      console.log('[Scores Refresh] ❌ No live games, stopping auto-refresh');
       // No auto-refresh for scheduled/final games - user can manually refresh
       return false;
     },
