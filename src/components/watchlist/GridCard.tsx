@@ -1,6 +1,6 @@
 'use client';
 
-import { UniversalSearchResult } from '@/app/api/watchlist/search/universal/route';
+import { WatchlistItem } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -8,78 +8,68 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Check, CheckCircle2, Eye, Plus, Trash2 } from 'lucide-react';
+import { CheckCircle2, Eye, Trash2 } from 'lucide-react';
 import Image from 'next/image';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
-interface SearchResultCardProps {
-  result: UniversalSearchResult;
-  onAdd: () => void;
-  isAdding: boolean;
-  alreadyInList: boolean;
-  isWatched?: boolean;
-  isWatching?: boolean;
+interface GridCardProps {
+  item: WatchlistItem;
+  onDelete: () => void;
   onMarkWatched?: () => void;
-  isMarkingWatched?: boolean;
   onMarkWatching?: () => void;
-  isMarkingWatching?: boolean;
-  onDelete?: () => void;
   disableContextMenu?: boolean;
+  hideStatusBadge?: boolean;
 }
 
-export function SearchResultCard({
-  result,
-  onAdd,
-  isAdding,
-  alreadyInList,
-  isWatched,
-  isWatching,
-  onMarkWatched,
-  isMarkingWatched,
-  onMarkWatching,
-  isMarkingWatching,
+/**
+ * GridCard - Optimized for grid layouts (watched/watching pages)
+ * Features:
+ * - Responsive sizing based on grid container
+ * - Larger card footprint for better visibility in paginated views
+ * - Optimized hover states for grid context
+ */
+export function GridCard({
+  item,
   onDelete,
+  onMarkWatched,
+  onMarkWatching,
   disableContextMenu = false,
-}: SearchResultCardProps) {
+  hideStatusBadge = false
+}: GridCardProps) {
+  const isWatched = item.status === 'WATCHED';
+  const isWatching = item.status === 'WATCHING';
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const cardRef = useRef<HTMLDivElement>(null);
-  const menuIdRef = useRef(`menu-${result.id}-${Math.random().toString(36).substr(2, 9)}`);
-  
+
   useEffect(() => {
     if (open && position.x > 0 && position.y > 0) {
       const positionMenu = () => {
         const menuElements = document.querySelectorAll('[data-slot="dropdown-menu-content"]');
         if (menuElements.length === 0) return;
-        
-        // Get the last one (most recently opened)
+
         const menuElement = Array.from(menuElements)[menuElements.length - 1] as HTMLElement;
-        
+
         if (menuElement) {
-          // Force position to mouse location
           menuElement.style.position = 'fixed';
           menuElement.style.left = `${position.x}px`;
           menuElement.style.top = `${position.y}px`;
           menuElement.style.transform = 'translate(10px, 0)';
           menuElement.style.margin = '0';
           menuElement.style.zIndex = '9999';
-          // Prevent Radix from repositioning
           menuElement.style.setProperty('--radix-dropdown-menu-content-transform-origin', 'var(--radix-popper-transform-origin)');
         }
       };
-      
-      // Use multiple attempts to catch the menu when it appears
+
       const timeout1 = setTimeout(positionMenu, 0);
       const timeout2 = setTimeout(positionMenu, 10);
       const timeout3 = setTimeout(positionMenu, 50);
       const timeout4 = setTimeout(positionMenu, 100);
-      
-      // Also use MutationObserver to catch when menu is added to DOM
+
       const observer = new MutationObserver(() => {
         positionMenu();
       });
       observer.observe(document.body, { childList: true, subtree: true });
-      
+
       return () => {
         clearTimeout(timeout1);
         clearTimeout(timeout2);
@@ -90,31 +80,26 @@ export function SearchResultCard({
     }
   }, [open, position]);
 
-  // Close dropdown on scroll - don't interfere with scrolling
   useEffect(() => {
     if (open) {
       const handleScroll = () => {
-        // Close after scroll has happened
         setOpen(false);
-        // Clean up positioned flag
         const menuElements = document.querySelectorAll('[data-slot="dropdown-menu-content"]');
         menuElements.forEach(el => {
           delete (el as HTMLElement).dataset.positioned;
         });
       };
-      // Only listen to actual scroll events, not wheel (to not interfere)
       window.addEventListener('scroll', handleScroll, { passive: true });
       return () => {
         window.removeEventListener('scroll', handleScroll);
       };
     }
   }, [open]);
-  
+
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
       <div className="group relative flex flex-col w-full h-full transition-all duration-500 ease-out" style={{ width: '100%', minWidth: 0 }}>
         <div
-          ref={cardRef}
           className="relative aspect-[2/3] overflow-visible rounded-xl bg-muted shadow-md transition-all duration-300 ease-out group-hover:shadow-xl group-hover:ring-2 group-hover:ring-primary/30 cursor-context-menu w-full"
           onContextMenu={(e) => {
             if (disableContextMenu) return;
@@ -124,7 +109,6 @@ export function SearchResultCard({
             setOpen(true);
           }}
           onMouseDown={(e) => {
-            // Prevent middle mouse button (button 1) from scrolling
             if (e.button === 1) {
               e.preventDefault();
               e.stopPropagation();
@@ -134,17 +118,18 @@ export function SearchResultCard({
           <DropdownMenuTrigger asChild className="hidden">
             <div />
           </DropdownMenuTrigger>
+
           {/* Tooltip */}
           <div className="absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-full mb-1 z-50 px-2 py-1 bg-black/95 text-white text-xs font-medium rounded-md shadow-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none max-w-[200px] break-words text-center">
-            {result.title}
+            {item.title}
             <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black/95"></div>
           </div>
 
           <div className="relative aspect-[2/3] overflow-hidden rounded-xl">
-            {result.image ? (
+            {item.imageUrl ? (
               <Image
-                src={result.image}
-                alt={result.title}
+                src={item.imageUrl}
+                alt={item.title}
                 fill
                 className="object-cover transition-transform duration-500 group-hover:scale-110"
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1536px) 25vw, 20vw"
@@ -158,65 +143,40 @@ export function SearchResultCard({
           </div>
 
           {/* Rating Badge - Top Left */}
-          {result.rating && (
+          {item.rating && (
             <div className="absolute left-1 top-1 rounded-md bg-black/75 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm flex items-center gap-0.5 z-10 shadow-md">
               <span className="text-yellow-400 text-xs">★</span>
-              <span>{result.rating.toFixed(1)}</span>
+              <span>{item.rating.toFixed(1)}</span>
             </div>
           )}
 
-          {/* Status Badge - Below Category */}
-          {alreadyInList && !isWatched && !isWatching && (
-            <div className="absolute right-1 top-6 flex items-center gap-0.5 rounded-md bg-emerald-500/95 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm shadow-md z-10">
-              <Check className="h-2.5 w-2.5" />
-              <span>Saved</span>
-            </div>
-          )}
-          {isWatched && (
+          {/* Status Badges */}
+          {!hideStatusBadge && isWatched && (
             <div className="absolute right-1 top-6 flex items-center gap-0.5 rounded-md bg-emerald-500/95 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm shadow-md z-10">
               <CheckCircle2 className="h-2.5 w-2.5" />
               <span>Watched</span>
             </div>
           )}
-          {isWatching && (
+
+          {!hideStatusBadge && isWatching && (
             <div className="absolute right-1 top-6 flex items-center gap-0.5 rounded-md bg-blue-500/95 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm shadow-md z-10">
               <Eye className="h-2.5 w-2.5" />
               <span>Watching</span>
             </div>
           )}
 
-          {/* Type Badge - Top Right */}
+          {/* Media Type Badge - Top Right */}
           <div className="absolute right-1 top-1 rounded-md bg-black/75 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white backdrop-blur-sm z-10 shadow-md">
-            {result.type === 'anime' ? 'Anime' : result.type === 'movie' ? 'Movie' : result.type === 'show' ? 'TV' : result.type}
+            {item.type === 'ANIME' ? 'Anime' : item.type === 'MOVIE' ? 'Movie' : item.type === 'SHOW' ? 'TV' : item.type}
           </div>
 
-          {/* Hover Overlay - Add Button */}
-          {!alreadyInList && !isWatched && !isWatching && (
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-end p-1.5 pointer-events-none">
-              <div className="pointer-events-auto flex flex-col">
-                <Button
-                  size="sm"
-                  className="h-7 w-full text-xs font-medium opacity-0 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 shadow-md"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAdd();
-                  }}
-                  disabled={isAdding}
-                >
-                  <Plus className="mr-1 h-3 w-3" />
-                  {isAdding ? 'Adding...' : 'Add'}
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Remove Button - Right Bottom */}
-          {onDelete && (alreadyInList || isWatched || isWatching) && (
-            <div className="absolute right-1 bottom-1 opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none z-20">
+          {/* Hover Overlay - Delete Button */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-end p-1.5 pointer-events-none">
+            <div className="pointer-events-auto flex items-center justify-end">
               <Button
                 size="icon"
                 variant="destructive"
-                className="h-6 w-6 pointer-events-auto hover:scale-110 hover:rotate-12 shadow-md"
+                className="h-6 w-6 opacity-0 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 hover:scale-110 hover:rotate-12 shadow-md"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete();
@@ -225,18 +185,37 @@ export function SearchResultCard({
                 <Trash2 className="h-3 w-3" />
               </Button>
             </div>
-          )}
+          </div>
         </div>
+
+        <DropdownMenuContent
+          align="end"
+          onCloseAutoFocus={(e) => e.preventDefault()}
+          className="w-48 p-1 bg-background/90 backdrop-blur-xl border-border/50 shadow-xl rounded-xl"
+        >
+          {!isWatched && onMarkWatched && (
+            <DropdownMenuItem onClick={onMarkWatched} className="rounded-lg focus:bg-accent/50 focus:text-accent-foreground cursor-pointer">
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              Mark Watched
+            </DropdownMenuItem>
+          )}
+          {!isWatching && onMarkWatching && (
+            <DropdownMenuItem onClick={onMarkWatching} className="rounded-lg focus:bg-accent/50 focus:text-accent-foreground cursor-pointer">
+              <Eye className="mr-2 h-4 w-4" />
+              Mark Watching
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
 
         {/* Metadata - Below Image */}
         <div className="mt-1 space-y-0.5 w-full min-w-0 flex-shrink-0">
-          {(result.year || result.episodes) && (
+          {(item.year || item.episodes) && (
             <div className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground">
-              {result.year && <span>{result.year}</span>}
-              {result.episodes && (
+              {item.year && <span>{item.year}</span>}
+              {item.episodes && (
                 <>
                   <span className="text-muted-foreground/40">•</span>
-                  <span>{result.episodes} eps</span>
+                  <span>{item.episodes} eps</span>
                 </>
               )}
             </div>
@@ -247,30 +226,11 @@ export function SearchResultCard({
               wordBreak: 'break-word',
               overflowWrap: 'anywhere',
             }}
-            title={result.title}
+            title={item.title}
           >
-            {result.title}
+            {item.title}
           </h3>
         </div>
-        
-        <DropdownMenuContent
-          align="end"
-          onCloseAutoFocus={(e) => e.preventDefault()}
-          className="w-48 p-1 bg-background/90 backdrop-blur-xl border-border/50 shadow-xl rounded-xl"
-        >
-          {!isWatched && onMarkWatched && (
-            <DropdownMenuItem onClick={onMarkWatched} disabled={isMarkingWatched} className="rounded-lg focus:bg-accent/50 focus:text-accent-foreground cursor-pointer">
-              <CheckCircle2 className="mr-2 h-4 w-4" />
-              {isMarkingWatched ? 'Marking...' : 'Mark Watched'}
-            </DropdownMenuItem>
-          )}
-          {!isWatching && onMarkWatching && (
-            <DropdownMenuItem onClick={onMarkWatching} disabled={isMarkingWatching} className="rounded-lg focus:bg-accent/50 focus:text-accent-foreground cursor-pointer">
-              <Eye className="mr-2 h-4 w-4" />
-              {isMarkingWatching ? 'Marking...' : 'Mark Watching'}
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuContent>
       </div>
     </DropdownMenu>
   );

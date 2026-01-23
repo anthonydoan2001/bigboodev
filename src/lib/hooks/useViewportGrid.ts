@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useSidebar } from '@/lib/providers/SidebarProvider';
 
 interface UseViewportGridOptions {
   gap?: number;
@@ -10,9 +11,9 @@ interface UseViewportGridOptions {
   textHeightBelowCard?: number; // Height of text below card (title, year, etc.)
 }
 
-export function useViewportGrid({ 
-  gap = 16, 
-  minCardWidth = 120, 
+export function useViewportGrid({
+  gap = 16,
+  minCardWidth = 120,
   maxCardWidth = 280,
   cardAspectRatio = 1.5, // 2/3 aspect ratio
   headerHeight = 200, // Nav + filters + spacing
@@ -20,10 +21,17 @@ export function useViewportGrid({
   textHeightBelowCard = 60, // Text below card (year + title)
 }: UseViewportGridOptions = {}) {
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Get sidebar state to recalculate grid when sidebar toggles
+  const { isCollapsed } = useSidebar();
+
+  // Use consistent initial values for SSR and CSR to prevent hydration errors
+  // These will be updated immediately on client mount via useEffect
   const [itemWidth, setItemWidth] = useState(200);
   const [columns, setColumns] = useState(6);
   const [rows, setRows] = useState(3);
   const [itemsPerPage, setItemsPerPage] = useState(18);
+  const [isReady, setIsReady] = useState(false); // New: track if grid is ready to display
   const isCalculatingRef = useRef(false);
   const lastWidthRef = useRef(0);
   const lastHeightRef = useRef(0);
@@ -33,26 +41,55 @@ export function useViewportGrid({
     // Calculate a better initial estimate based on viewport
     const getInitialEstimate = () => {
       if (typeof window === 'undefined') return { minWidth: 200, maxWidth: 280, gap: 16, preferredWidth: 200 };
-      
+
       const windowWidth = window.innerWidth;
       const isMobile = windowWidth < 640;
       const isTablet = windowWidth >= 640 && windowWidth < 1024;
-      
-      // Estimate card width based on viewport - try to match what calculateGrid will produce
+
+      // Estimate card width based on viewport - match calculateGrid logic exactly (20% larger)
       const estimatedGap = isMobile ? 12 : isTablet ? 14 : gap;
-      const estimatedMinWidth = isMobile ? Math.min(minCardWidth, 140) : isTablet ? Math.min(minCardWidth, 200) : minCardWidth;
-      const estimatedMaxWidth = isMobile ? Math.min(maxCardWidth, 220) : isTablet ? Math.min(maxCardWidth, 400) : maxCardWidth;
-      
-      // Estimate how many columns would fit - aim for a reasonable size
-      const preferredWidth = isMobile ? 160 : isTablet ? 250 : 300;
-      const estimatedColumns = Math.max(1, Math.floor((windowWidth - 64) / (preferredWidth + estimatedGap))); // 64px for padding
-      const estimatedCardWidth = Math.floor(((windowWidth - 64) - (estimatedGap * (estimatedColumns - 1))) / estimatedColumns);
-      const clampedWidth = Math.max(estimatedMinWidth, Math.min(estimatedMaxWidth, estimatedCardWidth));
-      
+      const estimatedMinWidth = isMobile ? Math.min(minCardWidth, 168) : isTablet ? Math.min(minCardWidth, 240) : minCardWidth;
+      const estimatedMaxWidth = isMobile ? Math.min(maxCardWidth, 264) : isTablet ? Math.min(maxCardWidth, 480) : maxCardWidth;
+
+      // Account for sidebar width (same logic as setCSSFallback)
+      let sidebarWidth = 0;
+      if (!isMobile) {
+        try {
+          const sidebarCollapsed = localStorage.getItem('sidebar-collapsed');
+          const isSidebarCollapsed = sidebarCollapsed ? JSON.parse(sidebarCollapsed) : false;
+          sidebarWidth = isSidebarCollapsed ? 70 : 256;
+        } catch {
+          sidebarWidth = 70; // Default to collapsed
+        }
+      }
+
+      // More accurate padding estimation + sidebar
+      const pagePaddingX = isMobile ? 16 : isTablet ? 24 : 48;
+      const availableWidth = windowWidth - sidebarWidth - pagePaddingX;
+
+      // Calculate columns using same logic as calculateGrid
+      const maxColumnsWithMaxWidth = Math.floor((availableWidth + estimatedGap) / (estimatedMaxWidth + estimatedGap));
+      const maxColumnsWithMinWidth = Math.floor((availableWidth + estimatedGap) / (estimatedMinWidth + estimatedGap));
+
+      let estimatedColumns = Math.max(1, maxColumnsWithMaxWidth);
+
+      if (maxColumnsWithMinWidth > maxColumnsWithMaxWidth) {
+        const preferredWidth = isMobile ? 192 : isTablet ? 300 : 360; // 20% larger
+        const preferredColumns = Math.floor((availableWidth + estimatedGap) / (preferredWidth + estimatedGap));
+        if (preferredColumns > 0) {
+          estimatedColumns = preferredColumns;
+        }
+      }
+
+      // Calculate actual card width
+      const totalGaps = estimatedGap * (estimatedColumns - 1);
+      let estimatedCardWidth = Math.floor((availableWidth - totalGaps) / estimatedColumns);
+      estimatedCardWidth = Math.max(estimatedMinWidth, Math.min(estimatedMaxWidth, estimatedCardWidth));
+
       return {
         minWidth: estimatedMinWidth,
         maxWidth: estimatedMaxWidth,
-        preferredWidth: clampedWidth,
+        preferredWidth: estimatedCardWidth,
         gap: estimatedGap
       };
     };
@@ -61,24 +98,65 @@ export function useViewportGrid({
     const setCSSFallback = () => {
       if (!containerRef.current) return;
 
+      // Only run on client side
+      if (typeof window === 'undefined') return;
+
       const estimate = getInitialEstimate();
 
-      // Calculate estimated columns for initial layout
-      const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 1920;
-      const estimatedPadding = 64; // Approximate padding
-      const availableWidth = windowWidth - estimatedPadding;
-      const estimatedColumns = Math.max(1, Math.floor(availableWidth / (estimate.preferredWidth + estimate.gap)));
+      // Calculate estimated columns for initial layout - account for sidebar
+      const windowWidth = window.innerWidth;
+      const isMobile = windowWidth < 640;
+      const isTablet = windowWidth >= 640 && windowWidth < 1024;
 
-      // Set CSS Grid fallback with calculated columns (no auto-fit)
-      // This prevents the flash of small cards and ensures consistent sizing
-      containerRef.current.style.gridTemplateColumns = `repeat(${estimatedColumns}, ${estimate.preferredWidth}px)`;
+      // Check sidebar state from localStorage to calculate accurate available width
+      let sidebarWidth = 0;
+      if (!isMobile) {
+        // Only desktop has visible sidebar (md: breakpoint is 768px)
+        try {
+          const sidebarCollapsed = localStorage.getItem('sidebar-collapsed');
+          const isCollapsed = sidebarCollapsed ? JSON.parse(sidebarCollapsed) : (isMobile ? true : false);
+          sidebarWidth = isCollapsed ? 70 : 256; // 70px collapsed, 256px (w-64) expanded
+        } catch {
+          sidebarWidth = 70; // Default to collapsed if can't read
+        }
+      }
+
+      // More accurate padding estimation based on actual page layout
+      // py-2 sm:py-3 md:py-4 px-2 sm:px-3 md:px-4 lg:px-6
+      const pagePaddingX = isMobile ? 16 : isTablet ? 24 : 48; // Left + Right padding
+      const availableWidth = windowWidth - sidebarWidth - pagePaddingX;
+
+      // Calculate columns with the same logic as calculateGrid
+      const maxColumnsWithMaxWidth = Math.floor((availableWidth + estimate.gap) / (estimate.maxWidth + estimate.gap));
+      const maxColumnsWithMinWidth = Math.floor((availableWidth + estimate.gap) / (estimate.minWidth + estimate.gap));
+
+      let estimatedColumns = Math.max(1, maxColumnsWithMaxWidth);
+
+      // If we can fit more items, try the preferred width
+      if (maxColumnsWithMinWidth > maxColumnsWithMaxWidth) {
+        const preferredColumns = Math.floor((availableWidth + estimate.gap) / (estimate.preferredWidth + estimate.gap));
+        if (preferredColumns > 0) {
+          estimatedColumns = preferredColumns;
+        }
+      }
+
+      // Calculate actual card width to fit exactly
+      const totalGaps = estimate.gap * (estimatedColumns - 1);
+      let cardWidth = Math.floor((availableWidth - totalGaps) / estimatedColumns);
+      cardWidth = Math.max(estimate.minWidth, Math.min(estimate.maxWidth, cardWidth));
+
+      // Set CSS Grid fallback with calculated columns and width - with transitions disabled
+      containerRef.current.classList.add('no-transition');
+      containerRef.current.style.gridTemplateColumns = `repeat(${estimatedColumns}, ${cardWidth}px)`;
       containerRef.current.style.setProperty('--item-max-width', `${estimate.maxWidth}px`);
-      containerRef.current.style.setProperty('--item-width', `${estimate.preferredWidth}px`);
+      containerRef.current.style.setProperty('--item-width', `${cardWidth}px`);
       containerRef.current.style.setProperty('gap', `${estimate.gap}px`);
       containerRef.current.style.width = '100%';
     };
 
     const calculateGrid = (forceRecalculate = false) => {
+      // Only run on client side
+      if (typeof window === 'undefined') return;
       if (!containerRef.current || isCalculatingRef.current) return;
       
       // Check multiple width sources for more reliable measurement
@@ -103,17 +181,8 @@ export function useViewportGrid({
         return;
       }
       
-      // If this is the first calculation, delay slightly to let CSS-based initial layout render
-      // This prevents the flash of small cards before JavaScript kicks in
-      // But if forceRecalculate is true, skip this delay
-      if (!hasInitializedRef.current && !forceRecalculate) {
-        setTimeout(() => {
-          if (containerRef.current && !hasInitializedRef.current) {
-            calculateGrid();
-          }
-        }, 150);
-        return;
-      }
+      // Run calculation immediately on first load to prevent flash of large cards
+      // No delay needed - CSS fallback handles initial layout
       
       // If container width is still too small, try to get a better measurement
       if (containerWidth < 200) {
@@ -142,17 +211,17 @@ export function useViewportGrid({
       // Responsive breakpoints
       const isMobile = containerWidth < 640; // sm breakpoint
       const isTablet = containerWidth >= 640 && containerWidth < 1024; // md breakpoint
+
+      // Responsive gap based on screen size - more compact
+      const responsiveGap = isMobile ? Math.max(gap - 4, 6) : isTablet ? Math.max(gap - 2, 8) : gap;
       
-      // Responsive gap based on screen size
-      const responsiveGap = isMobile ? 12 : isTablet ? 14 : gap;
+      // Responsive card sizes based on screen size - 20% larger
+      const responsiveMinWidth = isMobile ? Math.min(minCardWidth, 120) : isTablet ? Math.min(minCardWidth, 144) : minCardWidth;
+      const responsiveMaxWidth = isMobile ? Math.min(maxCardWidth, 192) : isTablet ? Math.min(maxCardWidth, 240) : maxCardWidth;
       
-      // Responsive card sizes based on screen size
-      const responsiveMinWidth = isMobile ? Math.min(minCardWidth, 140) : isTablet ? Math.min(minCardWidth, 200) : minCardWidth;
-      const responsiveMaxWidth = isMobile ? Math.min(maxCardWidth, 220) : isTablet ? Math.min(maxCardWidth, 400) : maxCardWidth;
-      
-      // Responsive header/footer heights for mobile
-      const responsiveHeaderHeight = isMobile ? Math.max(headerHeight - 40, 120) : headerHeight;
-      const responsiveFooterHeight = isMobile ? Math.max(footerHeight - 20, 60) : footerHeight;
+      // Responsive header/footer heights for mobile - more compact
+      const responsiveHeaderHeight = isMobile ? Math.max(headerHeight - 50, 100) : isTablet ? Math.max(headerHeight - 20, 130) : headerHeight;
+      const responsiveFooterHeight = isMobile ? Math.max(footerHeight - 30, 40) : isTablet ? Math.max(footerHeight - 15, 50) : footerHeight;
       
       // Calculate available viewport height
       const viewportHeight = window.innerHeight;
@@ -166,8 +235,8 @@ export function useViewportGrid({
       let targetColumns = Math.max(1, maxItemsWithMaxWidth);
       
       if (maxItemsWithMinWidth > maxItemsWithMaxWidth) {
-        // Try to find sweet spot - responsive preferred width
-        const preferredWidth = isMobile ? 160 : isTablet ? 250 : 300;
+        // Try to find sweet spot - responsive preferred width, 20% larger
+        const preferredWidth = isMobile ? 156 : isTablet ? 180 : 192; // 20% increase
         const preferredItems = Math.floor((containerWidth + responsiveGap) / (preferredWidth + responsiveGap));
         if (preferredItems > 0) {
           targetColumns = preferredItems;
@@ -181,15 +250,15 @@ export function useViewportGrid({
       
       // Calculate card height based on aspect ratio
       const cardImageHeight = calculatedWidth * cardAspectRatio;
-      // Total card height includes image + text below
-      const responsiveTextHeight = isMobile ? Math.max(textHeightBelowCard - 10, 50) : textHeightBelowCard;
+      // Total card height includes image + text below - more compact
+      const responsiveTextHeight = isMobile ? Math.max(textHeightBelowCard - 15, 35) : isTablet ? Math.max(textHeightBelowCard - 10, 40) : textHeightBelowCard;
       const totalCardHeight = cardImageHeight + responsiveTextHeight;
       
       // Calculate how many rows fit in available height
       // Use minimal buffer to maximize items per page while preventing cut-off
       const rowHeight = totalCardHeight + responsiveGap;
-      // Use a very small buffer (just 20px) to allow maximum items while preventing cut-off
-      const buffer = 20; // Small fixed buffer instead of percentage-based
+      // Use a minimal buffer - reduce for compact layout
+      const buffer = isMobile ? 10 : isTablet ? 15 : 20;
       const maxRows = Math.floor((availableHeight - buffer) / rowHeight);
       const targetRows = Math.max(1, maxRows);
       
@@ -219,6 +288,14 @@ export function useViewportGrid({
       
       // Set CSS variables and apply grid layout dynamically
       if (containerRef.current) {
+        // Disable transitions on first calculation to prevent visible shift
+        const isFirstCalculation = !hasInitializedRef.current;
+
+        if (isFirstCalculation) {
+          // Disable transitions for instant initial layout
+          containerRef.current.classList.add('no-transition');
+        }
+
         // Update CSS variables immediately for responsive behavior
         containerRef.current.style.setProperty('--item-width', `${calculatedWidth}px`);
         containerRef.current.style.setProperty('--item-max-width', `${responsiveMaxWidth}px`);
@@ -231,10 +308,21 @@ export function useViewportGrid({
         // Ensure container takes full width
         containerRef.current.style.width = '100%';
 
+        // Re-enable transitions after first calculation completes
+        if (isFirstCalculation) {
+          requestAnimationFrame(() => {
+            if (containerRef.current) {
+              containerRef.current.classList.remove('no-transition');
+            }
+          });
+        }
+
         // Use requestAnimationFrame only for marking as initialized
         requestAnimationFrame(() => {
           hasInitializedRef.current = true;
           isCalculatingRef.current = false;
+          // Mark grid as ready to display after first calculation
+          setIsReady(true);
         });
       } else {
         isCalculatingRef.current = false;
@@ -243,6 +331,8 @@ export function useViewportGrid({
 
     // Check if container width is stable before calculating
     const checkStabilityAndCalculate = () => {
+      // Only run on client side
+      if (typeof window === 'undefined') return;
       if (!containerRef.current) return;
       
       const width1 = Math.max(
@@ -298,52 +388,55 @@ export function useViewportGrid({
       }
     };
     
-    // Set up fallback immediately - this prevents initial layout shift
-    // Use a microtask to ensure DOM is ready but before paint
-    if (typeof window !== 'undefined') {
-      // Set initial state immediately based on viewport
-      const initialEstimate = getInitialEstimate();
-      setItemWidth(initialEstimate.preferredWidth);
-      
-      // Set CSS fallback synchronously if container exists
-      if (containerRef.current) {
-        setCSSFallback();
-      } else {
-        // If container doesn't exist yet, set it up as soon as it's available
-        const checkAndSet = () => {
-          if (containerRef.current) {
-            setCSSFallback();
-          } else {
-            requestAnimationFrame(checkAndSet);
-          }
-        };
-        requestAnimationFrame(checkAndSet);
-      }
+    // Set up fallback immediately - client-side only to prevent hydration errors
+    // Set CSS fallback synchronously if container exists
+    if (containerRef.current) {
+      setCSSFallback();
     }
+
+    // Also set it up as soon as it becomes available
+    const checkAndSet = () => {
+      if (containerRef.current && !containerRef.current.style.gridTemplateColumns) {
+        setCSSFallback();
+      }
+    };
+    requestAnimationFrame(checkAndSet);
     
-    // Set up observer after a short delay to ensure DOM is ready
+    // Set up CSS fallback immediately - synchronously
+    if (containerRef.current) {
+      setCSSFallback();
+    }
+
+    // Set up observer and retry fallback after DOM is ready
     const observerTimeout = setTimeout(() => {
       setupFallbackAndObserver();
-    }, 50);
+    }, 0);
 
-    // Initial calculation with stability check - reduced retries to prevent flickering
+    // Initial calculation - run immediately on client to prevent flash
     const timeouts: NodeJS.Timeout[] = [];
-    
-    // Try after a short delay to let layout settle
-    timeouts.push(setTimeout(() => {
-      requestAnimationFrame(() => {
-        checkStabilityAndCalculate();
-      });
-    }, 100));
-    
-    // Retry after layout is likely complete
-    timeouts.push(setTimeout(() => {
-      requestAnimationFrame(() => {
-        checkStabilityAndCalculate();
-      });
-    }, 300));
 
-    // Listen to window resize for viewport changes with debouncing
+    // First attempt - truly immediate calculation on mount (client-side only)
+    if (typeof window !== 'undefined' && containerRef.current) {
+      // Synchronous calculation - no async delays for instant layout
+      const rect = containerRef.current.getBoundingClientRect();
+      const containerWidth = Math.max(
+        rect.width,
+        containerRef.current.clientWidth,
+        containerRef.current.offsetWidth
+      );
+
+      if (containerWidth >= 200) {
+        // Container has valid width, calculate immediately
+        calculateGrid(true);
+      } else {
+        // Container not ready yet, use microtask
+        Promise.resolve().then(() => {
+          calculateGrid(true);
+        });
+      }
+    }
+
+    // Listen to window resize for viewport changes with debouncing (client-side only)
     // This is critical for updating itemsPerPage when viewport height changes
     let windowResizeTimeout: NodeJS.Timeout | null = null;
     const handleResize = () => {
@@ -354,8 +447,10 @@ export function useViewportGrid({
         requestAnimationFrame(() => {
           calculateGrid(true); // Pass true to force recalculation
         });
-      }, 100); // Reduced debounce for more responsive updates
+      }, 150); // Slightly longer debounce for smoother animations
     };
+
+    // Only add event listener on client side
     if (typeof window !== 'undefined') {
       window.addEventListener('resize', handleResize, { passive: true });
     }
@@ -366,10 +461,115 @@ export function useViewportGrid({
       if (resizeTimeout) clearTimeout(resizeTimeout);
       if (windowResizeTimeout) clearTimeout(windowResizeTimeout);
       resizeObserver.disconnect();
-      window.removeEventListener('resize', handleResize);
+      // Only remove event listener on client side
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('resize', handleResize);
+      }
       isCalculatingRef.current = false;
     };
-  }, [gap, minCardWidth, maxCardWidth, cardAspectRatio, headerHeight, footerHeight, textHeightBelowCard]);
+  }, [gap, minCardWidth, maxCardWidth, cardAspectRatio, headerHeight, footerHeight, textHeightBelowCard, isCollapsed]);
 
-  return { containerRef, itemWidth, columns, rows, itemsPerPage };
+  // Separate effect to handle sidebar toggle - recalculate grid smoothly
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!hasInitializedRef.current) return; // Skip on initial mount
+
+    // Sidebar uses 500ms transition - sync grid animation with it
+    // Multiple calculations during the transition for smooth adjustment
+    const timeouts: NodeJS.Timeout[] = [];
+
+    // Immediate calculation to start the transition
+    timeouts.push(setTimeout(() => {
+      lastWidthRef.current = 0;
+      lastHeightRef.current = 0;
+      window.dispatchEvent(new Event('resize'));
+    }, 50)); // Small delay to let sidebar start animating
+
+    // Mid-transition update for smoother animation
+    timeouts.push(setTimeout(() => {
+      lastWidthRef.current = 0;
+      lastHeightRef.current = 0;
+      window.dispatchEvent(new Event('resize'));
+    }, 250)); // Halfway through sidebar animation
+
+    // Final update after sidebar transition completes (500ms + buffer)
+    timeouts.push(setTimeout(() => {
+      lastWidthRef.current = 0;
+      lastHeightRef.current = 0;
+      window.dispatchEvent(new Event('resize'));
+    }, 550)); // After sidebar animation completes
+
+    return () => {
+      timeouts.forEach(timeout => clearTimeout(timeout));
+    };
+  }, [isCollapsed]);
+
+  // Handle tab visibility changes - recalculate when tab becomes visible (keep content visible)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden && hasInitializedRef.current) {
+        // Tab became visible - keep isReady true, just recalculate layout
+        // Use microtask for instant recalculation
+        Promise.resolve().then(() => {
+          lastWidthRef.current = 0;
+          lastHeightRef.current = 0;
+          window.dispatchEvent(new Event('resize'));
+        });
+      }
+    };
+
+    const handleFocus = () => {
+      // Window gained focus - keep isReady true, just recalculate layout
+      if (hasInitializedRef.current) {
+        Promise.resolve().then(() => {
+          lastWidthRef.current = 0;
+          lastHeightRef.current = 0;
+          window.dispatchEvent(new Event('resize'));
+        });
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
+  // Recalculate on mount - immediately, no visible shift
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // Immediate calculation on mount - no setTimeout to prevent visual jump
+    if (containerRef.current) {
+      // Force immediate recalculation before first paint
+      Promise.resolve().then(() => {
+        lastWidthRef.current = 0;
+        lastHeightRef.current = 0;
+
+        // Directly call calculateGrid instead of dispatching resize event
+        // This is faster and prevents the visual shift
+        if (containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect();
+          const containerWidth = Math.max(
+            rect.width,
+            containerRef.current.clientWidth,
+            containerRef.current.offsetWidth
+          );
+
+          if (containerWidth >= 200) {
+            // Container is ready, calculate immediately
+            hasInitializedRef.current = false; // Reset to force recalculation
+            window.dispatchEvent(new Event('resize'));
+          }
+        }
+      });
+    }
+  }, []);
+
+  return { containerRef, itemWidth, columns, rows, itemsPerPage, isReady };
 }

@@ -5,7 +5,7 @@ import { useMemo, useEffect, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { WatchlistNav } from '@/components/watchlist/WatchlistNav';
-import { WatchlistCard } from '@/components/watchlist/WatchlistCard';
+import { GridCard } from '@/components/watchlist/GridCard';
 import { CardSkeleton } from '@/components/watchlist/CardSkeleton';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { useWatchlistMutations } from '@/lib/hooks/useWatchlistMutations';
@@ -22,9 +22,13 @@ function AnimeContent() {
   const { watchlistItems, isLoading } = useWatchlist();
   const { deleteMutation, markWatchedMutation, markWatchingMutation } = useWatchlistMutations();
   
-  const { containerRef, itemsPerPage } = useViewportGrid({
+  const { containerRef, itemsPerPage, isReady } = useViewportGrid({
     headerHeight: 140, // Nav + spacing (no filters)
     footerHeight: 0, // No footer - pagination is in header
+    minCardWidth: 120, // 20% larger than before (was 100)
+    maxCardWidth: 204, // 20% larger than before (was 170)
+    gap: 8, // Tighter gap between cards
+    textHeightBelowCard: 45, // Compact text area
   });
 
   // Filter watchlist items to only show anime
@@ -95,9 +99,9 @@ function AnimeContent() {
           </div>
 
           {/* Anime Results - Grid Layout - NO SCROLL */}
-          {isLoading ? (
+          {isLoading || !isReady ? (
             <div className="flex-1 min-h-0 w-full overflow-hidden">
-              <div ref={containerRef} className="watchlist-grid gap-3 sm:gap-4 w-full h-full overflow-hidden" style={{ gridAutoRows: 'min-content' }}>
+              <div ref={containerRef} className="watchlist-grid w-full h-full overflow-hidden" style={{ gridAutoRows: 'min-content' }}>
                 {Array.from({ length: itemsPerPage || 18 }).map((_, i) => (
                   <div key={i} style={{ width: '100%', minWidth: 0 }}>
                     <CardSkeleton />
@@ -107,10 +111,10 @@ function AnimeContent() {
             </div>
           ) : paginatedAnimeItems.length > 0 ? (
             <div className="flex-1 min-h-0 w-full overflow-hidden">
-              <div ref={containerRef} className="watchlist-grid gap-3 sm:gap-4 w-full h-full overflow-hidden" style={{ gridAutoRows: 'min-content' }}>
+              <div ref={containerRef} className="watchlist-grid w-full h-full overflow-hidden" style={{ gridAutoRows: 'min-content' }}>
                 {paginatedAnimeItems.map((item) => (
                   <div key={item.id} style={{ width: '100%', minWidth: 0 }}>
-                    <WatchlistCard
+                    <GridCard
                       item={item}
                       onDelete={() => deleteMutation.mutate(item.id)}
                       onMarkWatched={() => markWatchedMutation.mutate({ id: item.id })}

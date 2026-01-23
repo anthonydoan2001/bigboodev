@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { WatchlistNav } from '@/components/watchlist/WatchlistNav';
-import { WatchlistCard } from '@/components/watchlist/WatchlistCard';
+import { GridCard } from '@/components/watchlist/GridCard';
 import { CardSkeleton } from '@/components/watchlist/CardSkeleton';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { useWatchlistMutations } from '@/lib/hooks/useWatchlistMutations';
@@ -24,9 +24,13 @@ function WatchedContent() {
   const { watchedItems, isLoading } = useWatchlist();
   const { deleteMutation } = useWatchlistMutations();
   
-  const { containerRef, itemsPerPage } = useViewportGrid({
-    headerHeight: 180, // Nav + filters + spacing
+  const { containerRef, itemsPerPage, isReady } = useViewportGrid({
+    headerHeight: 160, // Nav + filters + spacing
     footerHeight: 0, // No footer - pagination is in header
+    minCardWidth: 120, // 20% larger than before (was 100)
+    maxCardWidth: 204, // 20% larger than before (was 170)
+    gap: 8, // Tighter gap between cards
+    textHeightBelowCard: 45, // Compact text area
   });
 
   // Filter watched items based on selected filter
@@ -68,8 +72,8 @@ function WatchedContent() {
   };
 
   return (
-    <div className="w-full h-screen flex flex-col py-4 sm:py-6 md:py-8 px-3 sm:px-4 md:px-6 lg:px-8 overflow-hidden">
-      <div className="w-full flex flex-col h-full space-y-4 sm:space-y-6">
+    <div className="w-full h-screen flex flex-col py-2 sm:py-3 md:py-4 px-2 sm:px-3 md:px-4 lg:px-6 overflow-hidden">
+      <div className="w-full flex flex-col h-full space-y-2 sm:space-y-3 md:space-y-4">
         <Suspense fallback={<div className="h-10 w-full bg-muted animate-pulse rounded flex-shrink-0" />}>
           <WatchlistNav />
         </Suspense>
@@ -144,11 +148,11 @@ function WatchedContent() {
           </div>
 
           {/* Watched Results - Grid Layout - NO SCROLL */}
-          {isLoading ? (
+          {isLoading || !isReady ? (
             <div className="flex-1 min-h-0 w-full overflow-hidden">
               <div
                 ref={containerRef}
-                className="watchlist-grid gap-3 sm:gap-4 w-full h-full overflow-hidden"
+                className="watchlist-grid w-full h-full overflow-hidden"
                 style={{
                   gridAutoRows: 'min-content'
                 }}
@@ -164,14 +168,15 @@ function WatchedContent() {
             <div className="flex-1 min-h-0 w-full overflow-hidden">
               <div
                 ref={containerRef}
-                className="watchlist-grid gap-3 sm:gap-4 w-full h-full overflow-hidden"
+                className="watchlist-grid w-full h-full overflow-hidden"
                 style={{
-                  gridAutoRows: 'min-content'
+                  gridAutoRows: 'min-content',
+                  opacity: 1
                 }}
               >
                 {paginatedWatchedItems.map((item) => (
                   <div key={item.id} style={{ width: '100%', minWidth: 0 }}>
-                    <WatchlistCard
+                    <GridCard
                       item={item}
                       onDelete={() => deleteMutation.mutate(item.id)}
                       disableContextMenu={true}

@@ -231,6 +231,30 @@
     overflow-x: hidden;
     justify-content: center;
     align-content: start;
+    /* Smooth gap transition to match sidebar animation */
+    transition: gap 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Smooth card transitions when grid changes - match sidebar 500ms timing */
+  .watchlist-grid > * {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Disable transitions on initial load to prevent visual jump */
+  .watchlist-grid.no-transition,
+  .watchlist-grid.no-transition > * {
+    transition: none !important;
+  }
+
+  /* GPU acceleration for better performance during transitions */
+  @media (prefers-reduced-motion: no-preference) {
+    .watchlist-grid {
+      will-change: gap;
+    }
+
+    .watchlist-grid > * {
+      will-change: transform;
+    }
   }
 
   /* Responsive grid for game cards - JavaScript controls columns dynamically */
