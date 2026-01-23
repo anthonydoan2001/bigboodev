@@ -319,118 +319,117 @@ function WatchlistContent() {
         {/* Content */}
         {showingSearch ? (
           <div className="flex flex-col flex-1 min-h-0 space-y-4">
-            {searchLoading || !searchGridReady ? (
+            <div className="flex flex-col flex-1 min-h-0 space-y-4">
+              {/* Search Filters */}
+              <div className="flex items-center justify-between min-h-[36px] flex-shrink-0">
+                {searchResults.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <Button
+                      variant={searchFilter === 'all' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleFilterChange('all')}
+                      className="text-caption sm:text-body-sm"
+                    >
+                      All ({searchResults.length})
+                    </Button>
+                    <Button
+                      variant={searchFilter === 'anime' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleFilterChange('anime')}
+                      className="text-caption sm:text-body-sm"
+                    >
+                      Anime ({searchResults.filter(item => item.type.toLowerCase() === 'anime').length})
+                    </Button>
+                    <Button
+                      variant={searchFilter === 'movie' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleFilterChange('movie')}
+                      className="text-caption sm:text-body-sm"
+                    >
+                      Movie ({searchResults.filter(item => item.type.toLowerCase() === 'movie').length})
+                    </Button>
+                    <Button
+                      variant={searchFilter === 'show' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleFilterChange('show')}
+                      className="text-caption sm:text-body-sm"
+                    >
+                      TV Show ({searchResults.filter(item => item.type.toLowerCase() === 'show').length})
+                    </Button>
+                  </div>
+                ) : (
+                  <div></div>
+                )}
+                {/* Pagination Controls */}
+                {totalSearchPages > 1 ? (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(Math.max(1, searchPage - 1))}
+                      disabled={searchPage === 1}
+                      className="text-caption sm:text-body-sm"
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-caption sm:text-body-sm text-muted-foreground whitespace-nowrap">
+                      Page {searchPage} of {totalSearchPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(Math.min(totalSearchPages, searchPage + 1))}
+                      disabled={searchPage === totalSearchPages}
+                      className="text-caption sm:text-body-sm"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                ) : (
+                  <div></div>
+                )}
+              </div>
+
+              {/* Search Results - Grid Layout - NO SCROLL */}
               <div className="flex-1 min-h-0 w-full overflow-hidden">
                 <div ref={searchContainerRef} className="watchlist-grid w-full h-full overflow-hidden" style={{ gridAutoRows: 'min-content' }}>
-                  {Array.from({ length: searchItemsPerPage || 18 }).map((_, i) => (
-                    <div key={i} style={{ width: '100%', minWidth: 0 }}>
-                      <CardSkeleton />
-                    </div>
-                  ))}
+                  {searchLoading || !searchGridReady ? (
+                    Array.from({ length: searchItemsPerPage || 18 }).map((_, i) => (
+                      <div key={`skeleton-${i}`} style={{ width: '100%', minWidth: 0 }}>
+                        <CardSkeleton />
+                      </div>
+                    ))
+                  ) : paginatedSearchResults.length > 0 ? (
+                    paginatedSearchResults.map((result) => {
+                      const alreadyInList = isInWatchlist(result.externalId, result.type);
+                      const itemWatched = isWatched(result.externalId, result.type);
+                      const itemWatching = isWatching(result.externalId, result.type);
+                      const itemId = getWatchlistItemId(result.externalId, result.type);
+                      return (
+                        <div key={result.id} style={{ width: '100%', minWidth: 0 }}>
+                          <SearchResultCard
+                            result={result}
+                            onAdd={() => addMutation.mutate(result)}
+                            isAdding={addMutation.isPending}
+                            alreadyInList={alreadyInList}
+                            isWatched={itemWatched}
+                            isWatching={itemWatching}
+                            onMarkWatched={() => markWatchedMutation.mutate({ item: result })}
+                            isMarkingWatched={markWatchedMutation.isPending}
+                            onMarkWatching={() => markWatchingMutation.mutate({ item: result })}
+                            isMarkingWatching={markWatchingMutation.isPending}
+                            onDelete={itemId ? () => deleteMutation.mutate(itemId) : undefined}
+                          />
+                        </div>
+                      );
+                    })
+                  ) : null}
                 </div>
               </div>
-            ) : (
-              <div className="flex flex-col flex-1 min-h-0 space-y-4">
-                {/* Search Filters */}
-                <div className="flex items-center justify-between min-h-[36px] flex-shrink-0">
-                  {searchResults.length > 0 ? (
-                    <div className="flex flex-wrap gap-2 items-center">
-                      <Button
-                        variant={searchFilter === 'all' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleFilterChange('all')}
-                        className="text-caption sm:text-body-sm"
-                      >
-                        All ({searchResults.length})
-                      </Button>
-                      <Button
-                        variant={searchFilter === 'anime' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleFilterChange('anime')}
-                        className="text-caption sm:text-body-sm"
-                      >
-                        Anime ({searchResults.filter(item => item.type.toLowerCase() === 'anime').length})
-                      </Button>
-                      <Button
-                        variant={searchFilter === 'movie' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleFilterChange('movie')}
-                        className="text-caption sm:text-body-sm"
-                      >
-                        Movie ({searchResults.filter(item => item.type.toLowerCase() === 'movie').length})
-                      </Button>
-                      <Button
-                        variant={searchFilter === 'show' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleFilterChange('show')}
-                        className="text-caption sm:text-body-sm"
-                      >
-                        TV Show ({searchResults.filter(item => item.type.toLowerCase() === 'show').length})
-                      </Button>
-                    </div>
-                  ) : (
-                    <div></div>
-                  )}
-                  {/* Pagination Controls */}
-                  {totalSearchPages > 1 ? (
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePageChange(Math.max(1, searchPage - 1))}
-                        disabled={searchPage === 1}
-                        className="text-caption sm:text-body-sm"
-                      >
-                        Previous
-                      </Button>
-                      <span className="text-caption sm:text-body-sm text-muted-foreground whitespace-nowrap">
-                        Page {searchPage} of {totalSearchPages}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePageChange(Math.min(totalSearchPages, searchPage + 1))}
-                        disabled={searchPage === totalSearchPages}
-                        className="text-caption sm:text-body-sm"
-                      >
-                        Next
-                      </Button>
-                    </div>
-                  ) : (
-                    <div></div>
-                  )}
-                </div>
 
-                {/* Search Results - Grid Layout - NO SCROLL */}
-                {paginatedSearchResults.length > 0 ? (
-                  <div className="flex-1 min-h-0 w-full overflow-hidden">
-                    <div ref={searchContainerRef} className="watchlist-grid w-full h-full overflow-hidden" style={{ gridAutoRows: 'min-content' }}>
-                      {paginatedSearchResults.map((result) => {
-                        const alreadyInList = isInWatchlist(result.externalId, result.type);
-                        const itemWatched = isWatched(result.externalId, result.type);
-                        const itemWatching = isWatching(result.externalId, result.type);
-                        const itemId = getWatchlistItemId(result.externalId, result.type);
-                        return (
-                          <div key={result.id} style={{ width: '100%', minWidth: 0 }}>
-                            <SearchResultCard
-                              result={result}
-                              onAdd={() => addMutation.mutate(result)}
-                              isAdding={addMutation.isPending}
-                              alreadyInList={alreadyInList}
-                              isWatched={itemWatched}
-                              isWatching={itemWatching}
-                              onMarkWatched={() => markWatchedMutation.mutate({ item: result })}
-                              isMarkingWatched={markWatchedMutation.isPending}
-                              onMarkWatching={() => markWatchingMutation.mutate({ item: result })}
-                              isMarkingWatching={markWatchingMutation.isPending}
-                              onDelete={itemId ? () => deleteMutation.mutate(itemId) : undefined}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : searchResults.length > 0 ? (
+              {/* Empty States */}
+              {!searchLoading && searchGridReady && paginatedSearchResults.length === 0 && (
+                searchResults.length > 0 ? (
                   <Card>
                     <CardContent className="p-12 text-center text-body text-muted-foreground">
                       <p>No {searchFilter === 'all' ? '' : searchFilter} results found for "{searchQuery}"</p>
@@ -442,9 +441,9 @@ function WatchlistContent() {
                       <p>No results found for "{searchQuery}"</p>
                     </CardContent>
                   </Card>
-                )}
-              </div>
-            )}
+                )
+              )}
+            </div>
           </div>
         ) : (
           <div className="space-y-8">

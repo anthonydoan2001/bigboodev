@@ -148,7 +148,7 @@ function WatchedContent() {
           </div>
 
           {/* Watched Results - Grid Layout - NO SCROLL */}
-          {isLoading || !isReady ? (
+          {isLoading || !isReady || paginatedWatchedItems.length > 0 ? (
             <div className="flex-1 min-h-0 w-full overflow-hidden">
               <div
                 ref={containerRef}
@@ -157,33 +157,24 @@ function WatchedContent() {
                   gridAutoRows: 'min-content'
                 }}
               >
-                {Array.from({ length: itemsPerPage || 18 }).map((_, i) => (
-                  <div key={i} style={{ width: '100%', minWidth: 0 }}>
-                    <CardSkeleton />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : paginatedWatchedItems.length > 0 ? (
-            <div className="flex-1 min-h-0 w-full overflow-hidden">
-              <div
-                ref={containerRef}
-                className="watchlist-grid w-full h-full overflow-hidden"
-                style={{
-                  gridAutoRows: 'min-content',
-                  opacity: 1
-                }}
-              >
-                {paginatedWatchedItems.map((item) => (
-                  <div key={item.id} style={{ width: '100%', minWidth: 0 }}>
-                    <GridCard
-                      item={item}
-                      onDelete={() => deleteMutation.mutate(item.id)}
-                      disableContextMenu={true}
-                      hideStatusBadge={true}
-                    />
-                  </div>
-                ))}
+                {isLoading || !isReady ? (
+                  Array.from({ length: itemsPerPage || 18 }).map((_, i) => (
+                    <div key={`skeleton-${i}`} style={{ width: '100%', minWidth: 0 }}>
+                      <CardSkeleton />
+                    </div>
+                  ))
+                ) : (
+                  paginatedWatchedItems.map((item) => (
+                    <div key={item.id} style={{ width: '100%', minWidth: 0 }}>
+                      <GridCard
+                        item={item}
+                        onDelete={() => deleteMutation.mutate(item.id)}
+                        disableContextMenu={true}
+                        hideStatusBadge={true}
+                      />
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           ) : watchedItems.length > 0 ? (

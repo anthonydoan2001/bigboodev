@@ -140,7 +140,7 @@ export function SearchResultCard({
             <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-black/95"></div>
           </div>
 
-          <div className="relative aspect-[2/3] overflow-hidden rounded-xl">
+          <div className="relative aspect-[2/3] overflow-hidden rounded-xl bg-muted">
             {result.image ? (
               <Image
                 src={result.image}
@@ -149,6 +149,7 @@ export function SearchResultCard({
                 className="object-cover transition-transform duration-500 group-hover:scale-110"
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1536px) 25vw, 20vw"
                 priority={false}
+                style={{ width: '100%', height: '100%' }}
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-secondary text-muted-foreground">
