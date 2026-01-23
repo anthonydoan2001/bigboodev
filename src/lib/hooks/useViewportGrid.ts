@@ -31,7 +31,8 @@ export function useViewportGrid({
   const [columns, setColumns] = useState(6);
   const [rows, setRows] = useState(3);
   const [itemsPerPage, setItemsPerPage] = useState(18);
-  const [isReady, setIsReady] = useState(false); // New: track if grid is ready to display
+  // Initialize isReady to false for SSR, but will be set to true immediately on client mount
+  const [isReady, setIsReady] = useState(typeof window !== 'undefined' ? false : false);
   const isCalculatingRef = useRef(false);
   const lastWidthRef = useRef(0);
   const lastHeightRef = useRef(0);
@@ -152,6 +153,12 @@ export function useViewportGrid({
       containerRef.current.style.setProperty('--item-width', `${cardWidth}px`);
       containerRef.current.style.setProperty('gap', `${estimate.gap}px`);
       containerRef.current.style.width = '100%';
+      
+      // Update state immediately to match CSS fallback - prevents layout shift
+      setItemWidth(cardWidth);
+      setColumns(estimatedColumns);
+      // Mark as ready immediately since CSS fallback is set synchronously
+      setIsReady(true);
     };
 
     const calculateGrid = (forceRecalculate = false) => {
@@ -317,11 +324,11 @@ export function useViewportGrid({
           });
         }
 
-        // Use requestAnimationFrame only for marking as initialized
+        // Mark as initialized - isReady is already true from CSS fallback
         requestAnimationFrame(() => {
           hasInitializedRef.current = true;
           isCalculatingRef.current = false;
-          // Mark grid as ready to display after first calculation
+          // isReady is already true from setCSSFallback, but ensure it stays true
           setIsReady(true);
         });
       } else {
@@ -391,21 +398,16 @@ export function useViewportGrid({
     // Set up fallback immediately - client-side only to prevent hydration errors
     // Set CSS fallback synchronously if container exists
     if (containerRef.current) {
-      setCSSFallback();
+      setCSSFallback(); // This sets isReady=true immediately
     }
 
     // Also set it up as soon as it becomes available
     const checkAndSet = () => {
       if (containerRef.current && !containerRef.current.style.gridTemplateColumns) {
-        setCSSFallback();
+        setCSSFallback(); // This sets isReady=true immediately
       }
     };
     requestAnimationFrame(checkAndSet);
-
-    // Set up CSS fallback immediately - synchronously
-    if (containerRef.current) {
-      setCSSFallback();
-    }
 
     // Set up observer and retry fallback after DOM is ready
     const observerTimeout = setTimeout(() => {
