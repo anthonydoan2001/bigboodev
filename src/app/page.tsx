@@ -1,6 +1,7 @@
 'use client';
 
 import { CalendarWidget } from "@/components/dashboard/CalendarWidget";
+import { GmailWidget } from "@/components/dashboard/GmailWidget";
 import { StocksCryptoWidget } from "@/components/dashboard/StocksCryptoWidget";
 import { WeatherWidget } from "@/components/dashboard/WeatherWidget";
 import { fetchQuote } from "@/lib/api/quote";
@@ -201,6 +202,11 @@ export default function Home() {
         {/* Stocks & Crypto Widget */}
         <div className="col-span-1">
           <StocksCryptoWidget />
+        </div>
+
+        {/* Gmail Widget */}
+        <div className="col-span-1">
+          <GmailWidget />
         </div>
       </div>
     </div>
