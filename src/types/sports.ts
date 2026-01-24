@@ -56,6 +56,8 @@ export interface TeamStanding {
   losses: number;
   winPercentage: number;
   streak: string; // e.g., "W3" or "L2"
+  last10Wins?: number;
+  last10Losses?: number;
   conference: 'Eastern' | 'Western';
 }
 

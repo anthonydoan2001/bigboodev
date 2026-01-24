@@ -984,6 +984,10 @@ export async function fetchStandings(sport: SportType): Promise<TeamStanding[]> 
             const losses = stats.find((s: any) => s.name === 'losses')?.value || 0;
             const winPercent = stats.find((s: any) => s.name === 'winPercent')?.value || 0;
             const streak = stats.find((s: any) => s.name === 'streak')?.displayValue || '-';
+            const last10WinsStat = stats.find((s: any) => s.name === 'lastTenWins' || s.name === 'last10Wins');
+            const last10LossesStat = stats.find((s: any) => s.name === 'lastTenLosses' || s.name === 'last10Losses');
+            const last10Wins = last10WinsStat ? parseInt(last10WinsStat.value) : undefined;
+            const last10Losses = last10LossesStat ? parseInt(last10LossesStat.value) : undefined;
 
             conferenceTeams.push({
               rank: 0, // Will be assigned after sorting
@@ -993,6 +997,8 @@ export async function fetchStandings(sport: SportType): Promise<TeamStanding[]> 
               losses: parseInt(losses),
               winPercentage: parseFloat(winPercent),
               streak: streak,
+              last10Wins,
+              last10Losses,
               conference: isEastern ? 'Eastern' : isWestern ? 'Western' : 'Eastern',
             });
           });
