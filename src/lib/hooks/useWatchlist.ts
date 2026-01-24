@@ -1,5 +1,6 @@
 import { WatchlistItem } from '@prisma/client';
 import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { getAuthHeaders } from '@/lib/api-client';
 
 export function useWatchlist() {
@@ -17,15 +18,25 @@ export function useWatchlist() {
   });
 
   const allItems: WatchlistItem[] = data?.items || [];
-  const watchlistItems: WatchlistItem[] = allItems.filter(
-    item => item.status !== 'WATCHED' && item.status !== 'WATCHING'
-  );
-  const watchedItems: WatchlistItem[] = allItems
-    .filter(item => item.status === 'WATCHED')
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  const watchingItems: WatchlistItem[] = allItems
-    .filter(item => item.status === 'WATCHING')
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  // Memoize categorized items - single pass through all items
+  const { watchlistItems, watchedItems, watchingItems } = useMemo(() => {
+    const watchlist: WatchlistItem[] = [];
+    const watched: WatchlistItem[] = [];
+    const watching: WatchlistItem[] = [];
+
+    for (const item of allItems) {
+      if (item.status === 'WATCHED') watched.push(item);
+      else if (item.status === 'WATCHING') watching.push(item);
+      else watchlist.push(item);
+    }
+
+    // Sort by createdAt descending
+    watched.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    watching.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return { watchlistItems: watchlist, watchedItems: watched, watchingItems: watching };
+  }, [allItems]);
 
   return {
     allItems,
