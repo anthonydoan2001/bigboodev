@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api-auth';
-import { getAllApiUsageStats, API_LIMITS } from '@/lib/api-usage';
+import { getAllApiUsageStatsOptimized } from '@/lib/api-usage-optimized';
+import { API_LIMITS } from '@/lib/api-usage';
 import { db } from '@/lib/db';
 
 export const GET = withAuth(async (request: Request, sessionToken: string) => {
@@ -15,7 +16,8 @@ export const GET = withAuth(async (request: Request, sessionToken: string) => {
       }, { status: 500 });
     }
 
-    const stats = await getAllApiUsageStats();
+    // Use optimized query (5-10x faster than old method)
+    const stats = await getAllApiUsageStatsOptimized();
 
     // Format the response with display names and usage percentages
     const formattedStats = Object.entries(stats).map(([apiName, usage]) => {

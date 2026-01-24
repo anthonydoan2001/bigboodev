@@ -1,7 +1,6 @@
 import { TeamStanding } from '@/types/sports';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
-import { TrendingUp, TrendingDown } from 'lucide-react';
 
 interface StandingsProps {
   standings: TeamStanding[];
@@ -26,7 +25,7 @@ export function Standings({ standings }: StandingsProps) {
                 <th className="px-4 py-3 text-left text-caption font-semibold text-muted-foreground">Team</th>
                 <th className="px-4 py-3 text-center text-caption font-semibold text-muted-foreground">W</th>
                 <th className="px-4 py-3 text-center text-caption font-semibold text-muted-foreground">L</th>
-                <th className="px-4 py-3 text-center text-caption font-semibold text-muted-foreground">PCT</th>
+                <th className="px-4 py-3 text-center text-caption font-semibold text-muted-foreground">Last 10</th>
                 <th className="px-4 py-3 text-center text-caption font-semibold text-muted-foreground">Streak</th>
               </tr>
             </thead>
@@ -66,24 +65,18 @@ export function Standings({ standings }: StandingsProps) {
                       {team.losses}
                     </td>
                     <td className="px-4 py-3 text-center text-body-sm tabular-nums text-muted-foreground">
-                      {team.winPercentage.toFixed(3)}
+                      {team.last10Wins !== undefined && team.last10Losses !== undefined
+                        ? `${team.last10Wins}-${team.last10Losses}`
+                        : '-'}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-1">
-                        {isWinStreak && (
-                          <TrendingUp className="w-3.5 h-3.5 text-green-500" />
-                        )}
-                        {isLossStreak && (
-                          <TrendingDown className="w-3.5 h-3.5 text-red-500" />
-                        )}
-                        <span className={`text-body-sm font-semibold tabular-nums ${
-                          isWinStreak ? 'text-green-600 dark:text-green-500' :
-                          isLossStreak ? 'text-red-600 dark:text-red-500' :
-                          'text-muted-foreground'
-                        }`}>
-                          {team.streak}
-                        </span>
-                      </div>
+                      <span className={`text-body-sm font-semibold tabular-nums ${
+                        isWinStreak ? 'text-green-600 dark:text-green-500' :
+                        isLossStreak ? 'text-red-600 dark:text-red-500' :
+                        'text-muted-foreground'
+                      }`}>
+                        {team.streak}
+                      </span>
                     </td>
                   </tr>
                 );

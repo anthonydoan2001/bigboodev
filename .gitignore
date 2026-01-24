@@ -50,3 +50,5 @@ next-env.d.ts
 *_ai.md
 *_claude.md
 *.claude.md
+API_MONITORING_ENHANCEMENT.md
+MIGRATION_CHECKLIST.md
