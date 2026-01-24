@@ -4,8 +4,12 @@ import { CalendarWidget } from "@/components/dashboard/CalendarWidget";
 import { StocksCryptoWidget } from "@/components/dashboard/StocksCryptoWidget";
 import { WeatherWidget } from "@/components/dashboard/WeatherWidget";
 import { fetchQuote } from "@/lib/api/quote";
+import { fetchWeather } from "@/lib/api/weather";
+import { fetchStockQuotes } from "@/lib/api/stocks";
+import { fetchCryptoQuotesFromDB } from "@/lib/api/crypto";
 import { useQuery } from "@tanstack/react-query";
-import { memo, useEffect, useState, useMemo, useCallback } from "react";
+import { memo, useEffect, useState, useMemo } from "react";
+import { Loader2 } from "lucide-react";
 
 // Memoized greeting calculation - only recalculates when hour changes
 function getGreeting(hour: number): string {
@@ -114,6 +118,36 @@ export default function Home() {
     refetchOnWindowFocus: false,
   });
 
+  // Fetch weather data
+  const { isLoading: weatherLoading } = useQuery({
+    queryKey: ['weather'],
+    queryFn: fetchWeather,
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+
+  // Fetch stocks data
+  const { isLoading: stocksLoading } = useQuery({
+    queryKey: ['stockQuotes'],
+    queryFn: fetchStockQuotes,
+    staleTime: 3600000,
+    refetchInterval: 3600000,
+    refetchOnMount: 'always',
+  });
+
+  // Fetch crypto data
+  const { isLoading: cryptoLoading } = useQuery({
+    queryKey: ['cryptoQuotes'],
+    queryFn: fetchCryptoQuotesFromDB,
+    staleTime: 3600000,
+    refetchInterval: 3600000,
+    refetchOnMount: 'always',
+  });
+
+  // Check if all widgets are loading
+  const isLoading = quoteLoading || weatherLoading || stocksLoading || cryptoLoading;
+
   // Update greeting only when hour changes (check every minute)
   useEffect(() => {
     let lastHour = getHoustonHour();
@@ -128,6 +162,18 @@ export default function Home() {
 
     return () => clearInterval(greetingInterval);
   }, []);
+
+  // Show loading spinner until all widgets are loaded
+  if (isLoading) {
+    return (
+      <div className="w-full py-6 px-4 sm:px-6 lg:px-8 min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-12 h-12 text-primary animate-spin" />
+          <p className="text-muted-foreground text-body">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full py-6 px-4 sm:px-6 lg:px-8 min-h-screen">
