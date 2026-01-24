@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/lib/providers/SidebarProvider';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, Film, Gamepad2, Home, Settings, Trophy, CheckSquare } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Film, Home, Settings, Trophy, CheckSquare } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ThemeToggle } from './ThemeToggle';
@@ -23,11 +23,6 @@ const navItems = [
     name: 'Watchlist',
     href: '/watchlist',
     icon: Film,
-  },
-  {
-    name: 'Games',
-    href: '/games',
-    icon: Gamepad2,
   },
   {
     name: 'Tasks',
