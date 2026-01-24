@@ -278,3 +278,16 @@ model Game {
   @@index([status, createdAt])
   @@map("games")
 }
+
+model GmailToken {
+  id           String   @id @default(cuid())
+  accessToken  String   @map("access_token") @db.Text
+  refreshToken String   @map("refresh_token") @db.Text
+  expiresAt    DateTime @map("expires_at")
+  email        String   @unique
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([email])
+  @@map("gmail_tokens")
+}
