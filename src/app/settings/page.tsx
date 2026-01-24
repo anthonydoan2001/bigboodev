@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback, memo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { apiFetch } from '@/lib/api-client';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ApiUsageStat {
   apiName: string;
@@ -34,8 +35,8 @@ export default function SettingsPage() {
 
   useEffect(() => {
     fetchApiUsage();
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchApiUsage, 30000);
+    // Refresh every 60 seconds (reduced from 30s for better performance)
+    const interval = setInterval(fetchApiUsage, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -65,20 +66,23 @@ export default function SettingsPage() {
     }
   };
 
-  const formatLimit = (limit: number, unit: string): string => {
-    if (unit === 'second') return `${limit}/sec`;
-    if (unit === 'minute') return `${limit}/min`;
-    if (unit === 'hour') return `${limit}/hr`;
-    if (unit === 'day') return `${limit}/day`;
-    if (unit === 'month') return `${limit}/mo`;
-    return `${limit}`;
-  };
+  // Memoized helper functions
+  const formatLimit = useCallback((limit: number, unit: string): string => {
+    const unitMap: Record<string, string> = {
+      second: '/sec',
+      minute: '/min',
+      hour: '/hr',
+      day: '/day',
+      month: '/mo',
+    };
+    return `${limit}${unitMap[unit] || ''}`;
+  }, []);
 
-  const getUsageColor = (percentage: number): string => {
+  const getUsageColor = useCallback((percentage: number): string => {
     if (percentage >= 90) return 'text-destructive';
     if (percentage >= 75) return 'text-yellow-600 dark:text-yellow-500';
     return 'text-muted-foreground';
-  };
+  }, []);
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-6xl">
@@ -91,8 +95,28 @@ export default function SettingsPage() {
         </div>
 
         {loading && apiStats.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Loading API usage statistics...</p>
+          <div className="grid gap-6 md:grid-cols-2">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-6 w-32" />
+                    <Skeleton className="h-5 w-20" />
+                  </div>
+                  <Skeleton className="h-4 w-24 mt-1" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-2 w-full" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-2 w-full" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         ) : error ? (
           <Card>

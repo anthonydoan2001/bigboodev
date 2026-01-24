@@ -1,4 +1,5 @@
 import { LayoutWrapper } from "@/components/navigation/LayoutWrapper";
+import { WebVitals } from "@/components/performance/WebVitals";
 import { QueryProvider } from "@/lib/providers/QueryProvider";
 import { ThemeProvider } from "@/lib/providers/ThemeProvider";
 import type { Metadata } from "next";
@@ -39,6 +40,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <QueryProvider>
+            <WebVitals debug={process.env.NODE_ENV === 'development'} />
             <LayoutWrapper>
               {children}
             </LayoutWrapper>

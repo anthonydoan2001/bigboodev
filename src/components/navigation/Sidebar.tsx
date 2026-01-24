@@ -1,10 +1,10 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { PrefetchLink } from '@/components/performance/PrefetchLink';
 import { useSidebar } from '@/lib/providers/SidebarProvider';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, Film, Gamepad2, Home, Settings, Trophy, CheckSquare } from 'lucide-react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -95,7 +95,7 @@ export function Sidebar() {
               const Icon = item.icon;
 
               return (
-                <Link
+                <PrefetchLink
                   key={item.href}
                   href={item.href}
                   className={cn(
@@ -110,6 +110,7 @@ export function Sidebar() {
                     transitionDelay: isCollapsed ? '0ms' : `${index * 30}ms`
                   }}
                   title={isCollapsed ? item.name : undefined}
+                  prefetchDelay={50}
                 >
                   {isActive && !isCollapsed && (
                     <div
@@ -136,7 +137,7 @@ export function Sidebar() {
                   )}>
                     {item.name}
                   </span>
-                </Link>
+                </PrefetchLink>
               );
             })}
           </nav>

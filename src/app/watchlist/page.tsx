@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useMemo, useState, useEffect, useRef, Suspense } from 'react';
+import { useMemo, useState, useEffect, useRef, Suspense, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,47 @@ import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { useWatchlistMutations } from '@/lib/hooks/useWatchlistMutations';
 import { useViewportGrid } from '@/lib/hooks/useViewportGrid';
 import { WatchlistItem } from '@prisma/client';
+import { getAuthHeaders } from '@/lib/api-client';
+
+// Shared randomization utility - Fisher-Yates shuffle with stable order tracking
+function createStableRandomOrder<T extends { id: string }>(
+  items: T[],
+  orderMap: Map<string, number>,
+  isInitialized: { current: boolean },
+  limit: number = 21
+): T[] {
+  // Initialize order map on first call with items
+  if (!isInitialized.current && items.length > 0) {
+    const indices = items.map((_, i) => i);
+    // Fisher-Yates shuffle
+    for (let i = indices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+    items.forEach((item, i) => orderMap.set(item.id, indices[i]));
+    isInitialized.current = true;
+  }
+
+  if (!isInitialized.current) return items.slice(0, limit);
+
+  // Get max existing order for new items
+  const existingOrders = Array.from(orderMap.values()).filter(v => v < 10000);
+  const maxOrder = existingOrders.length > 0 ? Math.max(...existingOrders) : -1;
+
+  // Sort by stored order, assign new order to new items
+  return items
+    .map(item => {
+      let order = orderMap.get(item.id);
+      if (order === undefined) {
+        order = Math.random() * 1000 + maxOrder + 1000;
+        orderMap.set(item.id, order);
+      }
+      return { item, order };
+    })
+    .sort((a, b) => a.order - b.order)
+    .slice(0, limit)
+    .map(({ item }) => item);
+}
 
 function WatchlistContent() {
   const router = useRouter();
@@ -29,23 +70,20 @@ function WatchlistContent() {
   const { watchlistItems, watchedItems, watchingItems, allItems, isLoading: listLoading } = useWatchlist();
   const { addMutation, deleteMutation, markWatchedMutation, markWatchingMutation } = useWatchlistMutations();
 
-  // Stable randomized order - only created once per page load
+  // Stable randomized order refs - created once per page load
   const randomizedOrderRef = useRef<Map<string, number>>(new Map());
-  const hasInitializedRef = useRef(false);
-
-  // Separate refs for anime, movies, and shows randomization
+  const hasInitializedRef = useRef({ current: false });
   const animeOrderRef = useRef<Map<string, number>>(new Map());
+  const hasInitializedAnimeRef = useRef({ current: false });
   const moviesOrderRef = useRef<Map<string, number>>(new Map());
+  const hasInitializedMoviesRef = useRef({ current: false });
   const showsOrderRef = useRef<Map<string, number>>(new Map());
-  const hasInitializedAnimeRef = useRef(false);
-  const hasInitializedMoviesRef = useRef(false);
-  const hasInitializedShowsRef = useRef(false);
+  const hasInitializedShowsRef = useRef({ current: false });
 
-  // Search query
+  // Search query - static import instead of dynamic
   const { data: searchData, isLoading: searchLoading } = useQuery<{ results: UniversalSearchResult[] }>({
     queryKey: ['universal-search', searchQuery],
     queryFn: async () => {
-      const { getAuthHeaders } = await import('@/lib/api-client');
       const res = await fetch(`/api/watchlist/search/universal?query=${encodeURIComponent(searchQuery)}`, {
         headers: getAuthHeaders(),
         credentials: 'include',
@@ -57,190 +95,73 @@ function WatchlistContent() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Create stable randomized order only on initial load
-  useEffect(() => {
-    if (!hasInitializedRef.current && !listLoading && watchlistItems.length > 0) {
-      const watchlistOrder = watchlistItems.map((_: WatchlistItem, index: number) => index);
-      for (let i = watchlistOrder.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [watchlistOrder[i], watchlistOrder[j]] = [watchlistOrder[j], watchlistOrder[i]];
-      }
-      watchlistItems.forEach((item: WatchlistItem, originalIndex: number) => {
-        randomizedOrderRef.current.set(item.id, watchlistOrder[originalIndex]);
-      });
-      hasInitializedRef.current = true;
-    }
-  }, [watchlistItems, listLoading]);
+  // Memoized grouped items by type
+  const { allAnime, allMovies, allShows } = useMemo(() => ({
+    allAnime: watchlistItems.filter(item => item.type === 'ANIME'),
+    allMovies: watchlistItems.filter(item => item.type === 'MOVIE'),
+    allShows: watchlistItems.filter(item => item.type === 'SHOW'),
+  }), [watchlistItems]);
 
-  // Get randomized watchlist items - filter to only include current items, maintain stable order
-  const randomizedWatchlist = useMemo(() => {
-    if (!hasInitializedRef.current && watchlistItems.length > 0) {
-      const watchlistOrder = watchlistItems.map((_: WatchlistItem, index: number) => index);
-      for (let i = watchlistOrder.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [watchlistOrder[i], watchlistOrder[j]] = [watchlistOrder[j], watchlistOrder[i]];
-      }
-      watchlistItems.forEach((item: WatchlistItem, originalIndex: number) => {
-        randomizedOrderRef.current.set(item.id, watchlistOrder[originalIndex]);
-      });
-      hasInitializedRef.current = true;
-    }
-
-    if (!hasInitializedRef.current) return watchlistItems;
-
-    const watchlistOrders = Array.from(randomizedOrderRef.current.values()).filter(v => v < 10000);
-    const maxWatchlistOrder = watchlistOrders.length > 0 ? Math.max(...watchlistOrders) : -1;
-
-    const itemsWithOrder = watchlistItems
-      .map(item => {
-        let order = randomizedOrderRef.current.get(item.id);
-        if (order === undefined || order >= 10000) {
-          order = Math.random() * 1000 + maxWatchlistOrder + 1000;
-          randomizedOrderRef.current.set(item.id, order);
-        }
-        return { item, order };
-      })
-      .sort((a, b) => a.order - b.order);
-
-    // Limit to 21 items for the main watchlist section
-    return itemsWithOrder.map(({ item }) => item).slice(0, 21);
-  }, [watchlistItems]);
-
-  // Group watchlist by type (excluding watched)
-  const allAnime = watchlistItems.filter(item => item.type === 'ANIME');
-  const allMovies = watchlistItems.filter(item => item.type === 'MOVIE');
-  const allShows = watchlistItems.filter(item => item.type === 'SHOW');
-
-  // Get randomized anime list - limit to 21 items
-  const animeList = useMemo(() => {
-    if (!hasInitializedAnimeRef.current && !listLoading && allAnime.length > 0) {
-      const animeOrder = allAnime.map((_: WatchlistItem, index: number) => index);
-      for (let i = animeOrder.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [animeOrder[i], animeOrder[j]] = [animeOrder[j], animeOrder[i]];
-      }
-      allAnime.forEach((item: WatchlistItem, originalIndex: number) => {
-        animeOrderRef.current.set(item.id, animeOrder[originalIndex]);
-      });
-      hasInitializedAnimeRef.current = true;
-    }
-
-    if (!hasInitializedAnimeRef.current || allAnime.length === 0) return allAnime.slice(0, 21);
-
-    const itemsWithOrder = allAnime
-      .map(item => {
-        let order = animeOrderRef.current.get(item.id);
-        if (order === undefined) {
-          const maxOrder = Math.max(...Array.from(animeOrderRef.current.values()).filter(v => v < 10000), -1);
-          order = Math.random() * 1000 + maxOrder + 1000;
-          animeOrderRef.current.set(item.id, order);
-        }
-        return { item, order };
-      })
-      .sort((a, b) => a.order - b.order);
-
-    return itemsWithOrder.map(({ item }) => item).slice(0, 21);
-  }, [allAnime, listLoading]);
-
-  // Get randomized movies list - limit to 21 items
-  const moviesList = useMemo(() => {
-    if (!hasInitializedMoviesRef.current && !listLoading && allMovies.length > 0) {
-      const moviesOrder = allMovies.map((_: WatchlistItem, index: number) => index);
-      for (let i = moviesOrder.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [moviesOrder[i], moviesOrder[j]] = [moviesOrder[j], moviesOrder[i]];
-      }
-      allMovies.forEach((item: WatchlistItem, originalIndex: number) => {
-        moviesOrderRef.current.set(item.id, moviesOrder[originalIndex]);
-      });
-      hasInitializedMoviesRef.current = true;
-    }
-
-    if (!hasInitializedMoviesRef.current || allMovies.length === 0) return allMovies.slice(0, 21);
-
-    const itemsWithOrder = allMovies
-      .map(item => {
-        let order = moviesOrderRef.current.get(item.id);
-        if (order === undefined) {
-          const maxOrder = Math.max(...Array.from(moviesOrderRef.current.values()).filter(v => v < 10000), -1);
-          order = Math.random() * 1000 + maxOrder + 1000;
-          moviesOrderRef.current.set(item.id, order);
-        }
-        return { item, order };
-      })
-      .sort((a, b) => a.order - b.order);
-
-    return itemsWithOrder.map(({ item }) => item).slice(0, 21);
-  }, [allMovies, listLoading]);
-
-  // Get randomized shows list - limit to 21 items
-  const showsList = useMemo(() => {
-    if (!hasInitializedShowsRef.current && !listLoading && allShows.length > 0) {
-      const showsOrder = allShows.map((_: WatchlistItem, index: number) => index);
-      for (let i = showsOrder.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [showsOrder[i], showsOrder[j]] = [showsOrder[j], showsOrder[i]];
-      }
-      allShows.forEach((item: WatchlistItem, originalIndex: number) => {
-        showsOrderRef.current.set(item.id, showsOrder[originalIndex]);
-      });
-      hasInitializedShowsRef.current = true;
-    }
-
-    if (!hasInitializedShowsRef.current || allShows.length === 0) return allShows.slice(0, 21);
-
-    const itemsWithOrder = allShows
-      .map(item => {
-        let order = showsOrderRef.current.get(item.id);
-        if (order === undefined) {
-          const maxOrder = Math.max(...Array.from(showsOrderRef.current.values()).filter(v => v < 10000), -1);
-          order = Math.random() * 1000 + maxOrder + 1000;
-          showsOrderRef.current.set(item.id, order);
-        }
-        return { item, order };
-      })
-      .sort((a, b) => a.order - b.order);
-
-    return itemsWithOrder.map(({ item }) => item).slice(0, 21);
-  }, [allShows, listLoading]);
-
-  // Filter out items without images or ratings from search results
-  const searchResults: UniversalSearchResult[] = (searchData?.results || []).filter(
-    (result: UniversalSearchResult) =>
-      result.image &&
-      result.image.trim() !== '' &&
-      result.rating &&
-      result.rating > 0
+  // Randomized lists using shared utility
+  const randomizedWatchlist = useMemo(() =>
+    createStableRandomOrder(watchlistItems, randomizedOrderRef.current, hasInitializedRef.current),
+    [watchlistItems]
   );
 
-  // Helper to check if item is in watchlist
-  const isInWatchlist = (externalId: number, type: string) => {
-    return watchlistItems.some(
-      item => item.externalId === String(externalId) && item.type === type.toUpperCase()
-    );
-  };
+  const animeList = useMemo(() =>
+    createStableRandomOrder(allAnime, animeOrderRef.current, hasInitializedAnimeRef.current),
+    [allAnime]
+  );
 
-  // Helper to check if item is watched
-  const isWatched = (externalId: number, type: string) => {
-    return watchedItems.some(
-      item => item.externalId === String(externalId) && item.type === type.toUpperCase()
-    );
-  };
+  const moviesList = useMemo(() =>
+    createStableRandomOrder(allMovies, moviesOrderRef.current, hasInitializedMoviesRef.current),
+    [allMovies]
+  );
 
-  // Helper to check if item is watching
-  const isWatching = (externalId: number, type: string) => {
-    return watchingItems.some(
-      item => item.externalId === String(externalId) && item.type === type.toUpperCase()
-    );
-  };
+  const showsList = useMemo(() =>
+    createStableRandomOrder(allShows, showsOrderRef.current, hasInitializedShowsRef.current),
+    [allShows]
+  );
 
-  // Helper to get watchlist item ID by externalId and type
-  const getWatchlistItemId = (externalId: number, type: string): string | null => {
-    const item = allItems.find(
-      item => item.externalId === String(externalId) && item.type === type.toUpperCase()
-    );
-    return item?.id || null;
-  };
+  // Filter search results - memoized
+  const searchResults = useMemo(() =>
+    (searchData?.results || []).filter(
+      (result: UniversalSearchResult) =>
+        result.image?.trim() && result.rating && result.rating > 0
+    ),
+    [searchData?.results]
+  );
+
+  // Create lookup maps for O(1) status checks - memoized
+  const itemLookup = useMemo(() => {
+    const watchlistSet = new Set(watchlistItems.map(i => `${i.externalId}-${i.type}`));
+    const watchedSet = new Set(watchedItems.map(i => `${i.externalId}-${i.type}`));
+    const watchingSet = new Set(watchingItems.map(i => `${i.externalId}-${i.type}`));
+    const idMap = new Map(allItems.map(i => [`${i.externalId}-${i.type}`, i.id]));
+
+    return { watchlistSet, watchedSet, watchingSet, idMap };
+  }, [watchlistItems, watchedItems, watchingItems, allItems]);
+
+  // Memoized helper functions using lookup maps
+  const isInWatchlist = useCallback((externalId: number, type: string) =>
+    itemLookup.watchlistSet.has(`${externalId}-${type.toUpperCase()}`),
+    [itemLookup.watchlistSet]
+  );
+
+  const isWatched = useCallback((externalId: number, type: string) =>
+    itemLookup.watchedSet.has(`${externalId}-${type.toUpperCase()}`),
+    [itemLookup.watchedSet]
+  );
+
+  const isWatching = useCallback((externalId: number, type: string) =>
+    itemLookup.watchingSet.has(`${externalId}-${type.toUpperCase()}`),
+    [itemLookup.watchingSet]
+  );
+
+  const getWatchlistItemId = useCallback((externalId: number, type: string): string | null =>
+    itemLookup.idMap.get(`${externalId}-${type.toUpperCase()}`) || null,
+    [itemLookup.idMap]
+  );
 
   // Filter search results based on selected filter
   const filteredSearchResults = useMemo(() => {
@@ -309,27 +230,20 @@ function WatchlistContent() {
     }
   }, [searchItemsPerPage, totalSearchPages, searchPage, searchQuery, searchFilter, router, hasMounted, searchGridReady]);
 
-  const handleFilterChange = (newFilter: 'all' | 'anime' | 'movie' | 'show') => {
+  const handleFilterChange = useCallback((newFilter: 'all' | 'anime' | 'movie' | 'show') => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('filter', newFilter);
     params.set('page', '1');
     router.push(`/watchlist?${params.toString()}`);
-  };
+  }, [searchParams, router]);
 
-  const handlePageChange = (newPage: number) => {
+  const handlePageChange = useCallback((newPage: number) => {
     const params = new URLSearchParams();
-    // Always preserve search query
-    if (searchQuery) {
-      params.set('search', searchQuery);
-    }
-    // Preserve filter
-    if (searchFilter && searchFilter !== 'all') {
-      params.set('filter', searchFilter);
-    }
-    // Set the new page
+    if (searchQuery) params.set('search', searchQuery);
+    if (searchFilter && searchFilter !== 'all') params.set('filter', searchFilter);
     params.set('page', newPage.toString());
     router.push(`/watchlist?${params.toString()}`);
-  };
+  }, [searchQuery, searchFilter, router]);
 
   const showingSearch = searchQuery.length > 0;
 
