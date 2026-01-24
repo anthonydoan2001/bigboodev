@@ -84,17 +84,93 @@ model TopItem {
 }
 
 model ApiUsage {
-  id         String   @id @default(cuid())
-  apiName    String   @map("api_name")
-  endpoint   String?
-  timestamp  DateTime @default(now())
-  success    Boolean  @default(true)
-  statusCode Int?     @map("status_code")
-  createdAt  DateTime @default(now()) @map("created_at")
+  id           String   @id @default(cuid())
+  apiName      String   @map("api_name")
+  endpoint     String?
+  method       String?  @default("GET")
+  timestamp    DateTime @default(now())
 
-  @@index([apiName, timestamp])
-  @@index([timestamp])
+  // Performance metrics
+  responseTime Int?     @map("response_time") // milliseconds
+  requestSize  Int?     @map("request_size")  // bytes
+  responseSize Int?     @map("response_size") // bytes
+
+  // Status tracking
+  success      Boolean  @default(true)
+  statusCode   Int?     @map("status_code")
+  errorType    String?  @map("error_type")    // 'RATE_LIMIT', 'TIMEOUT', 'SERVER_ERROR', etc.
+  errorMessage String?  @map("error_message") @db.Text
+
+  // Cost tracking
+  costCredits  Float?   @map("cost_credits")  // API credit cost
+
+  // Request metadata
+  cached       Boolean  @default(false)
+  userId       String?  @map("user_id")       // if user-specific
+
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Optimized indexes for common queries
+  @@index([apiName, timestamp(sort: Desc)])
+  @@index([timestamp(sort: Desc)])
+  @@index([apiName, success, timestamp])
+  @@index([success, timestamp])
+  @@index([apiName, endpoint, timestamp])
   @@map("api_usage")
+}
+
+model ApiUsageAggregate {
+  id              String   @id @default(cuid())
+  apiName         String   @map("api_name")
+  endpoint        String?
+  aggregationType String   @map("aggregation_type") // 'HOURLY', 'DAILY', 'MONTHLY'
+  periodStart     DateTime @map("period_start")
+  periodEnd       DateTime @map("period_end")
+
+  // Counts
+  totalRequests   Int      @map("total_requests")
+  successCount    Int      @map("success_count")
+  errorCount      Int      @map("error_count")
+  cachedCount     Int      @map("cached_count")
+
+  // Performance metrics (aggregated)
+  avgResponseTime Float?   @map("avg_response_time")
+  maxResponseTime Int?     @map("max_response_time")
+  minResponseTime Int?     @map("min_response_time")
+
+  // Error breakdown
+  rateLimitErrors Int      @default(0) @map("rate_limit_errors")
+  timeoutErrors   Int      @default(0) @map("timeout_errors")
+  serverErrors    Int      @default(0) @map("server_errors")
+
+  // Cost
+  totalCost       Float?   @map("total_cost")
+
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@unique([apiName, aggregationType, periodStart])
+  @@index([apiName, aggregationType, periodStart])
+  @@index([periodStart, aggregationType])
+  @@map("api_usage_aggregates")
+}
+
+model ApiAlert {
+  id            String    @id @default(cuid())
+  apiName       String    @map("api_name")
+  alertType     String    @map("alert_type") // 'RATE_LIMIT_WARNING', 'COST_THRESHOLD', 'ERROR_SPIKE'
+  threshold     Float     // percentage or absolute value
+  period        String    // 'MINUTE', 'HOUR', 'DAY'
+
+  enabled       Boolean   @default(true)
+  lastTriggered DateTime? @map("last_triggered")
+
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@unique([apiName, alertType, period])
+  @@index([apiName, enabled])
+  @@map("api_alerts")
 }
 
 model GameScore {

@@ -56,7 +56,7 @@ export default function SettingsPage() {
       console.error('Error fetching API usage:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load API usage statistics';
       setError(errorMessage);
-      
+
       // If it's a database error (table doesn't exist), show helpful message
       if (errorMessage.includes('does not exist') || errorMessage.includes('api_usage')) {
         setError('Database table not found. Please run: npx prisma migrate deploy');
@@ -144,7 +144,7 @@ export default function SettingsPage() {
               const usageEntries = Object.entries(stat.usage).filter(
                 ([_, value]) => value.limit !== undefined
               );
-              
+
               if (usageEntries.length === 0) {
                 return (
                   <Card key={stat.apiName}>
@@ -204,13 +204,13 @@ export default function SettingsPage() {
                             {stat.usage.perSecond.count} / {formatLimit(stat.usage.perSecond.limit, 'second')} ({stat.usage.perSecond.percentage}%)
                           </span>
                         </div>
-                        <Progress 
-                          value={stat.usage.perSecond.count} 
-                          max={stat.usage.perSecond.limit} 
+                        <Progress
+                          value={stat.usage.perSecond.count}
+                          max={stat.usage.perSecond.limit}
                         />
                       </div>
                     )}
-                    
+
                     {stat.usage.perMinute && stat.usage.perMinute.limit && (
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
@@ -221,13 +221,13 @@ export default function SettingsPage() {
                             {stat.usage.perMinute.count} / {formatLimit(stat.usage.perMinute.limit, 'minute')} ({stat.usage.perMinute.percentage}%)
                           </span>
                         </div>
-                        <Progress 
-                          value={stat.usage.perMinute.count} 
-                          max={stat.usage.perMinute.limit} 
+                        <Progress
+                          value={stat.usage.perMinute.count}
+                          max={stat.usage.perMinute.limit}
                         />
                       </div>
                     )}
-                    
+
                     {stat.usage.perHour && stat.usage.perHour.limit && (
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
@@ -238,13 +238,13 @@ export default function SettingsPage() {
                             {stat.usage.perHour.count} / {formatLimit(stat.usage.perHour.limit, 'hour')} ({stat.usage.perHour.percentage}%)
                           </span>
                         </div>
-                        <Progress 
-                          value={stat.usage.perHour.count} 
-                          max={stat.usage.perHour.limit} 
+                        <Progress
+                          value={stat.usage.perHour.count}
+                          max={stat.usage.perHour.limit}
                         />
                       </div>
                     )}
-                    
+
                     {stat.usage.perDay && stat.usage.perDay.limit && (
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
@@ -255,13 +255,13 @@ export default function SettingsPage() {
                             {stat.usage.perDay.count} / {formatLimit(stat.usage.perDay.limit, 'day')} ({stat.usage.perDay.percentage}%)
                           </span>
                         </div>
-                        <Progress 
-                          value={stat.usage.perDay.count} 
-                          max={stat.usage.perDay.limit} 
+                        <Progress
+                          value={stat.usage.perDay.count}
+                          max={stat.usage.perDay.limit}
                         />
                       </div>
                     )}
-                    
+
                     {stat.usage.perMonth && stat.usage.perMonth.limit && (
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
@@ -272,9 +272,9 @@ export default function SettingsPage() {
                             {stat.usage.perMonth.count} / {formatLimit(stat.usage.perMonth.limit, 'month')} ({stat.usage.perMonth.percentage}%)
                           </span>
                         </div>
-                        <Progress 
-                          value={stat.usage.perMonth.count} 
-                          max={stat.usage.perMonth.limit} 
+                        <Progress
+                          value={stat.usage.perMonth.count}
+                          max={stat.usage.perMonth.limit}
                         />
                       </div>
                     )}
