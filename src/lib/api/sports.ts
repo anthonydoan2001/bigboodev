@@ -984,10 +984,55 @@ export async function fetchStandings(sport: SportType): Promise<TeamStanding[]> 
             const losses = stats.find((s: any) => s.name === 'losses')?.value || 0;
             const winPercent = stats.find((s: any) => s.name === 'winPercent')?.value || 0;
             const streak = stats.find((s: any) => s.name === 'streak')?.displayValue || '-';
-            const last10WinsStat = stats.find((s: any) => s.name === 'lastTenWins' || s.name === 'last10Wins');
-            const last10LossesStat = stats.find((s: any) => s.name === 'lastTenLosses' || s.name === 'last10Losses');
-            const last10Wins = last10WinsStat ? parseInt(last10WinsStat.value) : undefined;
-            const last10Losses = last10LossesStat ? parseInt(last10LossesStat.value) : undefined;
+            
+            // Find last 10 games stat - ESPN uses "Last Ten Games" with displayValue like "5-5"
+            let last10Wins: number | undefined;
+            let last10Losses: number | undefined;
+            
+            // Look for "Last Ten Games" stat (case-insensitive match)
+            const lastTenGamesStat = stats.find((s: any) => 
+              s.name === 'Last Ten Games' ||
+              s.name?.toLowerCase() === 'last ten games' ||
+              s.name?.toLowerCase().includes('last ten') ||
+              s.name?.toLowerCase().includes('lastten')
+            );
+            
+            if (lastTenGamesStat) {
+              // Parse displayValue which is in format "W-L" (e.g., "5-5", "6-4")
+              const recordValue = lastTenGamesStat.displayValue || lastTenGamesStat.value;
+              if (typeof recordValue === 'string' && recordValue.includes('-')) {
+                const parts = recordValue.split('-').map(p => p.trim());
+                const wins = parseInt(parts[0]);
+                const losses = parseInt(parts[1]);
+                if (!isNaN(wins) && !isNaN(losses)) {
+                  last10Wins = wins;
+                  last10Losses = losses;
+                }
+              }
+            }
+            
+            // Fallback: Try other variations if "Last Ten Games" not found
+            if (last10Wins === undefined || last10Losses === undefined) {
+              const lastTenRecordStat = stats.find((s: any) => 
+                s.name === 'lastTen' || 
+                s.name === 'lastTenRecord' ||
+                s.name === 'last10Record' ||
+                s.name === 'last10'
+              );
+              
+              if (lastTenRecordStat) {
+                const recordValue = lastTenRecordStat.displayValue || lastTenRecordStat.value;
+                if (typeof recordValue === 'string' && recordValue.includes('-')) {
+                  const parts = recordValue.split('-').map(p => p.trim());
+                  const wins = parseInt(parts[0]);
+                  const losses = parseInt(parts[1]);
+                  if (!isNaN(wins) && !isNaN(losses)) {
+                    last10Wins = wins;
+                    last10Losses = losses;
+                  }
+                }
+              }
+            }
 
             conferenceTeams.push({
               rank: 0, // Will be assigned after sorting

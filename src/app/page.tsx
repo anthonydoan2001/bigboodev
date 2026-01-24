@@ -146,9 +146,6 @@ export default function Home() {
     refetchOnMount: 'always',
   });
 
-  // Check if all widgets are loading
-  const isLoading = quoteLoading || weatherLoading || stocksLoading || cryptoLoading;
-
   // Update greeting only when hour changes (check every minute)
   useEffect(() => {
     let lastHour = getHoustonHour();
@@ -164,15 +161,7 @@ export default function Home() {
     return () => clearInterval(greetingInterval);
   }, []);
 
-  // Show loading spinner until all widgets are loaded
-  if (isLoading) {
-    return (
-      <div className="w-full py-6 px-4 sm:px-6 lg:px-8 min-h-screen flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-primary animate-spin" />
-      </div>
-    );
-  }
-
+  // Render immediately - don't block on widget loading for better LCP
   return (
     <div className="w-full py-6 px-4 sm:px-6 lg:px-8 min-h-screen">
       {/* Header Section with Weather */}
@@ -205,7 +194,7 @@ export default function Home() {
         </div>
 
         {/* Gmail Widget */}
-        <div className="col-span-1">
+        <div className="col-span-1 sm:col-span-2">
           <GmailWidget />
         </div>
       </div>

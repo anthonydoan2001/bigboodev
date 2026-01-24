@@ -86,9 +86,6 @@ const EmailItem = memo(function EmailItem({ email }: { email: GmailEmail }) {
         >
           {email.subject}
         </p>
-        <p className="text-[11px] text-muted-foreground/70 truncate">
-          {email.snippet}
-        </p>
       </div>
 
       {/* External link icon on hover */}

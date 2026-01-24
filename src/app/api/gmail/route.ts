@@ -141,9 +141,10 @@ export const GET = withAuth(async () => {
       console.log('Gmail token refreshed successfully');
     }
 
-    // Fetch list of messages (last 10 from inbox)
+    // Fetch list of messages (last 10 from Primary and Updates categories)
+    const query = encodeURIComponent('in:inbox (category:primary OR category:updates)');
     const listResponse = await fetch(
-      'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10&labelIds=INBOX',
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10&q=${query}`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
