@@ -8,8 +8,8 @@ import { CryptoQuote } from '@/types/crypto';
 import { StockQuote } from '@/types/stocks';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowUp, ArrowDown } from 'lucide-react';
-import { useEffect } from 'react';
 import Image from 'next/image';
+import { memo } from 'react';
 
 function formatPrice(price: number): string {
   // Format crypto prices - show more decimals for smaller values
@@ -55,7 +55,7 @@ function cleanCompanyName(name: string): string {
     .trim();
 }
 
-function StockCard({ quote }: { quote: StockQuote }) {
+const StockCard = memo(function StockCard({ quote }: { quote: StockQuote }) {
   const isPositive = quote.change >= 0;
   const changeColor = isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
 
@@ -100,9 +100,9 @@ function StockCard({ quote }: { quote: StockQuote }) {
       </div>
     </div>
   );
-}
+});
 
-function CryptoCard({ crypto }: { crypto: CryptoQuote }) {
+const CryptoCard = memo(function CryptoCard({ crypto }: { crypto: CryptoQuote }) {
   const percentChange = crypto.percentChange24h ?? 0;
   const isPositive = percentChange >= 0;
   const changeColor = isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
@@ -148,28 +148,24 @@ function CryptoCard({ crypto }: { crypto: CryptoQuote }) {
       </div>
     </div>
   );
-}
+});
 
 export function StocksCryptoWidget() {
-  const { data: stocksData, isLoading: stocksLoading, error: stocksError, refetch: refetchStocks } = useQuery({
+  const { data: stocksData, isLoading: stocksLoading, error: stocksError } = useQuery({
     queryKey: ['stockQuotes'],
     queryFn: fetchStockQuotes,
     staleTime: 3600000, // Consider stale after 1 hour
     refetchInterval: 3600000, // Auto-refresh every 1 hour
+    refetchOnMount: 'always', // Refetch on mount if stale
   });
 
-  const { data: cryptoData, isLoading: cryptoLoading, error: cryptoError, refetch: refetchCrypto } = useQuery({
+  const { data: cryptoData, isLoading: cryptoLoading, error: cryptoError } = useQuery({
     queryKey: ['cryptoQuotes'],
     queryFn: fetchCryptoQuotesFromDB,
     staleTime: 3600000, // Consider stale after 1 hour
     refetchInterval: 3600000, // Auto-refresh every 1 hour
+    refetchOnMount: 'always', // Refetch on mount if stale
   });
-
-  // Refetch on mount and window focus
-  useEffect(() => {
-    refetchStocks();
-    refetchCrypto();
-  }, [refetchStocks, refetchCrypto]);
 
   const isLoading = stocksLoading || cryptoLoading;
   const hasError = stocksError || cryptoError;

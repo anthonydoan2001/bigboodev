@@ -13,33 +13,30 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { autoFavoriteHoustonGames, getFavorites, isHoustonGame, toggleFavorite as toggleFavoriteInStorage } from '@/lib/favorites';
 import { GameScore, SportType, TeamStanding, TopPerformer } from '@/types/sports';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState, useRef, Suspense } from 'react';
+import { useEffect, useState, useRef, Suspense, useMemo, useCallback } from 'react';
 import { getAuthHeaders } from '@/lib/api-client';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-async function fetchScores(sport: SportType, date: Date) {
-  // Format date in local timezone as YYYY-MM-DD
+// Format date string helper - moved outside component for reuse
+function formatDateString(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
-  const dateStr = `${year}-${month}-${day}`;
+  return `${year}-${month}-${day}`;
+}
+
+async function fetchScores(sport: SportType, date: Date) {
+  const dateStr = formatDateString(date);
 
   const response = await fetch(`/api/sports/scores?sport=${sport}&date=${dateStr}`, {
     headers: getAuthHeaders(),
     credentials: 'include',
-    cache: 'no-store', // Don't cache - we need fresh data for live games
+    cache: 'no-store',
   });
   if (!response.ok) {
     throw new Error('Failed to fetch scores');
   }
   const data = await response.json();
-  // Log fetch for debugging
-  console.log(`[Sports] Fetched ${sport} scores:`, {
-    count: data.scores?.length || 0,
-    cached: data.cached,
-    timestamp: data.timestamp,
-    hasLive: data.scores?.some((g: any) => g.status === 'live'),
-  });
   // Convert date strings back to Date objects
   return data.scores.map((game: any) => ({
     ...game,
@@ -48,16 +45,12 @@ async function fetchScores(sport: SportType, date: Date) {
 }
 
 async function fetchTopPerformers(sport: SportType, date: Date) {
-  // Format date in local timezone as YYYY-MM-DD
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const dateStr = `${year}-${month}-${day}`;
+  const dateStr = formatDateString(date);
 
   const response = await fetch(`/api/sports/performers?sport=${sport}&date=${dateStr}`, {
     headers: getAuthHeaders(),
     credentials: 'include',
-    cache: 'no-store', // Don't cache - we need fresh data for live games
+    cache: 'no-store',
   });
   if (!response.ok) {
     throw new Error('Failed to fetch top performers');
@@ -159,8 +152,8 @@ function SportsPageContent() {
     }
   }, [searchParams]); // Re-run when URL params change
 
-  // Update URL when state changes
-  const updateURL = (params: { sport?: string; tab?: string; date?: string; removeDate?: boolean }) => {
+  // Update URL when state changes - memoized
+  const updateURL = useCallback((params: { sport?: string; tab?: string; date?: string; removeDate?: boolean }) => {
     const currentParams = new URLSearchParams(searchParams.toString());
 
     if (params.sport !== undefined) {
@@ -177,32 +170,31 @@ function SportsPageContent() {
     }
 
     router.push(`/sports?${currentParams.toString()}`, { scroll: false });
-  };
+  }, [searchParams, router]);
 
-  // Handle sport change
-  const handleSportChange = (sport: SportType | 'FAVORITES') => {
+  // Handle sport change - memoized
+  const handleSportChange = useCallback((sport: SportType | 'FAVORITES') => {
     setSelectedSport(sport);
     updateURL({ sport });
-  };
+  }, [updateURL]);
 
-  // Handle tab change
-  const handleTabChange = (tab: string) => {
+  // Handle tab change - memoized
+  const handleTabChange = useCallback((tab: string) => {
     setSelectedTab(tab);
-    // Remove date from URL for standings tab, add it back for games/performers
     if (tab === 'standings') {
       updateURL({ tab, removeDate: true });
     } else {
       const dateStr = selectedDate.toISOString().split('T')[0];
       updateURL({ tab, date: dateStr });
     }
-  };
+  }, [selectedDate, updateURL]);
 
-  // Handle date change
-  const handleDateChange = (date: Date) => {
+  // Handle date change - memoized
+  const handleDateChange = useCallback((date: Date) => {
     setSelectedDate(date);
     const dateStr = date.toISOString().split('T')[0];
     updateURL({ date: dateStr });
-  };
+  }, [updateURL]);
 
   const showPerformers = selectedSport === 'NBA'; // Only show performers for NBA
   const isFavoritesView = selectedSport === 'FAVORITES';
@@ -212,19 +204,6 @@ function SportsPageContent() {
 
   // Use selected date for scores
   const dateForScores = selectedDate;
-
-  // Debug: Log query states
-  useEffect(() => {
-    console.log('[Query State]', {
-      selectedSport,
-      selectedTab,
-      isMounted,
-      shouldFetchScores,
-      isFavoritesView,
-      scoresQueryEnabled: shouldFetchScores && isMounted,
-      favoritesQueryEnabled: isFavoritesView && isMounted,
-    });
-  }, [selectedSport, selectedTab, isMounted, shouldFetchScores, isFavoritesView]);
 
   const {
     data: scores,
@@ -238,24 +217,11 @@ function SportsPageContent() {
     refetchOnWindowFocus: false,
     enabled: shouldFetchScores && isMounted,
     refetchInterval: (query) => {
-      // In React Query v5, refetchInterval callback receives the query object
       const data = query.state.data;
-
-      console.log('[Scores Refresh] Checking interval...', {
-        hasData: !!data,
-        isArray: Array.isArray(data),
-        dataLength: Array.isArray(data) ? data.length : 0,
-        hasLive: Array.isArray(data) ? data.some(game => game.status === 'live') : false,
-      });
-
       // Only auto-refresh if there are live games - refresh every 30 seconds
       if (Array.isArray(data) && data.some(game => game.status === 'live')) {
-        console.log('[Scores Refresh] ✅ Live games detected, refreshing in 30 seconds');
-        return 30000; // 30 seconds for live games
+        return 30000;
       }
-
-      console.log('[Scores Refresh] ❌ No live games, stopping auto-refresh');
-      // No auto-refresh for scheduled/final games - user can manually refresh
       return false;
     },
   });
@@ -275,15 +241,11 @@ function SportsPageContent() {
     refetchOnWindowFocus: false,
     enabled: isFavoritesView && isMounted,
     refetchInterval: (query) => {
-      // In React Query v5, refetchInterval callback receives the query object
       const data = query.state.data;
-
-      // Only auto-refresh if there are live games - refresh every 30 seconds
+      // Only auto-refresh if there are live games
       if (Array.isArray(data) && data.some(game => game.status === 'live')) {
-        console.log('[Favorites Refresh] ✅ Live games detected, refreshing in 30 seconds');
-        return 30000; // 30 seconds for live games
+        return 30000;
       }
-      // No auto-refresh for scheduled/final games - user can manually refresh
       return false;
     },
   });
@@ -304,10 +266,10 @@ function SportsPageContent() {
     }
   }, [favoriteQueries.data]);
 
-  const handleToggleFavorite = (gameId: string) => {
+  const handleToggleFavorite = useCallback((gameId: string) => {
     toggleFavoriteInStorage(gameId);
     setFavorites(getFavorites());
-  };
+  }, []);
 
   const {
     data: performers,
@@ -325,15 +287,10 @@ function SportsPageContent() {
     staleTime: 0, // Always consider data stale so refetchInterval works properly
     refetchOnWindowFocus: false,
     enabled: selectedSport === 'NBA' && isMounted, // Only for NBA and after mount
-    refetchInterval: (query) => {
-      // Only auto-refresh performers if there are live games - refresh every 30 seconds
+    refetchInterval: () => {
+      // Only auto-refresh performers if there are live games
       const hasLiveGames = Array.isArray(scores) && scores.some(game => game.status === 'live');
-      if (hasLiveGames) {
-        console.log('[Performers Refresh] ✅ Live games detected, refreshing in 30 seconds');
-        return 30000; // 30 seconds for live games
-      }
-      // No auto-refresh for completed/scheduled games - user can manually refresh
-      return false;
+      return hasLiveGames ? 30000 : false;
     },
   });
 
@@ -355,29 +312,38 @@ function SportsPageContent() {
     enabled: selectedSport === 'NBA' && isMounted, // Only for NBA and after mount
   });
 
-  // Determine which games to show
-  const currentScores = isFavoritesView ? favoriteQueries.data : scores;
+  // Determine which games to show - memoized for performance
+  const currentScores = useMemo(() =>
+    isFavoritesView ? favoriteQueries.data : scores,
+    [isFavoritesView, favoriteQueries.data, scores]
+  );
   const currentLoading = !isMounted || (isFavoritesView ? favoriteQueries.isLoading : scoresLoading);
   const currentError = isFavoritesView ? favoriteQueries.error : scoresError;
 
-  // Helper function to check if a completed game is older than 24 hours
-  const isCompletedGameOld = (game: GameScore): boolean => {
-    if (game.status !== 'final') return false;
-    const now = new Date();
-    const gameTime = game.startTime;
-    const hoursSinceGame = (now.getTime() - gameTime.getTime()) / (1000 * 60 * 60);
-    // Remove completed games that are more than 24 hours old
-    return hoursSinceGame > 24;
-  };
+  // Memoized game filtering - avoid recalculating on every render
+  const gamesToShow = useMemo(() => {
+    if (!currentScores) return [];
 
-  // Filter games for favorites or use regular scores, exclude completed games older than 24 hours
-  const filteredScores = isFavoritesView
-    ? currentScores?.filter(game => favorites.includes(game.id))
-    : currentScores;
-  const gamesToShow = (filteredScores || []).filter(game => !isCompletedGameOld(game));
+    const now = Date.now();
+    const twentyFourHoursMs = 24 * 60 * 60 * 1000;
 
-  // Check if there are any live games
-  const hasLiveGames = Array.isArray(gamesToShow) && gamesToShow.some(game => game.status === 'live');
+    // Filter by favorites if in favorites view
+    const filtered = isFavoritesView
+      ? currentScores.filter(game => favorites.includes(game.id))
+      : currentScores;
+
+    // Exclude completed games older than 24 hours
+    return filtered.filter(game => {
+      if (game.status !== 'final') return true;
+      return (now - game.startTime.getTime()) <= twentyFourHoursMs;
+    });
+  }, [currentScores, isFavoritesView, favorites]);
+
+  // Check if there are any live games - memoized
+  const hasLiveGames = useMemo(() =>
+    gamesToShow.some(game => game.status === 'live'),
+    [gamesToShow]
+  );
   const isAutoRefreshing = hasLiveGames && (scoresFetching || favoriteQueries.isFetching);
 
   // Detect when games finish and update standings
@@ -391,7 +357,6 @@ function SportsPageContent() {
 
       // Detect if a game just finished (live -> final)
       if (previousStatus === 'live' && game.status === 'final') {
-        console.log(`[Standings Update] Game finished: ${game.awayTeam} vs ${game.homeTeam}`);
         gamesJustFinished = true;
       }
 
@@ -401,7 +366,6 @@ function SportsPageContent() {
 
     // If any games just finished, invalidate standings to trigger refresh
     if (gamesJustFinished && selectedSport === 'NBA') {
-      console.log('[Standings Update] Refreshing standings due to finished games');
       queryClient.invalidateQueries({ queryKey: ['standings', selectedSport] });
     }
   }, [currentScores, isMounted, selectedSport, queryClient]);

@@ -1,5 +1,6 @@
 import { Game } from '@prisma/client';
 import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { getAuthHeaders } from '@/lib/api-client';
 
 export function useGames() {
@@ -18,17 +19,26 @@ export function useGames() {
 
   const allGames: Game[] = data?.items || [];
 
-  const playingGames: Game[] = allGames
-    .filter(game => game.status === 'PLAYING')
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  // Memoize filtered and sorted arrays to avoid recalculation on every render
+  const { playingGames, playedGames, playlistGames } = useMemo(() => {
+    const playing: Game[] = [];
+    const played: Game[] = [];
+    const playlist: Game[] = [];
 
-  const playedGames: Game[] = allGames
-    .filter(game => game.status === 'PLAYED')
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    // Single pass through all games
+    for (const game of allGames) {
+      if (game.status === 'PLAYING') playing.push(game);
+      else if (game.status === 'PLAYED') played.push(game);
+      else if (game.status === 'PLAYLIST') playlist.push(game);
+    }
 
-  const playlistGames: Game[] = allGames
-    .filter(game => game.status === 'PLAYLIST')
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    // Sort each category
+    playing.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    played.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    playlist.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return { playingGames: playing, playedGames: played, playlistGames: playlist };
+  }, [allGames]);
 
   return {
     allGames,
