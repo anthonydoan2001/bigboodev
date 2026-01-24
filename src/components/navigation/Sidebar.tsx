@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/lib/providers/SidebarProvider';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, Film, Home, Settings, Trophy, CheckSquare } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Film, Gamepad2, Home, Settings, Trophy, CheckSquare } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ThemeToggle } from './ThemeToggle';
@@ -23,6 +23,11 @@ const navItems = [
     name: 'Watchlist',
     href: '/watchlist',
     icon: Film,
+  },
+  {
+    name: 'Games',
+    href: '/games/playlist',
+    icon: Gamepad2,
   },
   {
     name: 'Tasks',
@@ -77,11 +82,13 @@ export function Sidebar() {
           {/* Navigation */}
           <nav className="flex-1 space-y-2 p-3">
             {navItems.map((item, index) => {
-              // Special handling for watchlist, sports, and tasks to match sub-routes
+              // Special handling for watchlist, sports, games, and tasks to match sub-routes
               const isActive = item.href === '/watchlist'
                 ? pathname.startsWith('/watchlist')
                 : item.name === 'Sports'
                 ? pathname.startsWith('/sports')
+                : item.name === 'Games'
+                ? pathname.startsWith('/games')
                 : item.href === '/tasks'
                 ? pathname.startsWith('/tasks')
                 : pathname === item.href;

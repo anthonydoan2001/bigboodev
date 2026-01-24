@@ -9,7 +9,7 @@ datasource db {
 }
 
 model WatchlistItem {
-  id         String   @id @default(cuid())
+  id         String   @id(map: "WatchlistItem_pkey") @default(cuid())
   type       String
   title      String
   status     String   @default("PLAN_TO_WATCH")
@@ -29,45 +29,44 @@ model WatchlistItem {
 }
 
 model StockQuote {
-  symbol        String   @id
+  symbol        String   @id(map: "stock_quotes_new_pkey")
   companyName   String?  @map("company_name")
   logoUrl       String?  @map("logo_url")
   currentPrice  Float    @map("current_price")
   change        Float
   percentChange Float    @map("percent_change")
   lastUpdated   DateTime @default(now()) @map("last_updated")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@index([lastUpdated])
   @@map("stock_quotes")
 }
 
 model DailyQuote {
-  date      String   @id
-  content   String   @db.Text
+  date      String   @id(map: "daily_quotes_new_pkey")
+  content   String
   author    String
-  updatedAt DateTime @updatedAt @map("updated_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("daily_quotes")
 }
 
 model CryptoQuote {
-  symbol           String   @id
+  symbol           String   @id(map: "crypto_quotes_new_pkey")
   name             String
   logoUrl          String?  @map("logo_url")
   price            Float
   percentChange24h Float?   @map("percent_change_24h")
   lastUpdated      DateTime @default(now()) @map("last_updated")
   createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at")
 
-  @@index([lastUpdated])
   @@map("crypto_quotes")
 }
 
 model TopItem {
   id          String   @id
-  type        String // 'anime' | 'movie' | 'show'
+  type        String
   title       String
   imageUrl    String   @map("image_url")
   year        Int?
@@ -76,7 +75,7 @@ model TopItem {
   externalId  Int      @map("external_id")
   lastUpdated DateTime @default(now()) @map("last_updated")
   createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@unique([externalId, type])
   @@index([type])
@@ -84,43 +83,10 @@ model TopItem {
   @@map("top_items")
 }
 
-model Game {
-  id         String   @id @default(cuid())
-  title      String
-  status     String   @default("PLAN_TO_PLAY")
-  externalId String   @map("external_id")
-  imageUrl   String?  @map("image_url")
-  rating     Float?
-  released   String? // Release date as string (YYYY-MM-DD format)
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-
-  @@unique([externalId])
-  @@index([status])
-  @@index([createdAt])
-  @@map("games")
-}
-
-model TopGame {
-  id          String   @id
-  title       String
-  imageUrl    String   @map("image_url")
-  rating      Float
-  released    String? // Release date as string (YYYY-MM-DD format)
-  externalId  Int      @map("external_id")
-  lastUpdated DateTime @default(now()) @map("last_updated")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  @@unique([externalId])
-  @@index([lastUpdated])
-  @@map("top_games")
-}
-
 model ApiUsage {
   id         String   @id @default(cuid())
-  apiName    String   @map("api_name") // 'finnhub', 'coinmarketcap', 'rawg', 'tmdb', 'jikan', 'espn', 'openweather'
-  endpoint   String? // Optional endpoint path
+  apiName    String   @map("api_name")
+  endpoint   String?
   timestamp  DateTime @default(now())
   success    Boolean  @default(true)
   statusCode Int?     @map("status_code")
@@ -132,27 +98,27 @@ model ApiUsage {
 }
 
 model GameScore {
-  id            String   @id @default(cuid()) // Auto-generated ID
-  gameId        String   @map("game_id") // ESPN game ID
-  sport         String   // 'NBA' | 'NFL'
-  date          DateTime  @db.Date // Game date (YYYY-MM-DD)
-  homeTeam      String   @map("home_team")
-  awayTeam      String   @map("away_team")
-  homeScore     Int      @map("home_score")
-  awayScore     Int      @map("away_score")
-  homeTeamLogo  String?  @map("home_team_logo")
-  awayTeamLogo  String?  @map("away_team_logo")
-  status        String   // 'scheduled' | 'live' | 'final'
+  id            String    @id @default(cuid())
+  gameId        String    @map("game_id")
+  sport         String
+  date          DateTime  @db.Date
+  homeTeam      String    @map("home_team")
+  awayTeam      String    @map("away_team")
+  homeScore     Int       @map("home_score")
+  awayScore     Int       @map("away_score")
+  homeTeamLogo  String?   @map("home_team_logo")
+  awayTeamLogo  String?   @map("away_team_logo")
+  status        String
   quarter       String?
-  timeRemaining String?  @map("time_remaining")
+  timeRemaining String?   @map("time_remaining")
   startTime     DateTime  @map("start_time")
-  playoffRound  String?  @map("playoff_round")
-  odds          Json?    // Store odds object as JSON
-  topScorer     Json?    @map("top_scorer") // Store topScorer object as JSON
-  expiresAt     DateTime? @map("expires_at") // For live games - when cache expires
+  playoffRound  String?   @map("playoff_round")
+  odds          Json?
+  topScorer     Json?     @map("top_scorer")
+  expiresAt     DateTime? @map("expires_at")
   lastUpdated   DateTime  @default(now()) @map("last_updated")
   createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
 
   @@unique([gameId, sport, date])
   @@index([sport, date])
@@ -164,12 +130,12 @@ model GameScore {
 
 model TopPerformer {
   id          String   @id @default(cuid())
-  sport       String // 'NBA' | 'NFL'
-  date        DateTime @db.Date // Game date (YYYY-MM-DD)
-  name        String // Player name
-  team        String // Team abbreviation
+  sport       String
+  date        DateTime @db.Date
+  name        String
+  team        String
   imageUrl    String?  @map("image_url")
-  stats       Json // Store stats object as JSON
+  stats       Json
   lastUpdated DateTime @default(now()) @map("last_updated")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -184,11 +150,10 @@ model TopPerformer {
 model Note {
   id        String   @id @default(cuid())
   title     String
-  content   String   @db.Text
+  content   String
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
-  tasks Task[]
+  tasks     Task[]
 
   @@index([createdAt])
   @@map("notes")
@@ -197,18 +162,17 @@ model Note {
 model Task {
   id          String    @id @default(cuid())
   title       String
-  description String?   @db.Text
-  status      String    @default("TODO") // 'TODO' | 'IN_PROGRESS' | 'DONE'
-  priority    String    @default("MEDIUM") // 'LOW' | 'MEDIUM' | 'HIGH'
+  description String?
+  status      String    @default("TODO")
+  priority    String    @default("MEDIUM")
   dueDate     DateTime? @map("due_date") @db.Date
   category    String?
-  notes       String?   @db.Text // Inline notes
+  notes       String?
   noteId      String?   @map("note_id")
-  position    Int       @default(0) // For kanban ordering within status
+  position    Int       @default(0)
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
-
-  note Note? @relation(fields: [noteId], references: [id], onDelete: SetNull)
+  note        Note?     @relation(fields: [noteId], references: [id])
 
   @@index([status])
   @@index([status, position])
@@ -217,4 +181,24 @@ model Task {
   @@index([dueDate])
   @@index([createdAt])
   @@map("tasks")
+}
+
+model Game {
+  id          String   @id @default(cuid())
+  gameTitle   String   @map("game_title")
+  rawgRating  Float?   @map("rawg_rating")
+  coverArtUrl String?  @map("cover_art_url")
+  status      String   @default("PLAYLIST") // 'PLAYING' | 'PLAYED' | 'PLAYLIST'
+  rawgGameId  Int      @unique @map("rawg_game_id")
+  releaseDate String?  @map("release_date")
+  genres      String?
+  platforms   String?
+  metacritic  Int?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([status, createdAt])
+  @@map("games")
 }

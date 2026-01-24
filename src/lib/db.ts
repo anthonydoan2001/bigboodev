@@ -33,6 +33,9 @@ if (process.env.NODE_ENV === 'development') {
   if (!('note' in db)) {
     console.warn('⚠️  Prisma client missing note model. Please restart the dev server after running: npx prisma generate');
   }
+  if (!('game' in db)) {
+    console.warn('⚠️  Prisma client missing game model. Please restart the dev server after running: npx prisma generate');
+  }
 }
 
 
