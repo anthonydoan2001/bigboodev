@@ -1,5 +1,5 @@
 -- AlterTable: Add new columns to api_usage (using DO block to check if columns exist)
-DO $$ 
+DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='api_usage' AND column_name='method') THEN
         ALTER TABLE "api_usage" ADD COLUMN "method" TEXT DEFAULT 'GET';
