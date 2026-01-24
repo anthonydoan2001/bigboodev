@@ -167,10 +167,7 @@ export default function Home() {
   if (isLoading) {
     return (
       <div className="w-full py-6 px-4 sm:px-6 lg:px-8 min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-12 h-12 text-primary animate-spin" />
-          <p className="text-muted-foreground text-body">Loading dashboard...</p>
-        </div>
+        <Loader2 className="w-12 h-12 text-primary animate-spin" />
       </div>
     );
   }
