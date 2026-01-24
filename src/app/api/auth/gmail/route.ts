@@ -4,8 +4,11 @@ import { cookies } from 'next/headers';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI;
 
-// Gmail readonly scope
-const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
+// Gmail readonly scope + email to identify user
+const SCOPES = [
+  'https://www.googleapis.com/auth/gmail.readonly',
+  'https://www.googleapis.com/auth/userinfo.email',
+];
 
 /**
  * GET /api/auth/gmail

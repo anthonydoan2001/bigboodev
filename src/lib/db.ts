@@ -18,9 +18,6 @@ if (process.env.NODE_ENV === 'development') {
   if (!('apiUsage' in db)) {
     console.warn('⚠️  Prisma client missing apiUsage model. Please restart the dev server after running: npx prisma generate');
   }
-  if (!('collection' in db)) {
-    console.warn('⚠️  Prisma client missing collection model. Please restart the dev server after running: npx prisma generate');
-  }
   if (!('gameScore' in db)) {
     console.warn('⚠️  Prisma client missing gameScore model. Please restart the dev server after running: npx prisma generate');
   }

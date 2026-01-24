@@ -294,10 +294,15 @@ function SportsPageContent() {
     },
   });
 
+  // Track when games finish to trigger standings refresh
+  const [lastGameFinishTime, setLastGameFinishTime] = useState<number | null>(null);
+
   const {
     data: standings,
     isLoading: standingsLoading,
     error: standingsError,
+    isFetching: standingsFetching,
+    refetch: refetchStandings,
   } = useQuery({
     queryKey: ['standings', selectedSport],
     queryFn: () => {
@@ -307,9 +312,19 @@ function SportsPageContent() {
       }
       return fetchStandings(selectedSport);
     },
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 0, // Always consider data stale so refetchInterval works properly
     refetchOnWindowFocus: false,
     enabled: selectedSport === 'NBA' && isMounted, // Only for NBA and after mount
+    refetchInterval: () => {
+      // Only refresh if a game finished recently (within last 2 minutes)
+      // Standings don't change during live games, only when games complete
+      const recentGameFinish = lastGameFinishTime && (Date.now() - lastGameFinishTime) < 120000; // 2 minutes
+      
+      if (recentGameFinish) {
+        return 30000; // Refresh every 30 seconds for 2 minutes after game finishes
+      }
+      return false;
+    },
   });
 
   // Determine which games to show - memoized for performance
@@ -364,8 +379,9 @@ function SportsPageContent() {
       previousGameStatuses.current.set(game.id, game.status);
     });
 
-    // If any games just finished, invalidate standings to trigger refresh
+    // If any games just finished, invalidate standings and track finish time
     if (gamesJustFinished && selectedSport === 'NBA') {
+      setLastGameFinishTime(Date.now());
       queryClient.invalidateQueries({ queryKey: ['standings', selectedSport] });
     }
   }, [currentScores, isMounted, selectedSport, queryClient]);

@@ -25,7 +25,7 @@ export function Standings({ standings }: StandingsProps) {
                 <th className="px-4 py-3 text-left text-caption font-semibold text-muted-foreground">Team</th>
                 <th className="px-4 py-3 text-center text-caption font-semibold text-muted-foreground">W</th>
                 <th className="px-4 py-3 text-center text-caption font-semibold text-muted-foreground">L</th>
-                <th className="px-4 py-3 text-center text-caption font-semibold text-muted-foreground">Last 10</th>
+                <th className="px-4 pr-2 py-3 text-center text-caption font-semibold text-muted-foreground">Last 10</th>
                 <th className="px-4 py-3 text-center text-caption font-semibold text-muted-foreground">Streak</th>
               </tr>
             </thead>
@@ -64,12 +64,12 @@ export function Standings({ standings }: StandingsProps) {
                     <td className="px-4 py-3 text-center text-body font-semibold tabular-nums">
                       {team.losses}
                     </td>
-                    <td className="px-4 py-3 text-center text-body-sm tabular-nums text-muted-foreground">
+                    <td className="px-4 pr-2 py-3 text-center text-body-sm tabular-nums text-muted-foreground">
                       {team.last10Wins !== undefined && team.last10Losses !== undefined
                         ? `${team.last10Wins}-${team.last10Losses}`
                         : '-'}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-center">
                       <span className={`text-body-sm font-semibold tabular-nums ${
                         isWinStreak ? 'text-green-600 dark:text-green-500' :
                         isLossStreak ? 'text-red-600 dark:text-red-500' :
