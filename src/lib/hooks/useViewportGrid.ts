@@ -43,30 +43,23 @@ export function useViewportGrid({
     const getInitialEstimate = () => {
       if (typeof window === 'undefined') return { minWidth: 200, maxWidth: 280, gap: 16, preferredWidth: 200 };
 
-      const windowWidth = window.innerWidth;
-      const isMobile = windowWidth < 640;
-      const isTablet = windowWidth >= 640 && windowWidth < 1024;
+      // Get actual container width if available, otherwise estimate conservatively
+      let availableWidth = 800; // Conservative default
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const containerWidth = Math.max(rect.width, containerRef.current.clientWidth, containerRef.current.offsetWidth);
+        if (containerWidth >= 200) {
+          availableWidth = containerWidth;
+        }
+      }
+
+      const isMobile = availableWidth < 640;
+      const isTablet = availableWidth >= 640 && availableWidth < 1024;
 
       // Estimate card width based on viewport - match calculateGrid logic exactly (20% larger)
       const estimatedGap = isMobile ? 12 : isTablet ? 14 : gap;
       const estimatedMinWidth = isMobile ? Math.min(minCardWidth, 168) : isTablet ? Math.min(minCardWidth, 240) : minCardWidth;
       const estimatedMaxWidth = isMobile ? Math.min(maxCardWidth, 264) : isTablet ? Math.min(maxCardWidth, 480) : maxCardWidth;
-
-      // Account for sidebar width (same logic as setCSSFallback)
-      let sidebarWidth = 0;
-      if (!isMobile) {
-        try {
-          const sidebarCollapsed = localStorage.getItem('sidebar-collapsed');
-          const isSidebarCollapsed = sidebarCollapsed ? JSON.parse(sidebarCollapsed) : false;
-          sidebarWidth = isSidebarCollapsed ? 70 : 256;
-        } catch {
-          sidebarWidth = 70; // Default to collapsed
-        }
-      }
-
-      // More accurate padding estimation + sidebar
-      const pagePaddingX = isMobile ? 16 : isTablet ? 24 : 48;
-      const availableWidth = windowWidth - sidebarWidth - pagePaddingX;
 
       // Calculate columns using same logic as calculateGrid
       const maxColumnsWithMaxWidth = Math.floor((availableWidth + estimatedGap) / (estimatedMaxWidth + estimatedGap));
@@ -104,28 +97,21 @@ export function useViewportGrid({
 
       const estimate = getInitialEstimate();
 
-      // Calculate estimated columns for initial layout - account for sidebar
-      const windowWidth = window.innerWidth;
-      const isMobile = windowWidth < 640;
-      const isTablet = windowWidth >= 640 && windowWidth < 1024;
+      // Get actual container width (already accounts for sidebar margin from MainContent)
+      const rect = containerRef.current.getBoundingClientRect();
+      let availableWidth = Math.max(
+        rect.width,
+        containerRef.current.clientWidth,
+        containerRef.current.offsetWidth
+      );
 
-      // Check sidebar state from localStorage to calculate accurate available width
-      let sidebarWidth = 0;
-      if (!isMobile) {
-        // Only desktop has visible sidebar (md: breakpoint is 768px)
-        try {
-          const sidebarCollapsed = localStorage.getItem('sidebar-collapsed');
-          const isCollapsed = sidebarCollapsed ? JSON.parse(sidebarCollapsed) : (isMobile ? true : false);
-          sidebarWidth = isCollapsed ? 70 : 256; // 70px collapsed, 256px (w-64) expanded
-        } catch {
-          sidebarWidth = 70; // Default to collapsed if can't read
-        }
+      // Fallback to conservative estimate if container not ready
+      if (availableWidth < 200) {
+        availableWidth = 800;
       }
 
-      // More accurate padding estimation based on actual page layout
-      // py-2 sm:py-3 md:py-4 px-2 sm:px-3 md:px-4 lg:px-6
-      const pagePaddingX = isMobile ? 16 : isTablet ? 24 : 48; // Left + Right padding
-      const availableWidth = windowWidth - sidebarWidth - pagePaddingX;
+      const isMobile = availableWidth < 640;
+      const isTablet = availableWidth >= 640 && availableWidth < 1024;
 
       // Calculate columns with the same logic as calculateGrid
       const maxColumnsWithMaxWidth = Math.floor((availableWidth + estimate.gap) / (estimate.maxWidth + estimate.gap));

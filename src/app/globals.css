@@ -257,15 +257,6 @@
     }
   }
 
-  /* Responsive grid for game cards - JavaScript controls columns dynamically */
-  .games-grid {
-    display: grid;
-    /* grid-template-columns is set dynamically via JavaScript in useViewportGrid */
-    overflow-x: hidden;
-    justify-content: center;
-    align-content: start;
-  }
-
   /* Smooth scroll optimization */
   .smooth-scroll {
     scroll-behavior: smooth;
