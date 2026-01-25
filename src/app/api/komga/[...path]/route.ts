@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { withAuth } from '@/lib/api-auth';
+import { withAuth, requireAuth } from '@/lib/api-auth';
 import { createBasicAuthHeader } from '@/lib/komga';
 
 const DEFAULT_USER_ID = 'default';
+
+// Paths that don't require session auth (images accessed directly by browser)
+function isImagePath(path: string[]): boolean {
+  if (path.length < 2) return false;
+  const lastSegment = path[path.length - 1];
+  // Thumbnails: /series/{id}/thumbnail or /books/{id}/thumbnail
+  if (lastSegment === 'thumbnail') return true;
+  // Pages: /books/{id}/pages/{pageNum}
+  if (path.length >= 3 && path[path.length - 2] === 'pages' && /^\d+$/.test(lastSegment)) return true;
+  return false;
+}
 
 async function getKomgaCredentials() {
   const settings = await db.komgaSettings.findUnique({
@@ -37,6 +48,8 @@ async function proxyRequest(
 
   // Forward content-type for non-GET requests
   const contentType = request.headers.get('content-type');
+  const isMultipart = contentType?.includes('multipart/form-data');
+
   if (contentType) {
     headers['Content-Type'] = contentType;
   }
@@ -44,7 +57,12 @@ async function proxyRequest(
   // Get request body for non-GET methods
   let body: BodyInit | null = null;
   if (request.method !== 'GET' && request.method !== 'HEAD') {
-    body = await request.text();
+    // Use arrayBuffer for multipart/binary data, text for JSON
+    if (isMultipart) {
+      body = await request.arrayBuffer();
+    } else {
+      body = await request.text();
+    }
   }
 
   try {
@@ -53,6 +71,15 @@ async function proxyRequest(
       headers,
       body,
     });
+
+    // Handle non-OK responses
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      return new NextResponse(errorText || 'Komga error', {
+        status: response.status,
+        headers: { 'Content-Type': 'text/plain' },
+      });
+    }
 
     const responseContentType = response.headers.get('content-type') || '';
 
@@ -97,7 +124,21 @@ async function proxyRequest(
 }
 
 // Handle all HTTP methods
-export const GET = withAuth(async (request: NextRequest) => {
+// GET is special: thumbnail requests skip session auth (for Next.js Image Optimization)
+export async function GET(request: NextRequest) {
+  const url = new URL(request.url);
+  const pathMatch = url.pathname.match(/\/api\/komga\/(.+)/);
+  const path = pathMatch ? pathMatch[1].split('/') : [];
+
+  // Image requests don't require session auth (still use Komga's stored credentials)
+  if (!isImagePath(path)) {
+    try {
+      requireAuth(request);
+    } catch {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  }
+
   const credentials = await getKomgaCredentials();
   if (!credentials) {
     return NextResponse.json(
@@ -106,12 +147,8 @@ export const GET = withAuth(async (request: NextRequest) => {
     );
   }
 
-  const url = new URL(request.url);
-  const pathMatch = url.pathname.match(/\/api\/komga\/(.+)/);
-  const path = pathMatch ? pathMatch[1].split('/') : [];
-
   return proxyRequest(request, path, credentials);
-});
+}
 
 export const POST = withAuth(async (request: NextRequest) => {
   const credentials = await getKomgaCredentials();

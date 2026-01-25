@@ -7,6 +7,10 @@ interface ReaderState {
   readingMode: ReadingMode;
   setReadingMode: (mode: ReadingMode) => void;
 
+  // Book progress (persisted) - maps bookId to page number
+  bookProgress: Record<string, number>;
+  saveLocalProgress: (bookId: string, page: number) => void;
+
   // Current session (not persisted)
   currentBookId: string | null;
   currentPage: number;
@@ -36,6 +40,7 @@ export const useMangaStore = create<ReaderState>()(
     (set, get) => ({
       // Persisted settings
       readingMode: 'vertical-scroll',
+      bookProgress: {},
 
       // Session state
       currentBookId: null,
@@ -51,33 +56,60 @@ export const useMangaStore = create<ReaderState>()(
       // Actions
       setReadingMode: (mode) => set({ readingMode: mode }),
 
-      setSession: (book, pages) =>
+      saveLocalProgress: (bookId, page) => {
+        set((state) => ({
+          bookProgress: { ...state.bookProgress, [bookId]: page },
+        }));
+      },
+
+      setSession: (book, pages) => {
+        const { bookProgress } = get();
+        // Priority: local progress > API progress > default to 1
+        const localPage = bookProgress[book.id];
+        const apiPage = book.readProgress?.page;
+        const startPage = localPage || (apiPage && apiPage > 0 ? apiPage : 1);
+
         set({
           currentBookId: book.id,
           book,
           pages,
           totalPages: pages.length,
-          currentPage: book.readProgress?.page || 1,
+          currentPage: Math.min(startPage, pages.length), // Ensure we don't exceed total pages
           isUIVisible: true,
-        }),
+        });
+      },
 
       setCurrentPage: (page) => {
-        const { totalPages } = get();
+        const { totalPages, currentBookId, saveLocalProgress } = get();
         const clampedPage = Math.max(1, Math.min(page, totalPages));
         set({ currentPage: clampedPage });
+        // Save to local storage immediately
+        if (currentBookId) {
+          saveLocalProgress(currentBookId, clampedPage);
+        }
       },
 
       goToNextPage: () => {
-        const { currentPage, totalPages } = get();
+        const { currentPage, totalPages, currentBookId, saveLocalProgress } = get();
         if (currentPage < totalPages) {
-          set({ currentPage: currentPage + 1 });
+          const newPage = currentPage + 1;
+          set({ currentPage: newPage });
+          // Save to local storage immediately
+          if (currentBookId) {
+            saveLocalProgress(currentBookId, newPage);
+          }
         }
       },
 
       goToPreviousPage: () => {
-        const { currentPage } = get();
+        const { currentPage, currentBookId, saveLocalProgress } = get();
         if (currentPage > 1) {
-          set({ currentPage: currentPage - 1 });
+          const newPage = currentPage - 1;
+          set({ currentPage: newPage });
+          // Save to local storage immediately
+          if (currentBookId) {
+            saveLocalProgress(currentBookId, newPage);
+          }
         }
       },
 
@@ -103,9 +135,10 @@ export const useMangaStore = create<ReaderState>()(
     }),
     {
       name: 'manga-reader-settings',
-      // Only persist the reading mode preference
+      // Persist reading mode and per-book progress
       partialize: (state) => ({
         readingMode: state.readingMode,
+        bookProgress: state.bookProgress,
       }),
     }
   )

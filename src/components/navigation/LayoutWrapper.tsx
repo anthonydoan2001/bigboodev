@@ -8,8 +8,10 @@ import { usePathname } from 'next/navigation';
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLoginPage = pathname === '/login';
+  const isMangaReaderPage = pathname.startsWith('/manga/read/');
 
-  if (isLoginPage) {
+  // Full-screen pages without sidebar
+  if (isLoginPage || isMangaReaderPage) {
     return <>{children}</>;
   }
 

@@ -174,6 +174,54 @@ export function getBookThumbnailUrl(bookId: string): string {
   return `${BASE_URL}/komga/books/${bookId}/thumbnail`;
 }
 
+// ============ Thumbnail Upload API ============
+
+export async function uploadSeriesThumbnail(seriesId: string, file: File): Promise<void> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch(`${BASE_URL}/komga/series/${seriesId}/thumbnails`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    credentials: 'include',
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'Failed to upload thumbnail' }));
+    throw new Error(error.error || 'Failed to upload thumbnail');
+  }
+}
+
+export async function deleteSeriesThumbnail(seriesId: string): Promise<void> {
+  // First get the list of thumbnails to find custom ones
+  const res = await fetch(`${BASE_URL}/komga/series/${seriesId}/thumbnails`, {
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch thumbnails');
+  }
+
+  const thumbnails = await res.json();
+
+  // Delete all user-uploaded thumbnails (type: "USER_UPLOADED")
+  for (const thumb of thumbnails) {
+    if (thumb.type === 'USER_UPLOADED') {
+      const deleteRes = await fetch(`${BASE_URL}/komga/series/${seriesId}/thumbnails/${thumb.id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+        credentials: 'include',
+      });
+
+      if (!deleteRes.ok && deleteRes.status !== 204) {
+        throw new Error('Failed to delete thumbnail');
+      }
+    }
+  }
+}
+
 // ============ Read Progress API ============
 
 export async function updateReadProgress(
@@ -213,6 +261,8 @@ export async function fetchBooksInProgress(options?: {
 }): Promise<KomgaBooksResponse> {
   const params = new URLSearchParams();
   params.set('read_status', 'IN_PROGRESS');
+  // Sort by last read date (most recent first)
+  params.set('sort', 'readProgress.lastModified,desc');
   if (options?.page !== undefined) params.set('page', options.page.toString());
   if (options?.size !== undefined) params.set('size', options.size.toString());
 

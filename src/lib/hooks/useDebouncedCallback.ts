@@ -6,24 +6,48 @@ import { useCallback, useRef, useEffect, useState } from 'react';
  */
 export function useDebouncedCallback<T extends (...args: Parameters<T>) => void>(
   callback: T,
-  delay: number
-): T {
+  delay: number,
+  options?: { flushOnUnmount?: boolean }
+): T & { flush: () => void; cancel: () => void } {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const callbackRef = useRef(callback);
+  const argsRef = useRef<Parameters<T> | null>(null);
+  const flushOnUnmount = options?.flushOnUnmount ?? false;
 
   // Keep callback ref up to date
   useEffect(() => {
     callbackRef.current = callback;
   }, [callback]);
 
-  // Cleanup on unmount
+  const cancel = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    argsRef.current = null;
+  }, []);
+
+  const flush = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (argsRef.current) {
+      callbackRef.current(...argsRef.current);
+      argsRef.current = null;
+    }
+  }, []);
+
+  // Cleanup on unmount - flush if option is enabled
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+      if (flushOnUnmount) {
+        flush();
+      } else {
+        cancel();
       }
     };
-  }, []);
+  }, [flushOnUnmount, flush, cancel]);
 
   const debouncedCallback = useCallback(
     (...args: Parameters<T>) => {
@@ -31,12 +55,18 @@ export function useDebouncedCallback<T extends (...args: Parameters<T>) => void>
         clearTimeout(timeoutRef.current);
       }
 
+      argsRef.current = args;
+
       timeoutRef.current = setTimeout(() => {
         callbackRef.current(...args);
+        argsRef.current = null;
       }, delay);
     },
     [delay]
-  ) as T;
+  ) as T & { flush: () => void; cancel: () => void };
+
+  debouncedCallback.flush = flush;
+  debouncedCallback.cancel = cancel;
 
   return debouncedCallback;
 }

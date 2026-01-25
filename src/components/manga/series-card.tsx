@@ -36,6 +36,7 @@ export function SeriesCard({ series }: SeriesCardProps) {
             src={thumbnailUrl}
             alt={series.name}
             fill
+            unoptimized
             className="object-cover transition-opacity group-hover:opacity-90"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
             onError={() => setImageError(true)}

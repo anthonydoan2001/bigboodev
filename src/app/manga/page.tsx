@@ -65,13 +65,13 @@ function MangaLibraryContent() {
               <div>
                 <h2 className="text-xl font-semibold">Connect to Komga</h2>
                 <p className="text-muted-foreground mt-1">
-                  Configure your Komga server in Settings to start reading manga
+                  Configure your Komga server to start reading manga
                 </p>
               </div>
               <Button asChild>
-                <Link href="/settings">
+                <Link href="/manga/settings">
                   <Settings className="h-4 w-4 mr-2" />
-                  Go to Settings
+                  Configure Komga
                 </Link>
               </Button>
             </CardContent>
@@ -96,8 +96,15 @@ function MangaLibraryContent() {
             </div>
           </div>
 
-          <div className="w-full sm:w-80">
-            <SearchBar placeholder="Search series..." />
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="flex-1 sm:w-80">
+              <SearchBar placeholder="Search series..." />
+            </div>
+            <Button variant="outline" size="icon" asChild>
+              <Link href="/manga/settings">
+                <Settings className="h-4 w-4" />
+              </Link>
+            </Button>
           </div>
         </div>
 
