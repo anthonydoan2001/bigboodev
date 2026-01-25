@@ -37,7 +37,11 @@ export const GET = withAuth(async (request: Request, sessionToken: string) => {
     const tasks = await db.task.findMany({
       where,
       include: {
-        note: true,
+        taskNotes: {
+          include: {
+            note: true,
+          },
+        },
       },
       orderBy: [
         { status: 'asc' },
@@ -85,11 +89,14 @@ export const POST = withAuth(async (request: Request, sessionToken: string) => {
         dueDate: dueDate ? new Date(dueDate) : null,
         category: category?.trim() || null,
         notes: notes?.trim() || null,
-        noteId: noteId || null,
         position: newPosition,
       },
       include: {
-        note: true,
+        taskNotes: {
+          include: {
+            note: true,
+          },
+        },
       },
     });
 

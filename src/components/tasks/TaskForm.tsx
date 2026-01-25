@@ -6,10 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { getAuthHeaders } from '@/lib/api-client';
 import { CreateTaskInput, TaskPriority, TaskStatus, TaskWithNote, UpdateTaskInput } from '@/types/tasks';
-import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { FileText, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
 
 interface TaskFormProps {
   task?: TaskWithNote | null;
@@ -27,21 +27,6 @@ export function TaskForm({ task, open, onOpenChange, onSubmit, isSubmitting }: T
   const [dueDate, setDueDate] = useState('');
   const [category, setCategory] = useState('');
   const [notes, setNotes] = useState('');
-  const [noteId, setNoteId] = useState<string>('');
-
-  // Fetch notes for linking
-  const { data: notesData } = useQuery<{ items: Array<{ id: string; title: string }> }>({
-    queryKey: ['notes'],
-    queryFn: async () => {
-      const res = await fetch('/api/notes', {
-        headers: getAuthHeaders(),
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('Failed to fetch notes');
-      return res.json();
-    },
-    enabled: open,
-  });
 
   useEffect(() => {
     if (task) {
@@ -52,7 +37,6 @@ export function TaskForm({ task, open, onOpenChange, onSubmit, isSubmitting }: T
       setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '');
       setCategory(task.category || '');
       setNotes(task.notes || '');
-      setNoteId(task.noteId || '');
     } else {
       // Reset form for new task
       setTitle('');
@@ -62,7 +46,6 @@ export function TaskForm({ task, open, onOpenChange, onSubmit, isSubmitting }: T
       setDueDate('');
       setCategory('');
       setNotes('');
-      setNoteId('');
     }
   }, [task, open]);
 
@@ -82,7 +65,6 @@ export function TaskForm({ task, open, onOpenChange, onSubmit, isSubmitting }: T
       dueDate: dueDate || undefined,
       category: category.trim() || undefined,
       notes: notes.trim() || undefined,
-      noteId: noteId || undefined,
     };
 
     onSubmit(formData);
@@ -188,33 +170,29 @@ export function TaskForm({ task, open, onOpenChange, onSubmit, isSubmitting }: T
             />
           </div>
 
-          {/* Link to Note */}
-          <div className="space-y-2">
-            <Label htmlFor="noteId">Link to Note</Label>
-            <Select value={noteId || undefined} onValueChange={(value) => setNoteId(value || '')}>
-              <SelectTrigger id="noteId">
-                <SelectValue placeholder="Select a note (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                {notesData?.items.map((note) => (
-                  <SelectItem key={note.id} value={note.id}>
-                    {note.title}
-                  </SelectItem>
+          {/* Linked Notes (display only) */}
+          {task && task.taskNotes && task.taskNotes.length > 0 && (
+            <div className="space-y-2">
+              <Label>Linked Notes</Label>
+              <div className="flex flex-wrap gap-2">
+                {task.taskNotes.map((taskNote) => (
+                  <Link
+                    key={taskNote.note.id}
+                    href={`/notes?note=${taskNote.note.id}`}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-muted rounded-md text-sm hover:bg-accent transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    <span className="truncate max-w-[150px]">{taskNote.note.title || 'Untitled'}</span>
+                    <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                  </Link>
                 ))}
-              </SelectContent>
-            </Select>
-            {noteId && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setNoteId('')}
-                className="h-8 text-xs"
-              >
-                Clear note link
-              </Button>
-            )}
-          </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Manage linked notes from the Notes page
+              </p>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex justify-end gap-2 pt-4">
