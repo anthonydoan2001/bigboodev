@@ -87,7 +87,8 @@ export class KomgaClient {
 
   async testConnection(): Promise<{ success: boolean; error?: string }> {
     try {
-      const url = `${this.serverUrl}/api/v1/users/me`;
+      // Use /api/v1/libraries as a test endpoint - it requires auth and is widely supported
+      const url = `${this.serverUrl}/api/v1/libraries`;
       console.log('[Komga] Testing connection to:', url);
 
       const response = await fetch(url, {
