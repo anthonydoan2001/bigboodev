@@ -386,7 +386,7 @@ model TikTokVideo {
 model KomgaSettings {
   id        String   @id @default(cuid())
   userId    String   @unique @map("user_id") // Single user app, but keeps structure flexible
-  serverUrl String   @default("http://komga.bigboo.dev") @map("server_url")
+  serverUrl String   @default("https://komga.bigboo.dev") @map("server_url")
   email     String
   password  String   @db.Text // Encrypted password
   createdAt DateTime @default(now()) @map("created_at")
