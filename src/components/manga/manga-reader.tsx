@@ -4,7 +4,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import Image from 'next/image';
 import { useSwipeable } from 'react-swipeable';
 import { useMangaStore, useSeriesZoom } from '@/lib/stores/manga-store';
-import { useUpdateReadProgress, useAdjacentBooks } from '@/lib/hooks/useManga';
+import { useUpdateReadProgress, useAdjacentBooks, useReadListAdjacentBooks } from '@/lib/hooks/useManga';
 import { useDebouncedCallback } from '@/lib/hooks/useDebouncedCallback';
 import { getPageUrl } from '@/lib/api/manga';
 import { ReaderSettings } from './reader-settings';
@@ -24,12 +24,17 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
+type ReaderContext =
+  | { type: 'series' }
+  | { type: 'readlist'; readlistId: string };
+
 interface MangaReaderProps {
   book: KomgaBook;
   pages: KomgaPage[];
+  context?: ReaderContext;
 }
 
-export function MangaReader({ book, pages }: MangaReaderProps) {
+export function MangaReader({ book, pages, context = { type: 'series' } }: MangaReaderProps) {
   const router = useRouter();
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -71,7 +76,28 @@ export function MangaReader({ book, pages }: MangaReaderProps) {
   };
 
   const { updateProgress } = useUpdateReadProgress();
-  const { nextBook, previousBook } = useAdjacentBooks(book.id);
+
+  // Use reading list navigation when coming from a reading list
+  const isReadlistContext = context.type === 'readlist';
+  const readlistId = isReadlistContext ? context.readlistId : null;
+
+  const seriesAdjacent = useAdjacentBooks(isReadlistContext ? null : book.id);
+  const readlistAdjacent = useReadListAdjacentBooks(readlistId, book.id);
+
+  const nextBook = isReadlistContext ? readlistAdjacent.nextBook : seriesAdjacent.nextBook;
+  const previousBook = isReadlistContext ? readlistAdjacent.previousBook : seriesAdjacent.previousBook;
+
+  // Determine back link and navigation URLs based on context
+  const backLink = isReadlistContext
+    ? `/manga/readlist/${readlistId}`
+    : `/manga/series/${book.seriesId}`;
+
+  const getBookUrl = (targetBookId: string) => {
+    if (isReadlistContext) {
+      return `/manga/read/${targetBookId}?from=readlist&readlistId=${readlistId}`;
+    }
+    return `/manga/read/${targetBookId}`;
+  };
 
   const totalPages = pages.length;
   const isPageMode = readingMode === 'page-ltr' || readingMode === 'page-rtl';
@@ -404,13 +430,13 @@ export function MangaReader({ book, pages }: MangaReaderProps) {
   // Navigate to next/previous book
   const handleNextBook = () => {
     if (nextBook) {
-      router.push(`/manga/read/${nextBook.id}`);
+      router.push(getBookUrl(nextBook.id));
     }
   };
 
   const handlePreviousBook = () => {
     if (previousBook) {
-      router.push(`/manga/read/${previousBook.id}`);
+      router.push(getBookUrl(previousBook.id));
     }
   };
 
@@ -495,9 +521,9 @@ export function MangaReader({ book, pages }: MangaReaderProps) {
                 size="icon"
                 className="text-white hover:bg-white/20 h-9 w-9 flex-shrink-0"
                 asChild
-                title="Back to series"
+                title={isReadlistContext ? "Back to reading list" : "Back to series"}
               >
-                <Link href={`/manga/series/${book.seriesId}`}>
+                <Link href={backLink}>
                   <ArrowLeft className="h-5 w-5" />
                 </Link>
               </Button>
