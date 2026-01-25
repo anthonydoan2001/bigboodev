@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { PrefetchLink } from '@/components/performance/PrefetchLink';
 import { useSidebar } from '@/lib/providers/SidebarProvider';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, Film, Gamepad2, Home, Settings, Trophy, CheckSquare, StickyNote, Video } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Film, Gamepad2, Home, Settings, Trophy, CheckSquare, StickyNote, Video, BookOpen } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -13,6 +13,16 @@ const navItems = [
     name: 'Home',
     href: '/',
     icon: Home,
+  },
+  {
+    name: 'Notes',
+    href: '/notes',
+    icon: StickyNote,
+  },
+  {
+    name: 'Tasks',
+    href: '/tasks',
+    icon: CheckSquare,
   },
   {
     name: 'Sports',
@@ -25,19 +35,14 @@ const navItems = [
     icon: Film,
   },
   {
+    name: 'Manga',
+    href: '/manga',
+    icon: BookOpen,
+  },
+  {
     name: 'Games',
     href: '/games/playlist',
     icon: Gamepad2,
-  },
-  {
-    name: 'Tasks',
-    href: '/tasks',
-    icon: CheckSquare,
-  },
-  {
-    name: 'Notes',
-    href: '/notes',
-    icon: StickyNote,
   },
   {
     name: 'TikTok',
@@ -92,7 +97,7 @@ export function Sidebar() {
           {/* Navigation */}
           <nav className="flex-1 space-y-2 p-3">
             {navItems.map((item, index) => {
-              // Special handling for watchlist, sports, games, tasks, and notes to match sub-routes
+              // Special handling for watchlist, sports, games, tasks, notes, and manga to match sub-routes
               const isActive = item.href === '/watchlist'
                 ? pathname.startsWith('/watchlist')
                 : item.name === 'Sports'
@@ -105,6 +110,8 @@ export function Sidebar() {
                 ? pathname.startsWith('/notes')
                 : item.href === '/tiktok'
                 ? pathname.startsWith('/tiktok')
+                : item.href === '/manga'
+                ? pathname.startsWith('/manga')
                 : pathname === item.href;
               const Icon = item.icon;
 

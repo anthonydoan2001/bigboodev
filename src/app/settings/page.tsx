@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { apiFetch } from '@/lib/api-client';
 import { Skeleton } from '@/components/ui/skeleton';
+import { KomgaSettings } from '@/components/settings/KomgaSettings';
 
 interface ApiUsageStat {
   apiName: string;
@@ -90,8 +91,19 @@ export default function SettingsPage() {
         <div>
           <h1 className="text-3xl font-bold">Settings</h1>
           <p className="text-muted-foreground mt-1">
-            Monitor your API usage and rate limits
+            Configure integrations and monitor API usage
           </p>
+        </div>
+
+        {/* Integrations Section */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Integrations</h2>
+          <KomgaSettings />
+        </div>
+
+        {/* API Usage Section */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">API Usage</h2>
         </div>
 
         {loading && apiStats.length === 0 ? (
