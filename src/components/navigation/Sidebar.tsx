@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { PrefetchLink } from '@/components/performance/PrefetchLink';
 import { useSidebar } from '@/lib/providers/SidebarProvider';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, Film, Gamepad2, Home, Settings, Trophy, CheckSquare } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Film, Gamepad2, Home, Settings, Trophy, CheckSquare, StickyNote } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -33,6 +33,11 @@ const navItems = [
     name: 'Tasks',
     href: '/tasks',
     icon: CheckSquare,
+  },
+  {
+    name: 'Notes',
+    href: '/notes',
+    icon: StickyNote,
   },
   {
     name: 'Settings',
@@ -82,7 +87,7 @@ export function Sidebar() {
           {/* Navigation */}
           <nav className="flex-1 space-y-2 p-3">
             {navItems.map((item, index) => {
-              // Special handling for watchlist, sports, games, and tasks to match sub-routes
+              // Special handling for watchlist, sports, games, tasks, and notes to match sub-routes
               const isActive = item.href === '/watchlist'
                 ? pathname.startsWith('/watchlist')
                 : item.name === 'Sports'
@@ -91,6 +96,8 @@ export function Sidebar() {
                 ? pathname.startsWith('/games')
                 : item.href === '/tasks'
                 ? pathname.startsWith('/tasks')
+                : item.href === '/notes'
+                ? pathname.startsWith('/notes')
                 : pathname === item.href;
               const Icon = item.icon;
 

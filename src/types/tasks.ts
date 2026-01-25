@@ -1,10 +1,14 @@
-import { Task, Note } from '@prisma/client';
+import { Task, Note, TaskNote } from '@prisma/client';
 
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE';
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH';
 
+export interface TaskNoteWithNote extends TaskNote {
+  note: Note;
+}
+
 export interface TaskWithNote extends Task {
-  note: Note | null;
+  taskNotes?: TaskNoteWithNote[];
 }
 
 export interface CreateTaskInput {
@@ -15,7 +19,6 @@ export interface CreateTaskInput {
   dueDate?: string; // ISO date string
   category?: string;
   notes?: string;
-  noteId?: string;
 }
 
 export interface UpdateTaskInput {
@@ -26,7 +29,6 @@ export interface UpdateTaskInput {
   dueDate?: string | null; // ISO date string or null
   category?: string | null;
   notes?: string | null;
-  noteId?: string | null;
   position?: number;
 }
 

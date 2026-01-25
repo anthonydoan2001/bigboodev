@@ -30,7 +30,8 @@ export function useTasks(filters?: TaskFilters) {
       if (!res.ok) throw new Error('Failed to fetch tasks');
       return res.json();
     },
-    staleTime: 30000,
+    staleTime: 60000, // 1 minute
+    refetchOnWindowFocus: false,
   });
 
   // Memoize all filtering and grouping operations

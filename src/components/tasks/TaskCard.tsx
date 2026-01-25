@@ -87,10 +87,10 @@ export function TaskCard({ task, onEdit, onDelete, isDragging }: TaskCardProps) 
             </div>
           )}
 
-          {task.note && (
+          {task.taskNotes && task.taskNotes.length > 0 && (
             <div className="flex items-center gap-1 text-muted-foreground">
               <Link2 className="h-3 w-3" />
-              <span className="truncate max-w-[100px]">{task.note.title}</span>
+              <span>{task.taskNotes.length} note{task.taskNotes.length !== 1 ? 's' : ''}</span>
             </div>
           )}
 

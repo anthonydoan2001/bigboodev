@@ -60,9 +60,10 @@ export function TaskRow({ task, onEdit, onDelete }: TaskRowProps) {
       </td>
       <td className="p-3">
         <div className="flex items-center gap-2">
-          {task.note && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground" title={task.note.title}>
+          {task.taskNotes && task.taskNotes.length > 0 && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground" title={`${task.taskNotes.length} linked note(s)`}>
               <Link2 className="h-3 w-3" />
+              <span>{task.taskNotes.length}</span>
             </div>
           )}
           {task.notes && (

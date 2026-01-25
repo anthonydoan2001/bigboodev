@@ -85,7 +85,11 @@ export const POST = withAuth(async (request: Request, sessionToken: string) => {
         position: newPosition,
       },
       include: {
-        note: true,
+        taskNotes: {
+          include: {
+            note: true,
+          },
+        },
       },
     });
 
