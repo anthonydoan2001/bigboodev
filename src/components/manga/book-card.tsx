@@ -12,9 +12,10 @@ import { useState } from 'react';
 interface BookCardProps {
   book: KomgaBook;
   showSeriesTitle?: boolean;
+  hideProgress?: boolean;
 }
 
-export function BookCard({ book, showSeriesTitle = false }: BookCardProps) {
+export function BookCard({ book, showSeriesTitle = false, hideProgress = false }: BookCardProps) {
   const [imageError, setImageError] = useState(false);
 
   const thumbnailUrl = getBookThumbnailUrl(book.id);
@@ -35,6 +36,7 @@ export function BookCard({ book, showSeriesTitle = false }: BookCardProps) {
             src={thumbnailUrl}
             alt={book.name}
             fill
+            unoptimized
             className="object-cover transition-opacity group-hover:opacity-90"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
             onError={() => setImageError(true)}
@@ -55,28 +57,32 @@ export function BookCard({ book, showSeriesTitle = false }: BookCardProps) {
         </div>
 
         {/* Status Badge */}
-        <div className="absolute top-2 right-2">
-          {isComplete ? (
-            <Badge className="bg-green-600 hover:bg-green-600 text-white border-0">
-              <CheckCircle className="h-3 w-3 mr-1" />
-              Read
-            </Badge>
-          ) : hasProgress ? (
-            <Badge variant="secondary" className="bg-blue-600 hover:bg-blue-600 text-white border-0">
-              {progressPercent}%
-            </Badge>
-          ) : null}
-        </div>
+        {!hideProgress && (
+          <div className="absolute top-2 right-2">
+            {isComplete ? (
+              <Badge className="bg-green-600 hover:bg-green-600 text-white border-0">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Read
+              </Badge>
+            ) : hasProgress ? (
+              <Badge variant="secondary" className="bg-blue-600 hover:bg-blue-600 text-white border-0">
+                {progressPercent}%
+              </Badge>
+            ) : null}
+          </div>
+        )}
 
         {/* Page count */}
-        <div className="absolute bottom-2 left-2">
-          <Badge variant="secondary" className="bg-black/70 text-white border-0">
-            {totalPages} pages
-          </Badge>
-        </div>
+        {!hideProgress && (
+          <div className="absolute bottom-2 left-2">
+            <Badge variant="secondary" className="bg-black/70 text-white border-0">
+              {totalPages} pages
+            </Badge>
+          </div>
+        )}
 
         {/* Progress bar */}
-        {hasProgress && !isComplete && (
+        {!hideProgress && hasProgress && !isComplete && (
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/30">
             <div
               className="h-full bg-blue-500"
@@ -95,7 +101,7 @@ export function BookCard({ book, showSeriesTitle = false }: BookCardProps) {
             {book.seriesTitle}
           </p>
         )}
-        {hasProgress && !isComplete && (
+        {!hideProgress && hasProgress && !isComplete && (
           <div className="flex items-center gap-2">
             <Progress value={progressPercent} className="h-1 flex-1" />
             <span className="text-xs text-muted-foreground whitespace-nowrap">

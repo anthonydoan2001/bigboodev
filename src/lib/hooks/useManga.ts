@@ -147,13 +147,15 @@ export function useBooks(seriesId: string | null, options?: {
   };
 }
 
-export function useBookById(bookId: string | null) {
+export function useBookById(bookId: string | null, options?: { fresh?: boolean }) {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['manga', 'book', bookId],
     queryFn: () => (bookId ? fetchBookById(bookId) : Promise.resolve(null)),
     enabled: !!bookId,
-    staleTime: 2 * 60 * 1000,
+    // Use shorter stale time to ensure we get fresh progress data
+    staleTime: options?.fresh ? 0 : 30 * 1000, // 30 seconds for regular, 0 for fresh
     refetchOnWindowFocus: false,
+    refetchOnMount: options?.fresh ? 'always' : true, // Always refetch when mounting reader
   });
 
   return {
@@ -270,9 +272,94 @@ export function useUpdateReadProgress() {
       bookId: string;
       progress: UpdateReadProgressRequest;
     }) => updateReadProgress(bookId, progress),
-    onSuccess: (_, variables) => {
-      // Invalidate related queries
+
+    // Optimistically update the cache before the API call
+    onMutate: async ({ bookId, progress }) => {
+      // Cancel any outgoing refetches so they don't overwrite our optimistic update
+      await queryClient.cancelQueries({ queryKey: ['manga', 'book', bookId] });
+      await queryClient.cancelQueries({ queryKey: ['manga', 'books'] });
+      await queryClient.cancelQueries({ queryKey: ['manga', 'in-progress'] });
+      await queryClient.cancelQueries({ queryKey: ['manga', 'on-deck'] });
+
+      // Snapshot the previous values for rollback
+      const previousBook = queryClient.getQueryData(['manga', 'book', bookId]);
+      const previousBooksQueries: Array<{ key: unknown[]; data: unknown }> = [];
+
+      // Get all books queries to update
+      queryClient.getQueriesData({ queryKey: ['manga', 'books'] }).forEach(([key, data]) => {
+        previousBooksQueries.push({ key, data });
+      });
+
+      // Helper function to update a book's progress
+      const updateBookProgress = (book: any) => {
+        if (book?.id === bookId) {
+          return {
+            ...book,
+            readProgress: {
+              ...book.readProgress,
+              page: progress.page,
+              completed: progress.completed ?? book.readProgress?.completed ?? false,
+              lastModified: new Date().toISOString(),
+            },
+          };
+        }
+        return book;
+      };
+
+      // Optimistically update individual book query
+      queryClient.setQueryData(['manga', 'book', bookId], (old: any) => {
+        if (!old) return old;
+        return updateBookProgress(old);
+      });
+
+      // Optimistically update all books list queries
+      queryClient.setQueriesData({ queryKey: ['manga', 'books'] }, (old: any) => {
+        if (!old?.content) return old;
+        return {
+          ...old,
+          content: old.content.map(updateBookProgress),
+        };
+      });
+
+      // Optimistically update in-progress queries
+      queryClient.setQueriesData({ queryKey: ['manga', 'in-progress'] }, (old: any) => {
+        if (!old?.content) return old;
+        return {
+          ...old,
+          content: old.content.map(updateBookProgress),
+        };
+      });
+
+      // Optimistically update on-deck queries
+      queryClient.setQueriesData({ queryKey: ['manga', 'on-deck'] }, (old: any) => {
+        if (!old?.content) return old;
+        return {
+          ...old,
+          content: old.content.map(updateBookProgress),
+        };
+      });
+
+      // Return context for rollback
+      return { previousBook, previousBooksQueries };
+    },
+
+    // If the mutation fails, rollback to the previous state
+    onError: (err, variables, context) => {
+      if (context?.previousBook) {
+        queryClient.setQueryData(['manga', 'book', variables.bookId], context.previousBook);
+      }
+      if (context?.previousBooksQueries) {
+        context.previousBooksQueries.forEach(({ key, data }) => {
+          queryClient.setQueryData(key, data);
+        });
+      }
+    },
+
+    // Always refetch after success or error to ensure we have the latest data
+    onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: ['manga', 'book', variables.bookId] });
+      queryClient.invalidateQueries({ queryKey: ['manga', 'books'] });
+      queryClient.invalidateQueries({ queryKey: ['manga', 'series'] }); // For read counts
       queryClient.invalidateQueries({ queryKey: ['manga', 'in-progress'] });
       queryClient.invalidateQueries({ queryKey: ['manga', 'on-deck'] });
     },

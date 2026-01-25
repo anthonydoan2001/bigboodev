@@ -14,7 +14,8 @@ interface ReaderPageProps {
 
 export default function ReaderPage({ params }: ReaderPageProps) {
   const { bookId } = use(params);
-  const { book, isLoading: bookLoading, error: bookError } = useBookById(bookId);
+  // Use fresh: true to ensure we get the latest read progress
+  const { book, isLoading: bookLoading, error: bookError } = useBookById(bookId, { fresh: true });
   const { pages, isLoading: pagesLoading, error: pagesError } = useBookPages(bookId);
 
   const isLoading = bookLoading || pagesLoading;
