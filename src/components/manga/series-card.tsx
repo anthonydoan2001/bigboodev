@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { getSeriesThumbnailUrl } from '@/lib/api/manga';
+import { useThumbnailVersion } from '@/lib/stores/manga-store';
 import { KomgaSeries } from '@/types/komga';
 import { BookOpen, CheckCircle } from 'lucide-react';
 import { useState } from 'react';
@@ -14,9 +15,10 @@ interface SeriesCardProps {
 
 export function SeriesCard({ series }: SeriesCardProps) {
   const [imageError, setImageError] = useState(false);
+  const thumbnailVersion = useThumbnailVersion();
 
-  // Use lastModified as cache buster so thumbnails refresh when updated
-  const thumbnailUrl = `${getSeriesThumbnailUrl(series.id)}?t=${new Date(series.lastModified).getTime()}`;
+  // Use lastModified + global thumbnail version as cache buster
+  const thumbnailUrl = `${getSeriesThumbnailUrl(series.id)}?t=${new Date(series.lastModified).getTime()}&v=${thumbnailVersion}`;
   const totalBooks = series.booksCount;
   const readBooks = series.booksReadCount;
   const inProgressBooks = series.booksInProgressCount;

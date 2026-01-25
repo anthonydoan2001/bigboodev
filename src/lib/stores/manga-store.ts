@@ -16,6 +16,10 @@ interface ReaderState {
   bookProgress: Record<string, number>;
   saveLocalProgress: (bookId: string, page: number) => void;
 
+  // Thumbnail cache buster (not persisted) - incremented when thumbnails are updated
+  thumbnailVersion: number;
+  incrementThumbnailVersion: () => void;
+
   // Current session (not persisted)
   currentBookId: string | null;
   currentPage: number;
@@ -47,6 +51,10 @@ export const useMangaStore = create<ReaderState>()(
       readingMode: 'vertical-scroll',
       seriesZoom: {},
       bookProgress: {},
+
+      // Thumbnail cache buster
+      thumbnailVersion: 0,
+      incrementThumbnailVersion: () => set((state) => ({ thumbnailVersion: state.thumbnailVersion + 1 })),
 
       // Session state
       currentBookId: null,
@@ -171,3 +179,4 @@ export const useIsUIVisible = () => useMangaStore((state) => state.isUIVisible);
 export const useIsSettingsOpen = () => useMangaStore((state) => state.isSettingsOpen);
 export const useSeriesZoom = (seriesId: string) =>
   useMangaStore((state) => state.seriesZoom[seriesId] ?? 1);
+export const useThumbnailVersion = () => useMangaStore((state) => state.thumbnailVersion);

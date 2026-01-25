@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSeries } from '@/lib/hooks/useManga';
 import { getSeriesThumbnailUrl } from '@/lib/api/manga';
+import { useMangaStore } from '@/lib/stores/manga-store';
 import { ThumbnailUploadDialog } from './thumbnail-upload-dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ import { Search, Edit, ChevronLeft, ChevronRight, BookOpen, Loader2 } from 'luci
 
 export function SeriesThumbnailManager() {
   const queryClient = useQueryClient();
+  const incrementThumbnailVersion = useMangaStore((state) => state.incrementThumbnailVersion);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(0);
@@ -46,8 +48,10 @@ export function SeriesThumbnailManager() {
   const handleSuccess = () => {
     // Invalidate series queries to refresh thumbnails
     queryClient.invalidateQueries({ queryKey: ['manga', 'series'] });
-    // Increment refresh key to bust browser cache
+    // Increment refresh key to bust browser cache (local settings page)
     setRefreshKey((k) => k + 1);
+    // Increment global thumbnail version to bust cache on main manga pages
+    incrementThumbnailVersion();
   };
 
   return (
