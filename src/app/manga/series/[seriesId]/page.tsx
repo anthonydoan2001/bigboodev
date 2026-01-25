@@ -5,7 +5,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useSeriesById, useBooks } from '@/lib/hooks/useManga';
 import { getSeriesThumbnailUrl } from '@/lib/api/manga';
-import { BookCard } from '@/components/manga/book-card';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -134,6 +133,7 @@ export default function SeriesPage({ params }: SeriesPageProps) {
                   src={thumbnailUrl}
                   alt={series.name}
                   fill
+                  unoptimized
                   className="object-cover"
                   onError={() => setImageError(true)}
                   priority
@@ -240,7 +240,7 @@ export default function SeriesPage({ params }: SeriesPageProps) {
           </div>
         </div>
 
-        {/* Books Grid */}
+        {/* Books List */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Books</h2>
 
@@ -257,10 +257,38 @@ export default function SeriesPage({ params }: SeriesPageProps) {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {sortedBooks.map((book) => (
-                <BookCard key={book.id} book={book} />
-              ))}
+            <div className="space-y-1">
+              {sortedBooks.map((book) => {
+                const isComplete = book.readProgress?.completed || false;
+                const currentPage = book.readProgress?.page || 0;
+                const totalPages = book.media.pagesCount;
+                const hasProgress = currentPage > 0 && !isComplete;
+
+                return (
+                  <Link
+                    key={book.id}
+                    href={`/manga/read/${book.id}`}
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
+                  >
+                    <span className="w-8 text-center text-muted-foreground text-sm">
+                      {book.metadata.numberSort || book.number}
+                    </span>
+                    <span className="flex-1 text-sm">
+                      {book.metadata.title || book.name}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {totalPages} pages
+                    </span>
+                    {isComplete ? (
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    ) : hasProgress ? (
+                      <span className="text-xs text-blue-600">
+                        {currentPage}/{totalPages}
+                      </span>
+                    ) : null}
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>
