@@ -7,6 +7,11 @@ interface ReaderState {
   readingMode: ReadingMode;
   setReadingMode: (mode: ReadingMode) => void;
 
+  // Zoom level per series (persisted) - maps seriesId to zoom level (1 = 100%)
+  seriesZoom: Record<string, number>;
+  setSeriesZoom: (seriesId: string, zoom: number) => void;
+  getSeriesZoom: (seriesId: string) => number;
+
   // Book progress (persisted) - maps bookId to page number
   bookProgress: Record<string, number>;
   saveLocalProgress: (bookId: string, page: number) => void;
@@ -40,6 +45,7 @@ export const useMangaStore = create<ReaderState>()(
     (set, get) => ({
       // Persisted settings
       readingMode: 'vertical-scroll',
+      seriesZoom: {},
       bookProgress: {},
 
       // Session state
@@ -55,6 +61,18 @@ export const useMangaStore = create<ReaderState>()(
 
       // Actions
       setReadingMode: (mode) => set({ readingMode: mode }),
+
+      setSeriesZoom: (seriesId, zoom) => {
+        const clampedZoom = Math.max(0.5, Math.min(2, zoom));
+        set((state) => ({
+          seriesZoom: { ...state.seriesZoom, [seriesId]: clampedZoom },
+        }));
+      },
+
+      getSeriesZoom: (seriesId) => {
+        const { seriesZoom } = get();
+        return seriesZoom[seriesId] ?? 1;
+      },
 
       saveLocalProgress: (bookId, page) => {
         set((state) => ({
@@ -135,9 +153,10 @@ export const useMangaStore = create<ReaderState>()(
     }),
     {
       name: 'manga-reader-settings',
-      // Persist reading mode and per-book progress
+      // Persist reading mode, zoom per series, and per-book progress
       partialize: (state) => ({
         readingMode: state.readingMode,
+        seriesZoom: state.seriesZoom,
         bookProgress: state.bookProgress,
       }),
     }
@@ -150,3 +169,5 @@ export const useCurrentPage = () => useMangaStore((state) => state.currentPage);
 export const useTotalPages = () => useMangaStore((state) => state.totalPages);
 export const useIsUIVisible = () => useMangaStore((state) => state.isUIVisible);
 export const useIsSettingsOpen = () => useMangaStore((state) => state.isSettingsOpen);
+export const useSeriesZoom = (seriesId: string) =>
+  useMangaStore((state) => state.seriesZoom[seriesId] ?? 1);
