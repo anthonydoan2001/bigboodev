@@ -650,7 +650,9 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
         ref={scrollContainerRef}
         className={cn(
           'flex-1 overflow-auto',
-          isPageMode && 'flex items-center justify-center',
+          // Only center in page mode when zoom <= 1 (content fits in viewport)
+          // When zoomed in (zoom > 1), let content overflow naturally from top-left for proper scrolling
+          isPageMode && zoom <= 1 && 'flex items-center justify-center',
           readingMode === 'vertical-scroll' && 'overflow-y-auto overflow-x-auto',
           readingMode === 'horizontal-scroll-ltr' && 'overflow-x-auto overflow-y-auto flex flex-row',
           readingMode === 'horizontal-scroll-rtl' && 'overflow-x-auto overflow-y-auto flex flex-row-reverse',
@@ -660,7 +662,11 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
       >
         {isPageMode ? (
           // Page-by-page mode: show only current page with zoom
-          <div className="w-full h-full flex items-center justify-center">
+          // When zoomed out (zoom <= 1), center the content
+          // When zoomed in (zoom > 1), use min dimensions to enable scrolling from edges
+          <div className={cn(
+            zoom <= 1 ? 'w-full h-full flex items-center justify-center' : 'min-w-full min-h-full'
+          )}>
             {renderPage(currentPage, currentPage - 1)}
           </div>
         ) : (

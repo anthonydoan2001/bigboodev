@@ -1,12 +1,13 @@
 'use client';
 
 import { CalendarWidget } from "@/components/dashboard/CalendarWidget";
+import { ContinueReadingWidget } from "@/components/dashboard/ContinueReadingWidget";
 import { CountdownWidget } from "@/components/dashboard/CountdownWidget";
 import { GmailWidget } from "@/components/dashboard/GmailWidget";
 import { PinnedNotesWidget } from "@/components/dashboard/PinnedNotesWidget";
 import { RocketsGameWidget } from "@/components/dashboard/RocketsGameWidget";
 import { StocksCryptoWidget } from "@/components/dashboard/StocksCryptoWidget";
-import { WeatherWidget } from "@/components/dashboard/WeatherWidget";
+import { WeatherInline } from "@/components/dashboard/WeatherInline";
 import { fetchQuote } from "@/lib/api/quote";
 import { fetchWeather } from "@/lib/api/weather";
 import { fetchStockQuotes } from "@/lib/api/stocks";
@@ -69,19 +70,19 @@ const QuoteDisplay = memo(function QuoteDisplay({
   isLoading: boolean;
 }) {
   if (isLoading) {
-    return <div className="h-8 w-3/4 max-w-2xl bg-muted/20 animate-pulse rounded-md" />;
+    return <div className="h-6 w-1/2 max-w-lg bg-muted/20 animate-pulse rounded-md" />;
   }
 
   if (quote) {
     return (
-      <p className="text-muted-foreground text-title-lg italic font-normal">
+      <p className="text-muted-foreground text-base md:text-lg italic font-normal truncate max-w-3xl">
         "{quote.content}" — {quote.author}
       </p>
     );
   }
 
   return (
-    <p className="text-muted-foreground text-title-lg font-normal">
+    <p className="text-muted-foreground text-base md:text-lg font-normal">
       Here's what's happening today
     </p>
   );
@@ -108,17 +109,17 @@ const Clock = memo(function Clock() {
   // Show placeholder on server/initial render to avoid hydration mismatch
   if (!mounted) {
     return (
-      <div className="flex items-baseline gap-1.5 font-mono flex-shrink-0">
-        <span className="text-3xl md:text-4xl font-bold tabular-nums opacity-0">00:00:00</span>
-        <span className="text-lg md:text-xl font-semibold text-muted-foreground opacity-0">AM</span>
+      <div className="flex items-baseline gap-1 font-mono flex-shrink-0">
+        <span className="text-2xl md:text-3xl font-bold tabular-nums opacity-0">00:00:00</span>
+        <span className="text-base md:text-lg font-semibold text-muted-foreground opacity-0">AM</span>
       </div>
     );
   }
 
   return (
-    <div className="flex items-baseline gap-1.5 font-mono flex-shrink-0">
-      <span className="text-3xl md:text-4xl font-bold tabular-nums">{time}</span>
-      <span className="text-lg md:text-xl font-semibold text-muted-foreground">{period}</span>
+    <div className="flex items-baseline gap-1 font-mono flex-shrink-0">
+      <span className="text-2xl md:text-3xl font-bold tabular-nums">{time}</span>
+      <span className="text-base md:text-lg font-semibold text-muted-foreground">{period}</span>
     </div>
   );
 });
@@ -180,46 +181,55 @@ export default function Home() {
 
   // Render immediately - don't block on widget loading for better LCP
   return (
-    <div className="w-full py-6 px-4 sm:px-6 lg:px-8 min-h-screen">
-      {/* Header Section with Weather */}
-      <div className="mb-6 flex flex-col lg:flex-row lg:items-center gap-6">
-        {/* Left: Weather Widget */}
-        <div className="lg:w-80 flex-shrink-0">
-          <WeatherWidget />
-        </div>
-
-        {/* Right: Greeting & Quote */}
-        <div className="space-y-3 flex-1">
-          <div className="flex items-start justify-between gap-4">
-            <h1 className="text-display-lg">{greeting}, Big Boo</h1>
-            <Clock />
+    <div className="w-full h-screen overflow-hidden flex flex-col py-6 px-4 sm:px-6 lg:px-8">
+      {/* Compact Header Section */}
+      <div className="mb-6 flex-shrink-0">
+        <div className="flex gap-6">
+          {/* Left: Weather Widget - stretches to match height */}
+          <div className="flex-shrink-0 flex">
+            <WeatherInline />
           </div>
-          <QuoteDisplay quote={quote} isLoading={quoteLoading} />
+
+          {/* Right: Greeting, Quote, and Clock */}
+          <div className="flex-1 flex flex-col justify-center gap-4">
+            {/* Top: Greeting and Clock */}
+            <div className="flex items-center justify-between gap-4">
+              <h1 className="text-3xl md:text-4xl font-bold">{greeting}, Big Boo</h1>
+              <Clock />
+            </div>
+            {/* Bottom: Quote */}
+            <QuoteDisplay quote={quote} isLoading={quoteLoading} />
+          </div>
         </div>
       </div>
 
-      {/* Bento-style Dashboard Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 auto-rows-auto gap-4 md:gap-6">
-        {/* Calendar, Notes & Countdown Widgets - Stacked Vertically */}
-        <div className="col-span-1 flex flex-col gap-4 md:gap-6">
-          <CalendarWidget />
-          <PinnedNotesWidget />
-          <CountdownWidget />
-        </div>
+      {/* Optimized Dashboard Grid - Viewport Aware */}
+      <div className="flex-1 overflow-hidden min-h-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-min gap-4 h-full content-start overflow-y-auto scrollbar-hide pb-4">
+          {/* Mobile: Stacked (scroll allowed) */}
+          {/* Tablet (768px): 2 columns */}
+          {/* Laptop (1024px): 3 columns */}
 
-        {/* Stocks & Crypto Widget */}
-        <div className="col-span-1">
-          <StocksCryptoWidget />
-        </div>
+          {/* Calendar Widget with Countdown and Continue Reading in a row below */}
+          <div className="col-span-1 flex flex-col gap-4">
+            <CalendarWidget />
+            <div className="grid grid-cols-2 gap-4">
+              <ContinueReadingWidget />
+              <CountdownWidget />
+            </div>
+          </div>
 
-        {/* Rockets Game Widget */}
-        <div className="col-span-1">
-          <RocketsGameWidget />
-        </div>
+          {/* Gmail Widget with Pinned Notes stacked below */}
+          <div className="col-span-1 md:col-span-2 lg:col-span-1 flex flex-col gap-4">
+            <GmailWidget />
+            <PinnedNotesWidget />
+          </div>
 
-        {/* Gmail Widget */}
-        <div className="col-span-1 sm:col-span-2 lg:col-span-2">
-          <GmailWidget />
+          {/* Rockets Game Widget with Stocks stacked below */}
+          <div className="col-span-1 flex flex-col gap-4">
+            <RocketsGameWidget />
+            <StocksCryptoWidget />
+          </div>
         </div>
       </div>
     </div>

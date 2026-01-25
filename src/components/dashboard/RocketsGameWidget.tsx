@@ -126,8 +126,8 @@ export function RocketsGameWidget() {
 
   if (isLoading) {
     return (
-      <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden py-0 gap-0">
-        <CardContent className="p-4 h-full flex flex-col justify-center">
+      <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden py-0 gap-0 transition-all hover:shadow-md">
+        <CardContent className="p-3 h-full flex flex-col justify-center">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-muted/30 animate-pulse rounded-full" />
@@ -147,7 +147,7 @@ export function RocketsGameWidget() {
 
   if (error || !data) {
     return (
-      <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm flex items-center justify-center py-0 gap-0">
+      <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm flex items-center justify-center py-0 gap-0 transition-all hover:shadow-md">
         <p className="text-body-sm text-muted-foreground">Failed to load Rockets game</p>
       </Card>
     );
@@ -160,8 +160,8 @@ export function RocketsGameWidget() {
 
   if (!gameToShow) {
     return (
-      <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm flex items-center justify-center py-0 gap-0">
-        <CardContent className="p-4 text-center">
+      <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm flex items-center justify-center py-0 gap-0 transition-all hover:shadow-md">
+        <CardContent className="p-3 text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Image
               src="https://a.espncdn.com/i/teamlogos/nba/500/hou.png"
@@ -254,8 +254,8 @@ export function RocketsGameWidget() {
   // For scheduled games, show a different layout
   if (isScheduled) {
     return (
-      <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden py-0 gap-0">
-        <CardContent className="p-4 h-full flex flex-col justify-center items-center text-center">
+      <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden py-0 gap-0 transition-all hover:shadow-md">
+        <CardContent className="p-3 h-full flex flex-col justify-center items-center text-center">
           {/* Team Matchup */}
           <div className="flex items-center justify-center gap-4 mb-4">
             {/* Away Team */}
@@ -329,8 +329,8 @@ export function RocketsGameWidget() {
 
   // For live and finished games, show scores
   return (
-    <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden py-0 gap-0">
-      <CardContent className="p-4 h-full flex flex-col">
+    <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden py-0 gap-0 transition-all hover:shadow-md">
+      <CardContent className="p-3 h-full flex flex-col">
         {/* Header with status */}
         <div className="flex items-center justify-between mb-3">
           <span className="text-caption text-muted-foreground tracking-wide">

@@ -60,13 +60,13 @@ export function CalendarWidget() {
   };
   
   return (
-    <Card className="w-full border-white/10 shadow-sm bg-background/40 backdrop-blur-md py-0 gap-0">
+    <Card className="w-full border-white/10 shadow-sm bg-background/40 backdrop-blur-md py-0 gap-0 transition-all hover:shadow-md">
       <CardHeader className="pt-4 pb-2 px-4">
-        <div className="flex items-center justify-between px-2">
-          <CardTitle className="text-title">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg font-semibold">
             {monthNames[month]}
           </CardTitle>
-          <span className="text-body-sm text-muted-foreground bg-accent/50 px-2 py-1 rounded-md">
+          <span className="text-xs text-muted-foreground bg-accent/50 px-2 py-1 rounded">
             {year}
           </span>
         </div>
@@ -77,30 +77,30 @@ export function CalendarWidget() {
           {dayNames.map((day) => (
             <div
               key={day}
-              className="text-caption-sm text-muted-foreground text-center py-1"
+              className="text-[0.65rem] text-muted-foreground text-center py-1 font-medium uppercase tracking-wide"
             >
               {day}
             </div>
           ))}
         </div>
-        
+
         {/* Calendar grid */}
         <div className="grid grid-cols-7 gap-1">
           {days.map((day, index) => {
             if (day === null) {
-              return <div key={`empty-${index}`} className="aspect-square" />;
+              return <div key={`empty-${index}`} className="h-9" />;
             }
-            
+
             const isTodayDate = isToday(day);
-            
+
             return (
               <div
                 key={day}
                 className={cn(
-                  "aspect-square flex items-center justify-center text-body-sm rounded-full",
+                  "h-9 flex items-center justify-center text-sm rounded-full transition-all",
                   isTodayDate
                     ? "bg-primary text-primary-foreground font-bold shadow-md scale-105"
-                    : "text-muted-foreground font-medium"
+                    : "text-muted-foreground font-medium hover:bg-muted/30"
                 )}
               >
                 {day}
