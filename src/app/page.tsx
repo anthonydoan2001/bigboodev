@@ -1,7 +1,10 @@
 'use client';
 
 import { CalendarWidget } from "@/components/dashboard/CalendarWidget";
+import { CountdownWidget } from "@/components/dashboard/CountdownWidget";
 import { GmailWidget } from "@/components/dashboard/GmailWidget";
+import { PinnedNotesWidget } from "@/components/dashboard/PinnedNotesWidget";
+import { RocketsGameWidget } from "@/components/dashboard/RocketsGameWidget";
 import { StocksCryptoWidget } from "@/components/dashboard/StocksCryptoWidget";
 import { WeatherWidget } from "@/components/dashboard/WeatherWidget";
 import { fetchQuote } from "@/lib/api/quote";
@@ -86,9 +89,13 @@ const QuoteDisplay = memo(function QuoteDisplay({
 
 // Memoized Clock component - isolated re-renders for time updates
 const Clock = memo(function Clock() {
+  const [mounted, setMounted] = useState(false);
   const [currentTime, setCurrentTime] = useState(() => new Date());
 
   useEffect(() => {
+    setMounted(true);
+    setCurrentTime(new Date()); // Sync time on mount
+
     const timeInterval = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
@@ -97,6 +104,16 @@ const Clock = memo(function Clock() {
   }, []);
 
   const { time, period } = useMemo(() => formatTime(currentTime), [currentTime]);
+
+  // Show placeholder on server/initial render to avoid hydration mismatch
+  if (!mounted) {
+    return (
+      <div className="flex items-baseline gap-1.5 font-mono flex-shrink-0">
+        <span className="text-3xl md:text-4xl font-bold tabular-nums opacity-0">00:00:00</span>
+        <span className="text-lg md:text-xl font-semibold text-muted-foreground opacity-0">AM</span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-baseline gap-1.5 font-mono flex-shrink-0">
@@ -183,9 +200,11 @@ export default function Home() {
 
       {/* Bento-style Dashboard Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 auto-rows-auto gap-4 md:gap-6">
-        {/* Calendar Widget */}
-        <div className="col-span-1">
+        {/* Calendar, Rockets & Countdown Widgets - Stacked Vertically */}
+        <div className="col-span-1 flex flex-col gap-4 md:gap-6">
           <CalendarWidget />
+          <RocketsGameWidget />
+          <CountdownWidget />
         </div>
 
         {/* Stocks & Crypto Widget */}
@@ -193,8 +212,13 @@ export default function Home() {
           <StocksCryptoWidget />
         </div>
 
+        {/* Pinned Notes Widget */}
+        <div className="col-span-1">
+          <PinnedNotesWidget />
+        </div>
+
         {/* Gmail Widget */}
-        <div className="col-span-1 sm:col-span-2">
+        <div className="col-span-1 sm:col-span-2 lg:col-span-2">
           <GmailWidget />
         </div>
       </div>

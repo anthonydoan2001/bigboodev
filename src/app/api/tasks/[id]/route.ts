@@ -28,14 +28,17 @@ export const PATCH = withAuth(async (request: Request, sessionToken: string) => 
     if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null;
     if (category !== undefined) updateData.category = category?.trim() || null;
     if (notes !== undefined) updateData.notes = notes?.trim() || null;
-    if (noteId !== undefined) updateData.noteId = noteId || null;
     if (position !== undefined) updateData.position = position;
 
     const task = await db.task.update({
       where: { id },
       data: updateData,
       include: {
-        note: true,
+        taskNotes: {
+          include: {
+            note: true,
+          },
+        },
       },
     });
 
