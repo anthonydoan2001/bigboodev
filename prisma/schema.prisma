@@ -365,3 +365,20 @@ model GmailToken {
   @@index([email])
   @@map("gmail_tokens")
 }
+
+model TikTokVideo {
+  id          String    @id @default(cuid())
+  videoId     String    @unique @map("video_id")
+  url         String
+  title       String?
+  thumbnail   String?
+  authorName  String?   @map("author_name")
+  uploadDate  DateTime? @map("upload_date")
+  likedAt     DateTime  @map("liked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([likedAt])
+  @@index([uploadDate])
+  @@map("tiktok_videos")
+}

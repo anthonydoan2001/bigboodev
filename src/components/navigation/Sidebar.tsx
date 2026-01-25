@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { PrefetchLink } from '@/components/performance/PrefetchLink';
 import { useSidebar } from '@/lib/providers/SidebarProvider';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, Film, Gamepad2, Home, Settings, Trophy, CheckSquare, StickyNote } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Film, Gamepad2, Home, Settings, Trophy, CheckSquare, StickyNote, Video } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -38,6 +38,11 @@ const navItems = [
     name: 'Notes',
     href: '/notes',
     icon: StickyNote,
+  },
+  {
+    name: 'TikTok',
+    href: '/tiktok',
+    icon: Video,
   },
   {
     name: 'Settings',
@@ -98,6 +103,8 @@ export function Sidebar() {
                 ? pathname.startsWith('/tasks')
                 : item.href === '/notes'
                 ? pathname.startsWith('/notes')
+                : item.href === '/tiktok'
+                ? pathname.startsWith('/tiktok')
                 : pathname === item.href;
               const Icon = item.icon;
 
