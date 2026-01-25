@@ -152,6 +152,38 @@ export interface KomgaPage {
   size: string;
 }
 
+// ============ Library Types ============
+
+export interface KomgaLibrary {
+  id: string;
+  name: string;
+  root: string;
+  importComicInfoBook: boolean;
+  importComicInfoSeries: boolean;
+  importComicInfoCollection: boolean;
+  importComicInfoReadList: boolean;
+  importEpubBook: boolean;
+  importEpubSeries: boolean;
+  importMylarSeries: boolean;
+  importLocalArtwork: boolean;
+  importBarcodeIsbn: boolean;
+  scanForceModifiedTime: boolean;
+  scanInterval: string;
+  scanOnStartup: boolean;
+  scanCbx: boolean;
+  scanPdf: boolean;
+  scanEpub: boolean;
+  scanDirectoryExclusions: string[];
+  repairExtensions: boolean;
+  convertToCbz: boolean;
+  emptyTrashAfterScan: boolean;
+  seriesCover: string;
+  hashFiles: boolean;
+  hashPages: boolean;
+  analyzeDimensions: boolean;
+  unavailable: boolean;
+}
+
 // ============ API Response Types ============
 
 export interface KomgaPagedResponse<T> {
@@ -230,3 +262,19 @@ export interface SeriesFilters {
   libraryId?: string;
   status?: string;
 }
+
+// ============ Reading List Types ============
+
+export interface KomgaReadList {
+  id: string;
+  name: string;
+  summary: string;
+  ordered: boolean;
+  bookIds: string[];
+  createdDate: string;
+  lastModifiedDate: string;
+  filtered: boolean;
+  bookCount?: number;
+}
+
+export type KomgaReadListsResponse = KomgaPagedResponse<KomgaReadList>;
