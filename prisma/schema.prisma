@@ -382,3 +382,16 @@ model TikTokVideo {
   @@index([uploadDate])
   @@map("tiktok_videos")
 }
+
+model KomgaSettings {
+  id        String   @id @default(cuid())
+  userId    String   @unique @map("user_id") // Single user app, but keeps structure flexible
+  serverUrl String   @default("http://komga.bigboo.dev") @map("server_url")
+  email     String
+  password  String   @db.Text // Encrypted password
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("komga_settings")
+}
