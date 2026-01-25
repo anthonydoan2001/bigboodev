@@ -7,7 +7,10 @@ import {
   KomgaPage,
   KomgaSettings,
   KomgaSettingsInput,
+  KomgaLibrary,
   UpdateReadProgressRequest,
+  KomgaReadList,
+  KomgaReadListsResponse,
 } from '@/types/komga';
 
 const BASE_URL = '/api';
@@ -66,17 +69,35 @@ export async function deleteKomgaSettings(): Promise<{ success: boolean }> {
   return res.json();
 }
 
+// ============ Libraries API ============
+
+export async function fetchLibraries(): Promise<KomgaLibrary[]> {
+  const res = await fetch(`${BASE_URL}/komga/libraries`, {
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'Failed to fetch libraries' }));
+    throw new Error(error.error || 'Failed to fetch libraries');
+  }
+
+  return res.json();
+}
+
 // ============ Series API ============
 
 export async function fetchSeries(options?: {
   page?: number;
   size?: number;
   search?: string;
+  libraryId?: string;
 }): Promise<KomgaSeriesResponse> {
   const params = new URLSearchParams();
   if (options?.page !== undefined) params.set('page', options.page.toString());
   if (options?.size !== undefined) params.set('size', options.size.toString());
   if (options?.search) params.set('search', options.search);
+  if (options?.libraryId) params.set('library_id', options.libraryId);
 
   const query = params.toString();
   const res = await fetch(`${BASE_URL}/komga/series${query ? `?${query}` : ''}`, {
@@ -329,4 +350,72 @@ export async function fetchPreviousBook(bookId: string): Promise<KomgaBook | nul
   } catch {
     return null;
   }
+}
+
+// ============ Reading Lists API ============
+
+export async function fetchReadLists(options?: {
+  page?: number;
+  size?: number;
+  search?: string;
+}): Promise<KomgaReadListsResponse> {
+  const params = new URLSearchParams();
+  if (options?.page !== undefined) params.set('page', options.page.toString());
+  if (options?.size !== undefined) params.set('size', options.size.toString());
+  if (options?.search) params.set('search', options.search);
+
+  const query = params.toString();
+  const res = await fetch(`${BASE_URL}/komga/readlists${query ? `?${query}` : ''}`, {
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'Failed to fetch reading lists' }));
+    throw new Error(error.error || 'Failed to fetch reading lists');
+  }
+
+  return res.json();
+}
+
+export async function fetchReadListById(readListId: string): Promise<KomgaReadList> {
+  const res = await fetch(`${BASE_URL}/komga/readlists/${readListId}`, {
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'Failed to fetch reading list' }));
+    throw new Error(error.error || 'Failed to fetch reading list');
+  }
+
+  return res.json();
+}
+
+export async function fetchReadListBooks(readListId: string, options?: {
+  page?: number;
+  size?: number;
+  unpaged?: boolean;
+}): Promise<KomgaBooksResponse> {
+  const params = new URLSearchParams();
+  if (options?.page !== undefined) params.set('page', options.page.toString());
+  if (options?.size !== undefined) params.set('size', options.size.toString());
+  if (options?.unpaged) params.set('unpaged', 'true');
+
+  const query = params.toString();
+  const res = await fetch(`${BASE_URL}/komga/readlists/${readListId}/books${query ? `?${query}` : ''}`, {
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'Failed to fetch reading list books' }));
+    throw new Error(error.error || 'Failed to fetch reading list books');
+  }
+
+  return res.json();
+}
+
+export function getReadListThumbnailUrl(readListId: string): string {
+  return `${BASE_URL}/komga/readlists/${readListId}/thumbnail`;
 }

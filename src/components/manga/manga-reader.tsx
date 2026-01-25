@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import Image from 'next/image';
 import { useSwipeable } from 'react-swipeable';
-import { useMangaStore } from '@/lib/stores/manga-store';
+import { useMangaStore, useSeriesZoom } from '@/lib/stores/manga-store';
 import { useUpdateReadProgress, useAdjacentBooks } from '@/lib/hooks/useManga';
 import { useDebouncedCallback } from '@/lib/hooks/useDebouncedCallback';
 import { getPageUrl } from '@/lib/api/manga';
@@ -17,6 +17,8 @@ import {
   ChevronRight,
   BookOpen,
   Loader2,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -36,6 +38,7 @@ export function MangaReader({ book, pages }: MangaReaderProps) {
   const [isHydrated, setIsHydrated] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const hasScrolledToSavedPage = useRef(false);
+  const prevZoomRef = useRef<number | null>(null);
 
   const {
     readingMode,
@@ -50,7 +53,22 @@ export function MangaReader({ book, pages }: MangaReaderProps) {
     hideUI,
     openSettings,
     closeSettings,
+    setSeriesZoom,
   } = useMangaStore();
+
+  // Use the reactive selector hook for zoom
+  const zoom = useSeriesZoom(book.seriesId);
+  const zoomPercentage = Math.round(zoom * 100);
+
+  const handleZoomIn = () => {
+    const newZoom = Math.min(2, zoom + 0.1);
+    setSeriesZoom(book.seriesId, newZoom);
+  };
+
+  const handleZoomOut = () => {
+    const newZoom = Math.max(0.5, zoom - 0.1);
+    setSeriesZoom(book.seriesId, newZoom);
+  };
 
   const { updateProgress } = useUpdateReadProgress();
   const { nextBook, previousBook } = useAdjacentBooks(book.id);
@@ -199,6 +217,34 @@ export function MangaReader({ book, pages }: MangaReaderProps) {
       observer.disconnect();
     };
   }, [isPageMode, setCurrentPage, pages.length, book.id]);
+
+  // Preserve scroll position when zoom changes in scroll modes
+  useEffect(() => {
+    // Skip on initial render (prevZoomRef is null)
+    if (prevZoomRef.current === null) {
+      prevZoomRef.current = zoom;
+      return;
+    }
+
+    // Skip if zoom hasn't changed
+    if (prevZoomRef.current === zoom) return;
+
+    // Skip in page mode (no scrolling needed)
+    if (isPageMode) {
+      prevZoomRef.current = zoom;
+      return;
+    }
+
+    const currentPageEl = pageRefs.current.get(currentPage);
+    if (currentPageEl) {
+      // Use requestAnimationFrame to ensure DOM has updated with new sizes
+      requestAnimationFrame(() => {
+        currentPageEl.scrollIntoView({ behavior: 'instant', block: 'start' });
+      });
+    }
+
+    prevZoomRef.current = zoom;
+  }, [zoom, currentPage, isPageMode]);
 
   // Debounced progress save - flush on unmount to ensure progress is saved when navigating away
   const saveProgress = useDebouncedCallback(
@@ -374,6 +420,10 @@ export function MangaReader({ book, pages }: MangaReaderProps) {
     const page = pages[index];
     const isLoaded = loadedPages.has(pageNum);
 
+    // Calculate zoomed dimensions for scroll modes
+    const zoomedWidth = page ? Math.round(page.width * zoom) : undefined;
+    const zoomedHeight = page ? Math.round(page.height * zoom) : undefined;
+
     return (
       <div
         key={pageNum}
@@ -387,17 +437,16 @@ export function MangaReader({ book, pages }: MangaReaderProps) {
         }}
         className={cn(
           'relative flex-shrink-0',
-          isPageMode ? 'w-full h-full' : '',
-          readingMode === 'vertical-scroll' && 'w-full',
-          readingMode.includes('horizontal') && 'h-full'
+          isPageMode ? '' : '',
+          readingMode === 'vertical-scroll' && '',
+          readingMode.includes('horizontal') && ''
         )}
-        style={
-          !isPageMode
-            ? {
-                aspectRatio: page ? `${page.width}/${page.height}` : undefined,
-              }
-            : undefined
-        }
+        style={{
+          width: isPageMode ? `${zoom * 100}%` : zoomedWidth,
+          height: isPageMode ? `${zoom * 100}%` : zoomedHeight,
+          minWidth: isPageMode && zoom > 1 ? `${zoom * 100}%` : undefined,
+          minHeight: isPageMode && zoom > 1 ? `${zoom * 100}%` : undefined,
+        }}
       >
         {!isLoaded && (
           <div className="absolute inset-0 flex items-center justify-center bg-muted">
@@ -409,8 +458,8 @@ export function MangaReader({ book, pages }: MangaReaderProps) {
           alt={`Page ${pageNum}`}
           fill={isPageMode}
           unoptimized
-          width={!isPageMode ? page?.width : undefined}
-          height={!isPageMode ? page?.height : undefined}
+          width={!isPageMode ? zoomedWidth : undefined}
+          height={!isPageMode ? zoomedHeight : undefined}
           className={cn(
             'object-contain',
             isPageMode ? '' : 'w-full h-auto'
@@ -463,8 +512,8 @@ export function MangaReader({ book, pages }: MangaReaderProps) {
               </div>
             </div>
 
-            {/* Center: Page Navigation - Absolutely centered */}
-            <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 sm:gap-2 bg-black/30 rounded-lg px-2 sm:px-3 py-1.5">
+            {/* Center: Page Navigation + Zoom - Absolutely centered */}
+            <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 sm:gap-1.5 bg-black/30 rounded-lg px-2 sm:px-3 py-1.5">
               <Button
                 variant="ghost"
                 size="icon"
@@ -491,6 +540,32 @@ export function MangaReader({ book, pages }: MangaReaderProps) {
                 disabled={currentPage >= totalPages}
               >
                 <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+              </Button>
+
+              {/* Zoom Controls */}
+              <div className="h-4 w-px bg-white/30 mx-1" />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-white/20 h-7 w-7 sm:h-8 sm:w-8"
+                onClick={handleZoomOut}
+                disabled={zoom <= 0.5}
+                title="Zoom out"
+              >
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+              <span className="text-white text-xs font-medium min-w-[36px] text-center">
+                {zoomPercentage}%
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-white/20 h-7 w-7 sm:h-8 sm:w-8"
+                onClick={handleZoomIn}
+                disabled={zoom >= 2}
+                title="Zoom in"
+              >
+                <ZoomIn className="h-4 w-4" />
               </Button>
             </div>
 
@@ -550,24 +625,24 @@ export function MangaReader({ book, pages }: MangaReaderProps) {
         className={cn(
           'flex-1 overflow-auto',
           isPageMode && 'flex items-center justify-center',
-          readingMode === 'vertical-scroll' && 'overflow-y-auto overflow-x-hidden',
-          readingMode === 'horizontal-scroll-ltr' && 'overflow-x-auto overflow-y-hidden flex flex-row',
-          readingMode === 'horizontal-scroll-rtl' && 'overflow-x-auto overflow-y-hidden flex flex-row-reverse',
+          readingMode === 'vertical-scroll' && 'overflow-y-auto overflow-x-auto',
+          readingMode === 'horizontal-scroll-ltr' && 'overflow-x-auto overflow-y-auto flex flex-row',
+          readingMode === 'horizontal-scroll-rtl' && 'overflow-x-auto overflow-y-auto flex flex-row-reverse',
           isInitializing && 'invisible' // Hide content while initializing to prevent flash
         )}
         onClick={handleTap}
       >
         {isPageMode ? (
-          // Page-by-page mode: show only current page
+          // Page-by-page mode: show only current page with zoom
           <div className="w-full h-full flex items-center justify-center">
             {renderPage(currentPage, currentPage - 1)}
           </div>
         ) : (
-          // Scroll mode: show all pages
+          // Scroll mode: show all pages with zoomed dimensions
           <div
             className={cn(
-              readingMode === 'vertical-scroll' && 'flex flex-col items-center w-full max-w-4xl mx-auto',
-              readingMode.includes('horizontal') && 'flex h-full'
+              readingMode === 'vertical-scroll' && 'flex flex-col items-center',
+              readingMode.includes('horizontal') && 'flex'
             )}
           >
             {pages.map((_, index) => renderPage(index + 1, index))}
@@ -576,7 +651,7 @@ export function MangaReader({ book, pages }: MangaReaderProps) {
       </div>
 
       {/* Settings modal */}
-      <ReaderSettings open={isSettingsOpen} onClose={closeSettings} />
+      <ReaderSettings open={isSettingsOpen} onClose={closeSettings} seriesId={book.seriesId} />
     </div>
   );
 }

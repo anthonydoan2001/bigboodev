@@ -8,7 +8,9 @@ import {
 } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { useMangaStore } from '@/lib/stores/manga-store';
+import { Slider } from '@/components/ui/slider';
+import { Button } from '@/components/ui/button';
+import { useMangaStore, useSeriesZoom } from '@/lib/stores/manga-store';
 import { ReadingMode } from '@/types/komga';
 import {
   ArrowDown,
@@ -16,11 +18,13 @@ import {
   ArrowLeft,
   Square,
   Columns,
+  ZoomIn,
 } from 'lucide-react';
 
 interface ReaderSettingsProps {
   open: boolean;
   onClose: () => void;
+  seriesId: string;
 }
 
 const readingModes: {
@@ -61,12 +65,27 @@ const readingModes: {
   },
 ];
 
-export function ReaderSettings({ open, onClose }: ReaderSettingsProps) {
+const zoomPresets = [50, 75, 100, 125, 150, 200];
+
+export function ReaderSettings({ open, onClose, seriesId }: ReaderSettingsProps) {
   const readingMode = useMangaStore((state) => state.readingMode);
   const setReadingMode = useMangaStore((state) => state.setReadingMode);
+  const setSeriesZoom = useMangaStore((state) => state.setSeriesZoom);
+
+  // Use the reactive selector hook for zoom
+  const currentZoom = useSeriesZoom(seriesId);
+  const zoomPercentage = Math.round(currentZoom * 100);
 
   const handleModeChange = (value: string) => {
     setReadingMode(value as ReadingMode);
+  };
+
+  const handleZoomChange = (value: number[]) => {
+    setSeriesZoom(seriesId, value[0] / 100);
+  };
+
+  const handleZoomPreset = (preset: number) => {
+    setSeriesZoom(seriesId, preset / 100);
   };
 
   return (
@@ -76,7 +95,44 @@ export function ReaderSettings({ open, onClose }: ReaderSettingsProps) {
           <DialogTitle>Reader Settings</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-6 py-4">
+          {/* Zoom Control */}
+          <div className="space-y-3">
+            <Label className="text-base font-medium flex items-center gap-2">
+              <ZoomIn className="h-4 w-4" />
+              Zoom Level
+            </Label>
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <Slider
+                  value={[zoomPercentage]}
+                  onValueChange={handleZoomChange}
+                  min={50}
+                  max={200}
+                  step={10}
+                  className="flex-1"
+                />
+                <span className="text-sm font-medium w-12 text-right">
+                  {zoomPercentage}%
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {zoomPresets.map((preset) => (
+                  <Button
+                    key={preset}
+                    variant={zoomPercentage === preset ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleZoomPreset(preset)}
+                    className="h-7 px-2 text-xs"
+                  >
+                    {preset}%
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Reading Mode */}
           <div className="space-y-2">
             <Label className="text-base font-medium">Reading Mode</Label>
             <RadioGroup
