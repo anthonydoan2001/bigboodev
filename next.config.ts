@@ -47,6 +47,22 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'media.rawg.io',
       },
+      {
+        protocol: 'https',
+        hostname: '*.tiktokcdn.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'p16-sign-va.tiktokcdn.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'p16-sign.tiktokcdn-us.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'p77-sign.tiktokcdn-us.com',
+      },
     ],
   },
 };

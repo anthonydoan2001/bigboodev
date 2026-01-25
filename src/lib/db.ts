@@ -33,6 +33,9 @@ if (process.env.NODE_ENV === 'development') {
   if (!('game' in db)) {
     console.warn('⚠️  Prisma client missing game model. Please restart the dev server after running: npx prisma generate');
   }
+  if (!('tikTokVideo' in db)) {
+    console.warn('⚠️  Prisma client missing tikTokVideo model. Please restart the dev server after running: npx prisma generate');
+  }
 }
 
 
