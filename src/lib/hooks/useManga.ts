@@ -283,7 +283,7 @@ export function useUpdateReadProgress() {
 
       // Snapshot the previous values for rollback
       const previousBook = queryClient.getQueryData(['manga', 'book', bookId]);
-      const previousBooksQueries: Array<{ key: unknown[]; data: unknown }> = [];
+      const previousBooksQueries: Array<{ key: readonly unknown[]; data: unknown }> = [];
 
       // Get all books queries to update
       queryClient.getQueriesData({ queryKey: ['manga', 'books'] }).forEach(([key, data]) => {
