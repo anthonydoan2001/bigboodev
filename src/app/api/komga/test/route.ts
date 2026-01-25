@@ -28,9 +28,9 @@ export const POST = withAuth(async (request: Request) => {
 
     // Test connection
     const client = new KomgaClient(serverUrl, email, password);
-    const isConnected = await client.testConnection();
+    const result = await client.testConnection();
 
-    if (isConnected) {
+    if (result.success) {
       // Get library count as additional verification
       try {
         const libraries = await client.getLibraries();
@@ -48,7 +48,7 @@ export const POST = withAuth(async (request: Request) => {
     } else {
       return NextResponse.json({
         success: false,
-        error: 'Failed to authenticate. Please check your credentials.',
+        error: result.error || 'Failed to authenticate. Please check your credentials.',
       });
     }
   } catch (error) {

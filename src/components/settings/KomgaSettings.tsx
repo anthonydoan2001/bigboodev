@@ -13,7 +13,7 @@ export function KomgaSettings() {
   const { configured, settings, isLoading, refetch } = useKomgaSettings();
   const { save, isSaving, test, isTesting, remove, isRemoving } = useKomgaSettingsMutation();
 
-  const [serverUrl, setServerUrl] = useState('http://komga.bigboo.dev');
+  const [serverUrl, setServerUrl] = useState('https://komga.bigboo.dev');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
