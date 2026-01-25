@@ -58,10 +58,10 @@ export function CountdownWidget() {
   }, []);
 
   return (
-    <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0">
-      <CardContent className="p-4 flex flex-col items-center justify-center">
-        <span className="text-caption text-muted-foreground mb-1">Days until April 5th</span>
-        <span className="text-3xl font-bold tabular-nums">{days}</span>
+    <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0 transition-all hover:shadow-md h-full">
+      <CardContent className="p-4 flex flex-col items-center justify-center h-full">
+        <span className="text-xs text-muted-foreground mb-2 tracking-wide text-center">Days until April 5th</span>
+        <span className="text-4xl font-bold tabular-nums">{days}</span>
       </CardContent>
     </Card>
   );

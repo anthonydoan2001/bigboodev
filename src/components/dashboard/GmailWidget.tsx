@@ -52,35 +52,35 @@ const EmailItem = memo(function EmailItem({ email }: { email: GmailEmail }) {
   return (
     <button
       onClick={handleClick}
-      className="w-full flex items-start gap-2 py-1.5 px-2 text-left hover:bg-muted/30 transition-colors rounded-md group"
+      className="w-full flex items-start gap-1.5 py-1.5 px-2 text-left hover:bg-muted/30 transition-colors rounded group"
     >
       {/* Unread indicator */}
-      <div className="flex-shrink-0 pt-1">
+      <div className="flex-shrink-0 pt-0.5">
         {email.isUnread ? (
-          <Circle className="w-2 h-2 fill-blue-500 text-blue-500" />
+          <Circle className="w-1.5 h-1.5 fill-blue-500 text-blue-500" />
         ) : (
-          <Circle className="w-2 h-2 text-transparent" />
+          <Circle className="w-1.5 h-1.5 text-transparent" />
         )}
       </div>
 
       {/* Email content */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-1.5">
           <span
             className={cn(
-              'text-[13px] truncate',
+              'text-[11px] truncate',
               email.isUnread ? 'font-semibold text-foreground' : 'text-muted-foreground'
             )}
           >
-            {truncate(email.from, 25)}
+            {truncate(email.from, 20)}
           </span>
-          <span className="text-[10px] text-muted-foreground flex-shrink-0">
+          <span className="text-[9px] text-muted-foreground flex-shrink-0">
             {formatRelativeTime(email.date)}
           </span>
         </div>
         <p
           className={cn(
-            'text-[12px] truncate',
+            'text-[10px] truncate',
             email.isUnread ? 'font-medium text-foreground' : 'text-muted-foreground'
           )}
         >
@@ -89,7 +89,7 @@ const EmailItem = memo(function EmailItem({ email }: { email: GmailEmail }) {
       </div>
 
       {/* External link icon on hover */}
-      <ExternalLink className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5" />
+      <ExternalLink className="w-2.5 h-2.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5" />
     </button>
   );
 });
@@ -192,20 +192,20 @@ export const GmailWidget = memo(function GmailWidget() {
   }
 
   // Connected state - show emails
-  const displayEmails = data.emails.slice(0, 3);
+  const displayEmails = data.emails.slice(0, 5);
 
   return (
-    <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0">
-      <CardContent className="p-3">
+    <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0 transition-all hover:shadow-md">
+      <CardContent className="p-2.5">
         {/* Header */}
         <div className="flex items-center justify-between mb-1.5">
-          <div className="flex items-center gap-2">
-            <Mail className="w-4 h-4 text-muted-foreground" />
-            <span className="text-[13px] font-medium">Gmail</span>
+          <div className="flex items-center gap-1.5">
+            <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="text-xs font-semibold">Gmail</span>
           </div>
           <button
             onClick={handleDisconnect}
-            className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+            className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
             title="Disconnect Gmail"
           >
             <LogOut className="w-3 h-3" />
@@ -214,24 +214,24 @@ export const GmailWidget = memo(function GmailWidget() {
 
         {/* Email list */}
         {displayEmails.length > 0 ? (
-          <div className="space-y-0.5 -mx-1">
+          <div className="max-h-[320px] overflow-y-auto scrollbar-hide space-y-0.5 -mx-0.5">
             {displayEmails.map((email) => (
               <EmailItem key={email.id} email={email} />
             ))}
           </div>
         ) : (
-          <p className="text-[13px] text-muted-foreground text-center py-4">
+          <p className="text-xs text-muted-foreground text-center py-3">
             No emails in inbox
           </p>
         )}
 
         {/* Footer */}
-        <div className="mt-2 pt-2 border-t border-border/40">
+        <div className="mt-1.5 pt-1.5 border-t border-border/40">
           <a
             href="https://mail.google.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center justify-center gap-1 text-[0.65rem] text-primary hover:text-primary/80 transition-colors uppercase tracking-wide font-medium"
           >
             View all in Gmail
             <ExternalLink className="w-2.5 h-2.5" />
