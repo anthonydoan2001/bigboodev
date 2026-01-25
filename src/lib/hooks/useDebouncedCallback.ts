@@ -33,7 +33,7 @@ export function useDebouncedCallback<T extends (...args: Parameters<T>) => void>
       timeoutRef.current = null;
     }
     if (argsRef.current) {
-      callbackRef.current(...argsRef.current);
+      callbackRef.current(...(argsRef.current as Parameters<T>));
       argsRef.current = null;
     }
   }, []);
