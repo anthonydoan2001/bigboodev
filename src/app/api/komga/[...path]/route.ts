@@ -75,7 +75,8 @@ async function proxyRequest(
     // Handle non-OK responses
     if (!response.ok) {
       const errorText = await response.text().catch(() => '');
-      return new NextResponse(errorText || 'Komga error', {
+      console.error(`Komga API error: ${response.status} ${response.statusText} - ${errorText}`);
+      return new NextResponse(errorText || `Komga error: ${response.status} ${response.statusText}`, {
         status: response.status,
         headers: { 'Content-Type': 'text/plain' },
       });

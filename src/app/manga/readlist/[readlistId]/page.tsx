@@ -125,7 +125,8 @@ export default function ReadListPage({ params }: ReadListPageProps) {
     );
   }
 
-  const thumbnailUrl = getReadListThumbnailUrl(readList.id);
+  // Use lastModifiedDate as cache buster
+  const thumbnailUrl = `${getReadListThumbnailUrl(readList.id)}?t=${new Date(readList.lastModifiedDate).getTime()}`;
   const totalBooks = books.length;
   const readBooks = books.filter((b) => b.readProgress?.completed).length;
   const isComplete = readBooks === totalBooks && totalBooks > 0;

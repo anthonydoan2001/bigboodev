@@ -15,7 +15,8 @@ interface SeriesCardProps {
 export function SeriesCard({ series }: SeriesCardProps) {
   const [imageError, setImageError] = useState(false);
 
-  const thumbnailUrl = getSeriesThumbnailUrl(series.id);
+  // Use lastModified as cache buster so thumbnails refresh when updated
+  const thumbnailUrl = `${getSeriesThumbnailUrl(series.id)}?t=${new Date(series.lastModified).getTime()}`;
   const totalBooks = series.booksCount;
   const readBooks = series.booksReadCount;
   const inProgressBooks = series.booksInProgressCount;

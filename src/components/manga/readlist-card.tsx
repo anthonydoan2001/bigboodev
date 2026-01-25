@@ -15,7 +15,8 @@ interface ReadListCardProps {
 export function ReadListCard({ readList }: ReadListCardProps) {
   const [imageError, setImageError] = useState(false);
 
-  const thumbnailUrl = getReadListThumbnailUrl(readList.id);
+  // Use lastModifiedDate as cache buster
+  const thumbnailUrl = `${getReadListThumbnailUrl(readList.id)}?t=${new Date(readList.lastModifiedDate).getTime()}`;
   const bookCount = readList.bookIds?.length ?? readList.bookCount ?? 0;
 
   return (
