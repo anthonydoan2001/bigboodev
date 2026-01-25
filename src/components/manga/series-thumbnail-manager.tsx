@@ -19,6 +19,7 @@ export function SeriesThumbnailManager() {
   const [page, setPage] = useState(0);
   const [selectedSeries, setSelectedSeries] = useState<KomgaSeries | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0); // Cache busting key
 
   // Debounce search
   const handleSearchChange = (value: string) => {
@@ -45,6 +46,8 @@ export function SeriesThumbnailManager() {
   const handleSuccess = () => {
     // Invalidate series queries to refresh thumbnails
     queryClient.invalidateQueries({ queryKey: ['manga', 'series'] });
+    // Increment refresh key to bust browser cache
+    setRefreshKey((k) => k + 1);
   };
 
   return (
@@ -83,6 +86,7 @@ export function SeriesThumbnailManager() {
                 key={s.id}
                 series={s}
                 onEdit={() => handleEdit(s)}
+                refreshKey={refreshKey}
               />
             ))}
           </div>
@@ -134,11 +138,12 @@ export function SeriesThumbnailManager() {
 interface SeriesThumbnailCardProps {
   series: KomgaSeries;
   onEdit: () => void;
+  refreshKey?: number;
 }
 
-function SeriesThumbnailCard({ series, onEdit }: SeriesThumbnailCardProps) {
+function SeriesThumbnailCard({ series, onEdit, refreshKey = 0 }: SeriesThumbnailCardProps) {
   const [imageError, setImageError] = useState(false);
-  const thumbnailUrl = getSeriesThumbnailUrl(series.id);
+  const thumbnailUrl = `${getSeriesThumbnailUrl(series.id)}?v=${refreshKey}`;
 
   return (
     <div className="group relative">

@@ -95,7 +95,8 @@ export default function SeriesPage({ params }: SeriesPageProps) {
     );
   }
 
-  const thumbnailUrl = getSeriesThumbnailUrl(series.id);
+  // Use lastModified as cache buster so thumbnails refresh when updated
+  const thumbnailUrl = `${getSeriesThumbnailUrl(series.id)}?t=${new Date(series.lastModified).getTime()}`;
   const metadata = series.metadata;
   const totalBooks = series.booksCount;
   const readBooks = series.booksReadCount;
