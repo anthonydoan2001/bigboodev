@@ -1,6 +1,7 @@
 'use client';
 
 import { use } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useBookById, useBookPages } from '@/lib/hooks/useManga';
 import { MangaReader } from '@/components/manga/manga-reader';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,12 +15,36 @@ interface ReaderPageProps {
 
 export default function ReaderPage({ params }: ReaderPageProps) {
   const { bookId } = use(params);
+  const searchParams = useSearchParams();
+
+  // Get navigation context from URL params
+  const from = searchParams.get('from'); // 'readlist' or null (series)
+  const readlistId = searchParams.get('readlistId');
+
   // Use fresh: true to ensure we get the latest read progress
   const { book, isLoading: bookLoading, error: bookError } = useBookById(bookId, { fresh: true });
   const { pages, isLoading: pagesLoading, error: pagesError } = useBookPages(bookId);
 
   const isLoading = bookLoading || pagesLoading;
   const error = bookError || pagesError;
+
+  // Determine back link based on context
+  const getBackLink = () => {
+    if (from === 'readlist' && readlistId) {
+      return `/manga/readlist/${readlistId}`;
+    }
+    if (book) {
+      return `/manga/series/${book.seriesId}`;
+    }
+    return '/manga';
+  };
+
+  const getBackLabel = () => {
+    if (from === 'readlist') {
+      return 'Back to Reading List';
+    }
+    return 'Back to Series';
+  };
 
   if (isLoading) {
     return (
@@ -66,9 +91,9 @@ export default function ReaderPage({ params }: ReaderPageProps) {
       <div className="container mx-auto py-8 px-4">
         <div className="space-y-6">
           <Button variant="ghost" size="sm" asChild>
-            <Link href={`/manga/series/${book.seriesId}`}>
+            <Link href={getBackLink()}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Series
+              {getBackLabel()}
             </Link>
           </Button>
 
@@ -82,7 +107,7 @@ export default function ReaderPage({ params }: ReaderPageProps) {
                 </p>
               </div>
               <Button variant="outline" asChild>
-                <Link href={`/manga/series/${book.seriesId}`}>Go Back</Link>
+                <Link href={getBackLink()}>Go Back</Link>
               </Button>
             </CardContent>
           </Card>
@@ -91,5 +116,11 @@ export default function ReaderPage({ params }: ReaderPageProps) {
     );
   }
 
-  return <MangaReader book={book} pages={pages} />;
+  return (
+    <MangaReader
+      book={book}
+      pages={pages}
+      context={from === 'readlist' && readlistId ? { type: 'readlist', readlistId } : { type: 'series' }}
+    />
+  );
 }

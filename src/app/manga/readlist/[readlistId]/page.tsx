@@ -1,44 +1,63 @@
 'use client';
 
-import { Suspense } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { use, useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { useReadListById, useReadListBooks, useKomgaSettings } from '@/lib/hooks/useManga';
-import { BookCard } from '@/components/manga/book-card';
+import { getReadListThumbnailUrl } from '@/lib/api/manga';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { List, ChevronLeft, ChevronRight, Settings, Loader2, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import {
+  List,
+  ArrowLeft,
+  Play,
+  CheckCircle,
+  Settings,
+} from 'lucide-react';
 
-function ReadListPageContent() {
-  const params = useParams();
-  const searchParams = useSearchParams();
-  const readlistId = params.readlistId as string;
-  const page = parseInt(searchParams.get('page') || '0', 10);
+interface ReadListPageProps {
+  params: Promise<{ readlistId: string }>;
+}
 
+export default function ReadListPage({ params }: ReadListPageProps) {
+  const { readlistId } = use(params);
   const { configured, isLoading: settingsLoading } = useKomgaSettings();
-  const { readList, isLoading: readListLoading } = useReadListById(readlistId);
-  const {
-    books,
-    totalPages,
-    totalElements,
-    currentPage,
-    isLoading: booksLoading,
-    isFetching,
-    error,
-  } = useReadListBooks(readlistId, {
-    page,
-    size: 24,
-  });
+  const { readList, isLoading: readListLoading, error: readListError } = useReadListById(readlistId);
+  const { books, isLoading: booksLoading, error: booksError } = useReadListBooks(readlistId, { unpaged: true });
+  const [imageError, setImageError] = useState(false);
 
   const isLoading = settingsLoading || readListLoading || booksLoading;
 
-  // Settings not loaded yet
-  if (settingsLoading) {
+  if (isLoading) {
     return (
       <div className="container mx-auto py-8 px-4">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="space-y-6">
+          {/* Back button */}
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/manga">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Library
+            </Link>
+          </Button>
+
+          {/* Header skeleton */}
+          <div className="flex flex-col md:flex-row gap-6">
+            <Skeleton className="w-48 aspect-[2/3] rounded-lg flex-shrink-0" />
+            <div className="flex-1 space-y-4">
+              <Skeleton className="h-8 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+          </div>
+
+          {/* Books skeleton */}
+          <div className="space-y-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full rounded-lg" />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -49,15 +68,12 @@ function ReadListPageContent() {
     return (
       <div className="container mx-auto py-8 px-4">
         <div className="space-y-6">
-          <div className="flex items-center gap-3">
-            <List className="h-8 w-8 text-primary" />
-            <div>
-              <h1 className="text-3xl font-bold">Reading List</h1>
-              <p className="text-muted-foreground">
-                Configure your Komga server first
-              </p>
-            </div>
-          </div>
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/manga">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Library
+            </Link>
+          </Button>
 
           <Card>
             <CardContent className="py-12 text-center space-y-4">
@@ -81,161 +97,192 @@ function ReadListPageContent() {
     );
   }
 
+  if (readListError || !readList) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="space-y-6">
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/manga">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Library
+            </Link>
+          </Button>
+
+          <Card>
+            <CardContent className="py-12 text-center space-y-4">
+              <p className="text-destructive">
+                {readListError instanceof Error
+                  ? readListError.message
+                  : 'Failed to load reading list'}
+              </p>
+              <Button variant="outline" asChild>
+                <Link href="/manga">Go Back</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  const thumbnailUrl = getReadListThumbnailUrl(readList.id);
+  const totalBooks = books.length;
+  const readBooks = books.filter((b) => b.readProgress?.completed).length;
+  const isComplete = readBooks === totalBooks && totalBooks > 0;
+  const hasProgress = readBooks > 0 || books.some((b) => (b.readProgress?.page || 0) > 0);
+
+  // Find first unread or in-progress book
+  const continueBook = books.find(
+    (book) => !book.readProgress?.completed
+  );
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="space-y-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" asChild className="mr-1">
-              <Link href="/manga">
-                <ArrowLeft className="h-5 w-5" />
-              </Link>
-            </Button>
-            <List className="h-8 w-8 text-purple-500" />
-            <div>
-              {readListLoading ? (
-                <>
-                  <Skeleton className="h-8 w-48 mb-1" />
-                  <Skeleton className="h-4 w-32" />
-                </>
+        {/* Back button */}
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/manga">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Library
+          </Link>
+        </Button>
+
+        {/* Reading List Header */}
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Thumbnail */}
+          <div className="relative w-48 flex-shrink-0 mx-auto md:mx-0">
+            <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-muted">
+              {!imageError ? (
+                <Image
+                  src={thumbnailUrl}
+                  alt={readList.name}
+                  fill
+                  unoptimized
+                  className="object-cover"
+                  onError={() => setImageError(true)}
+                  priority
+                />
               ) : (
-                <>
-                  <h1 className="text-3xl font-bold">{readList?.name || 'Reading List'}</h1>
-                  <p className="text-muted-foreground">
-                    {totalElements > 0 ? `${totalElements} issues` : 'No issues in this list'}
-                  </p>
-                </>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <List className="h-16 w-16 text-muted-foreground/50" />
+                </div>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" asChild>
-              <Link href="/manga/settings">
-                <Settings className="h-4 w-4" />
-              </Link>
-            </Button>
+          {/* Info */}
+          <div className="flex-1 space-y-4">
+            <div>
+              <h1 className="text-3xl font-bold">{readList.name}</h1>
+            </div>
+
+            {/* Status badges */}
+            <div className="flex flex-wrap gap-2">
+              <Badge className="bg-purple-600 text-white">
+                <List className="h-3 w-3 mr-1" />
+                Reading List
+              </Badge>
+              {isComplete ? (
+                <Badge className="bg-green-600 text-white">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Completed
+                </Badge>
+              ) : hasProgress ? (
+                <Badge variant="secondary">
+                  {readBooks} / {totalBooks} read
+                </Badge>
+              ) : (
+                <Badge variant="outline">Unread</Badge>
+              )}
+              <Badge variant="outline">
+                {totalBooks} {totalBooks === 1 ? 'issue' : 'issues'}
+              </Badge>
+              {readList.ordered && (
+                <Badge variant="outline">Ordered</Badge>
+              )}
+            </div>
+
+            {/* Summary */}
+            {readList.summary && (
+              <p className="text-muted-foreground leading-relaxed">
+                {readList.summary}
+              </p>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex flex-wrap gap-3 pt-2">
+              {continueBook && (
+                <Button asChild>
+                  <Link href={`/manga/read/${continueBook.id}?from=readlist&readlistId=${readList.id}`}>
+                    <Play className="h-4 w-4 mr-2" />
+                    {continueBook.readProgress
+                      ? 'Continue Reading'
+                      : 'Start Reading'}
+                  </Link>
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Description */}
-        {readList?.summary && (
-          <p className="text-muted-foreground max-w-2xl">
-            {readList.summary}
-          </p>
-        )}
-
-        {/* Books Grid */}
+        {/* Books List */}
         <div className="space-y-4">
-          {isLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <div key={i} className="space-y-2">
-                  <Skeleton className="aspect-[2/3] rounded-lg" />
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-3 w-1/2" />
-                </div>
-              ))}
-            </div>
-          ) : error ? (
+          <h2 className="text-xl font-semibold">Issues</h2>
+
+          {booksError ? (
             <Card>
-              <CardContent className="py-12 text-center space-y-4">
-                <p className="text-destructive">
-                  {error instanceof Error ? error.message : 'Failed to load books'}
-                </p>
-                <Button variant="outline" onClick={() => window.location.reload()}>
-                  Try Again
-                </Button>
+              <CardContent className="py-8 text-center">
+                <p className="text-destructive">Failed to load issues</p>
               </CardContent>
             </Card>
           ) : books.length === 0 ? (
             <Card>
-              <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">
-                  No issues in this reading list
-                </p>
+              <CardContent className="py-8 text-center">
+                <p className="text-muted-foreground">No issues in this reading list</p>
               </CardContent>
             </Card>
           ) : (
-            <>
-              {isFetching && !booksLoading && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Loading...</span>
-                </div>
-              )}
+            <div className="space-y-1">
+              {books.map((book, index) => {
+                const isBookComplete = book.readProgress?.completed || false;
+                const currentPage = book.readProgress?.page || 0;
+                const totalPages = book.media.pagesCount;
+                const hasBookProgress = currentPage > 0 && !isBookComplete;
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {books.map((book, index) => (
-                  <div key={book.id} className="relative">
-                    {/* Reading order number */}
-                    {readList?.ordered && (
-                      <div className="absolute -top-2 -left-2 z-10 bg-purple-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
-                        {currentPage * 24 + index + 1}
-                      </div>
-                    )}
-                    <BookCard book={book} showSeriesTitle />
-                  </div>
-                ))}
-              </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-4 pt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={currentPage === 0}
-                    asChild
+                return (
+                  <Link
+                    key={book.id}
+                    href={`/manga/read/${book.id}?from=readlist&readlistId=${readList.id}`}
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
                   >
-                    <Link
-                      href={`/manga/readlist/${readlistId}?page=${currentPage - 1}`}
-                    >
-                      <ChevronLeft className="h-4 w-4 mr-1" />
-                      Previous
-                    </Link>
-                  </Button>
-
-                  <span className="text-sm text-muted-foreground">
-                    Page {currentPage + 1} of {totalPages}
-                  </span>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={currentPage >= totalPages - 1}
-                    asChild
-                  >
-                    <Link
-                      href={`/manga/readlist/${readlistId}?page=${currentPage + 1}`}
-                    >
-                      Next
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </Link>
-                  </Button>
-                </div>
-              )}
-            </>
+                    <span className="w-8 text-center text-muted-foreground text-sm font-medium">
+                      {index + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm block truncate">
+                        {book.metadata.title || book.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {book.seriesTitle}
+                      </span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {totalPages} pages
+                    </span>
+                    {isBookComplete ? (
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    ) : hasBookProgress ? (
+                      <span className="text-xs text-blue-600">
+                        {currentPage}/{totalPages}
+                      </span>
+                    ) : null}
+                  </Link>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>
     </div>
-  );
-}
-
-export default function ReadListPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="container mx-auto py-8 px-4">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        </div>
-      }
-    >
-      <ReadListPageContent />
-    </Suspense>
   );
 }
