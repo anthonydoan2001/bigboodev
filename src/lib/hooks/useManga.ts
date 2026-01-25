@@ -18,6 +18,7 @@ import {
   fetchReadLists,
   fetchReadListById,
   fetchReadListBooks,
+  fetchReadListAdjacentBook,
 } from '@/lib/api/manga';
 import { KomgaSettingsInput, UpdateReadProgressRequest } from '@/types/komga';
 
@@ -464,5 +465,29 @@ export function useReadListBooks(readListId: string | null, options?: {
     isFetching,
     error,
     refetch,
+  };
+}
+
+export function useReadListAdjacentBooks(readListId: string | null, bookId: string | null) {
+  const nextQuery = useQuery({
+    queryKey: ['manga', 'readlist-next-book', readListId, bookId],
+    queryFn: () => (readListId && bookId ? fetchReadListAdjacentBook(readListId, bookId, 'next') : Promise.resolve(null)),
+    enabled: !!readListId && !!bookId,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  const previousQuery = useQuery({
+    queryKey: ['manga', 'readlist-previous-book', readListId, bookId],
+    queryFn: () => (readListId && bookId ? fetchReadListAdjacentBook(readListId, bookId, 'previous') : Promise.resolve(null)),
+    enabled: !!readListId && !!bookId,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  return {
+    nextBook: nextQuery.data,
+    previousBook: previousQuery.data,
+    isLoading: nextQuery.isLoading || previousQuery.isLoading,
   };
 }

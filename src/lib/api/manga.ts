@@ -419,3 +419,35 @@ export async function fetchReadListBooks(readListId: string, options?: {
 export function getReadListThumbnailUrl(readListId: string): string {
   return `${BASE_URL}/komga/readlists/${readListId}/thumbnail`;
 }
+
+export async function fetchReadListAdjacentBook(
+  readListId: string,
+  bookId: string,
+  direction: 'next' | 'previous'
+): Promise<KomgaBook | null> {
+  try {
+    // Fetch all books in the reading list to find adjacent
+    const res = await fetch(`${BASE_URL}/komga/readlists/${readListId}/books?unpaged=true`, {
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+
+    if (!res.ok) return null;
+
+    const data: KomgaBooksResponse = await res.json();
+    const books = data.content;
+
+    // Find current book index
+    const currentIndex = books.findIndex((b) => b.id === bookId);
+    if (currentIndex === -1) return null;
+
+    // Get adjacent book based on direction
+    if (direction === 'next') {
+      return currentIndex < books.length - 1 ? books[currentIndex + 1] : null;
+    } else {
+      return currentIndex > 0 ? books[currentIndex - 1] : null;
+    }
+  } catch {
+    return null;
+  }
+}

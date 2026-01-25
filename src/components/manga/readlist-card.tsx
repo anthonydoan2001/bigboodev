@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { getReadListThumbnailUrl } from '@/lib/api/manga';
 import { KomgaReadList } from '@/types/komga';
-import { List, BookOpen } from 'lucide-react';
+import { List } from 'lucide-react';
 import { useState } from 'react';
 
 interface ReadListCardProps {
