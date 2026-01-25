@@ -200,10 +200,10 @@ export default function Home() {
 
       {/* Bento-style Dashboard Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 auto-rows-auto gap-4 md:gap-6">
-        {/* Calendar, Rockets & Countdown Widgets - Stacked Vertically */}
+        {/* Calendar, Notes & Countdown Widgets - Stacked Vertically */}
         <div className="col-span-1 flex flex-col gap-4 md:gap-6">
           <CalendarWidget />
-          <RocketsGameWidget />
+          <PinnedNotesWidget />
           <CountdownWidget />
         </div>
 
@@ -212,9 +212,9 @@ export default function Home() {
           <StocksCryptoWidget />
         </div>
 
-        {/* Pinned Notes Widget */}
+        {/* Rockets Game Widget */}
         <div className="col-span-1">
-          <PinnedNotesWidget />
+          <RocketsGameWidget />
         </div>
 
         {/* Gmail Widget */}
