@@ -66,11 +66,11 @@ export const POST = withAuth(async (request: Request) => {
 
     // Test connection before saving
     const client = new KomgaClient(serverUrl, email, password);
-    const isConnected = await client.testConnection();
+    const result = await client.testConnection();
 
-    if (!isConnected) {
+    if (!result.success) {
       return NextResponse.json(
-        { error: 'Failed to connect to Komga server. Please check your credentials.' },
+        { error: result.error || 'Failed to connect to Komga server. Please check your credentials.' },
         { status: 400 }
       );
     }
@@ -145,11 +145,11 @@ export const PATCH = withAuth(async (request: Request) => {
     const testPassword = password || existing.password;
 
     const client = new KomgaClient(testServerUrl, testEmail, testPassword);
-    const isConnected = await client.testConnection();
+    const result = await client.testConnection();
 
-    if (!isConnected) {
+    if (!result.success) {
       return NextResponse.json(
-        { error: 'Failed to connect with updated settings' },
+        { error: result.error || 'Failed to connect with updated settings' },
         { status: 400 }
       );
     }

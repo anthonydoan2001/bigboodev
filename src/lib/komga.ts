@@ -37,6 +37,7 @@ export class KomgaClient {
 
     const response = await fetch(url, {
       ...options,
+      redirect: 'follow',
       headers: {
         'Authorization': this.authHeader,
         'Content-Type': 'application/json',
@@ -63,6 +64,7 @@ export class KomgaClient {
     const url = `${this.serverUrl}${path}`;
 
     const response = await fetch(url, {
+      redirect: 'follow',
       headers: {
         'Authorization': this.authHeader,
       },
@@ -83,12 +85,46 @@ export class KomgaClient {
 
   // ============ Test Connection ============
 
-  async testConnection(): Promise<boolean> {
+  async testConnection(): Promise<{ success: boolean; error?: string }> {
     try {
-      await this.fetch('/api/v1/users/me');
-      return true;
-    } catch {
-      return false;
+      const url = `${this.serverUrl}/api/v1/users/me`;
+      console.log('[Komga] Testing connection to:', url);
+
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': this.authHeader,
+        },
+        redirect: 'follow', // Follow redirects (e.g., HTTP -> HTTPS)
+      });
+
+      console.log('[Komga] Response status:', response.status);
+
+      if (response.ok) {
+        return { success: true };
+      }
+
+      const errorText = await response.text().catch(() => '');
+      if (response.status === 401) {
+        return { success: false, error: 'Invalid email or password' };
+      }
+      if (response.status === 403) {
+        return { success: false, error: 'Access forbidden - check user permissions' };
+      }
+      return { success: false, error: `Server returned ${response.status}: ${errorText}` };
+    } catch (error) {
+      console.error('[Komga] Connection error:', error);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      // Check for common network errors
+      if (message.includes('ECONNREFUSED')) {
+        return { success: false, error: 'Cannot connect to server - connection refused' };
+      }
+      if (message.includes('ENOTFOUND')) {
+        return { success: false, error: 'Server not found - check the URL' };
+      }
+      if (message.includes('ETIMEDOUT')) {
+        return { success: false, error: 'Connection timed out' };
+      }
+      return { success: false, error: `Connection failed: ${message}` };
     }
   }
 
