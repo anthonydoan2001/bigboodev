@@ -487,7 +487,7 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
           width={!isPageMode ? zoomedWidth : undefined}
           height={!isPageMode ? zoomedHeight : undefined}
           className={cn(
-            'object-contain',
+            'object-contain object-center',
             isPageMode ? '' : 'w-full h-auto'
           )}
           onLoad={() => handlePageLoad(pageNum)}
