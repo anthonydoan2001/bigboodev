@@ -1,7 +1,7 @@
 'use client';
 
 import { useReadLists } from '@/lib/hooks/useManga';
-import { ReadListCard } from './readlist-card';
+import { ReadListCard } from './ReadlistCard';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { List, Loader2 } from 'lucide-react';

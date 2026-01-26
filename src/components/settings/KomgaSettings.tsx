@@ -145,7 +145,7 @@ export function KomgaSettings() {
             <CardTitle>Komga Manga Server</CardTitle>
           </div>
           {configured && (
-            <Badge variant="outline" className="text-green-600 border-green-600">
+            <Badge variant="success">
               <CheckCircle className="h-3 w-3 mr-1" />
               Configured
             </Badge>
@@ -216,8 +216,8 @@ export function KomgaSettings() {
           <div
             className={`p-3 rounded-lg flex items-center gap-2 ${
               testResult.success
-                ? 'bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300'
-                : 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300'
+                ? 'bg-success/10 text-success'
+                : 'bg-destructive/10 text-destructive'
             }`}
           >
             {testResult.success ? (
@@ -233,8 +233,8 @@ export function KomgaSettings() {
           <div
             className={`p-3 rounded-lg flex items-center gap-2 ${
               saveResult.success
-                ? 'bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300'
-                : 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300'
+                ? 'bg-success/10 text-success'
+                : 'bg-destructive/10 text-destructive'
             }`}
           >
             {saveResult.success ? (
