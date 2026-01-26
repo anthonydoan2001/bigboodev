@@ -1,7 +1,21 @@
-export type SportType = 'NBA';
+import {
+  SportType as PrismaSportType,
+  GameScoreStatus as PrismaGameScoreStatus,
+  GameScore as PrismaGameScore,
+  TopPerformer as PrismaTopPerformer,
+} from '@prisma/client';
+
+// Re-export Prisma enums and types
+export { PrismaSportType, PrismaGameScoreStatus };
+export type { PrismaGameScore, PrismaTopPerformer };
+
+// Type aliases for backward compatibility (string literal types)
+export type SportType = `${PrismaSportType}`;
+export type GameScoreStatus = `${PrismaGameScoreStatus}`;
 
 export type PlayoffRound = 'Wild Card' | 'Divisional' | 'Conference Championship' | 'Super Bowl';
 
+// API/Component interface (simpler than database model)
 export interface GameScore {
   id: string;
   sport: SportType;
@@ -11,7 +25,7 @@ export interface GameScore {
   awayScore: number;
   homeTeamLogo?: string;
   awayTeamLogo?: string;
-  status: 'scheduled' | 'live' | 'final';
+  status: GameScoreStatus;
   quarter?: string;
   timeRemaining?: string;
   startTime: Date;

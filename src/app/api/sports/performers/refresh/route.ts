@@ -24,8 +24,8 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
     const today = new Date();
     const sportsToCheck: SportType[] = sportParam ? [sportParam] : ['NBA'];
 
-    // Check if there are live games
-    const liveGamesBySport: Record<SportType, boolean> = {
+    // Check if there are live games (only checking supported sports)
+    const liveGamesBySport: Partial<Record<SportType, boolean>> = {
       NBA: false,
     };
 
@@ -65,7 +65,7 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
 
         if (performers.length === 0) {
           console.log(`[Top Performers Refresh] No performers found for ${sport}`);
-          results.push({ sport, count: 0, hasLiveGames: liveGamesBySport[sport] });
+          results.push({ sport, count: 0, hasLiveGames: liveGamesBySport[sport] ?? false });
           continue;
         }
 
@@ -77,7 +77,7 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
         results.push({
           sport,
           count: performers.length,
-          hasLiveGames: liveGamesBySport[sport],
+          hasLiveGames: liveGamesBySport[sport] ?? false,
         });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
