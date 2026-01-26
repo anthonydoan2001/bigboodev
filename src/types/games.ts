@@ -1,21 +1,13 @@
-// Game status enum
-export type GameStatus = 'PLAYING' | 'PLAYED' | 'PLAYLIST';
+import { GamePlaylistStatus, Game as PrismaGame } from '@prisma/client';
 
-// Database Game type (matches Prisma model)
-export interface Game {
-  id: string;
-  gameTitle: string;
-  rawgRating: number | null;
-  coverArtUrl: string | null;
-  status: GameStatus;
-  rawgGameId: number;
-  releaseDate: string | null;
-  genres: string | null;
-  platforms: string | null;
-  metacritic: number | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
+// Re-export Prisma enum for convenience
+export { GamePlaylistStatus };
+
+// Game status type (for backward compatibility)
+export type GameStatus = `${GamePlaylistStatus}`;
+
+// Database Game type (re-export from Prisma)
+export type Game = PrismaGame;
 
 // RAWG API Response types
 export interface RawgGame {

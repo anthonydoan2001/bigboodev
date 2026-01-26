@@ -8,23 +8,142 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// ============================================
+// ENUM DEFINITIONS
+// ============================================
+
+enum WatchlistStatus {
+  PLAN_TO_WATCH
+  WATCHING
+  WATCHED
+
+  @@map("watchlist_status")
+}
+
+enum WatchlistType {
+  ANIME
+  MOVIE
+  SHOW
+
+  @@map("watchlist_type")
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+
+  @@map("task_status")
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+
+  @@map("task_priority")
+}
+
+enum GamePlaylistStatus {
+  PLAYLIST
+  PLAYING
+  PLAYED
+
+  @@map("game_playlist_status")
+}
+
+enum GameScoreStatus {
+  scheduled
+  live
+  final
+
+  @@map("game_score_status")
+}
+
+enum SportType {
+  NBA
+  NFL
+  MLB
+  NHL
+  MLS
+
+  @@map("sport_type")
+}
+
+enum TopItemType {
+  anime
+  movie
+  show
+
+  @@map("top_item_type")
+}
+
+enum HttpMethod {
+  GET
+  POST
+  PUT
+  DELETE
+  PATCH
+
+  @@map("http_method")
+}
+
+enum ApiErrorType {
+  RATE_LIMIT
+  TIMEOUT
+  SERVER_ERROR
+  CLIENT_ERROR
+  NETWORK_ERROR
+
+  @@map("api_error_type")
+}
+
+enum AggregationType {
+  HOURLY
+  DAILY
+  MONTHLY
+
+  @@map("aggregation_type")
+}
+
+enum AlertType {
+  RATE_LIMIT_WARNING
+  COST_THRESHOLD
+  ERROR_SPIKE
+
+  @@map("alert_type")
+}
+
+enum AlertPeriod {
+  MINUTE
+  HOUR
+  DAY
+
+  @@map("alert_period")
+}
+
+// ============================================
+// MODELS
+// ============================================
+
 model WatchlistItem {
-  id         String   @id(map: "WatchlistItem_pkey") @default(cuid())
-  type       String
+  id         String          @id(map: "WatchlistItem_pkey") @default(cuid())
+  type       WatchlistType
   title      String
-  status     String   @default("PLAN_TO_WATCH")
-  externalId String   @map("external_id")
-  imageUrl   String?  @map("image_url")
+  status     WatchlistStatus @default(PLAN_TO_WATCH)
+  externalId String          @map("external_id")
+  imageUrl   String?         @map("image_url")
   rating     Float?
   year       Int?
   episodes   Int?
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
 
   @@unique([externalId, type])
   @@index([type])
   @@index([status])
   @@index([createdAt])
+  @@index([type, status], map: "watchlist_items_type_status_idx")
   @@map("watchlist_items")
 }
 
@@ -65,17 +184,17 @@ model CryptoQuote {
 }
 
 model TopItem {
-  id          String   @id
-  type        String
+  id          String      @id
+  type        TopItemType
   title       String
-  imageUrl    String   @map("image_url")
+  imageUrl    String      @map("image_url")
   year        Int?
   rating      Float
   episodes    Int?
-  externalId  Int      @map("external_id")
-  lastUpdated DateTime @default(now()) @map("last_updated")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+  externalId  Int         @map("external_id")
+  lastUpdated DateTime    @default(now()) @map("last_updated")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @default(now()) @updatedAt @map("updated_at")
 
   @@unique([externalId, type])
   @@index([type])
@@ -84,31 +203,31 @@ model TopItem {
 }
 
 model ApiUsage {
-  id           String   @id @default(cuid())
-  apiName      String   @map("api_name")
+  id           String        @id @default(cuid())
+  apiName      String        @map("api_name")
   endpoint     String?
-  method       String?  @default("GET")
-  timestamp    DateTime @default(now())
+  method       HttpMethod?   @default(GET)
+  timestamp    DateTime      @default(now())
 
   // Performance metrics
-  responseTime Int?     @map("response_time") // milliseconds
-  requestSize  Int?     @map("request_size")  // bytes
-  responseSize Int?     @map("response_size") // bytes
+  responseTime Int?          @map("response_time") // milliseconds
+  requestSize  Int?          @map("request_size")  // bytes
+  responseSize Int?          @map("response_size") // bytes
 
   // Status tracking
-  success      Boolean  @default(true)
-  statusCode   Int?     @map("status_code")
-  errorType    String?  @map("error_type")    // 'RATE_LIMIT', 'TIMEOUT', 'SERVER_ERROR', etc.
-  errorMessage String?  @map("error_message") @db.Text
+  success      Boolean       @default(true)
+  statusCode   Int?          @map("status_code")
+  errorType    ApiErrorType? @map("error_type")
+  errorMessage String?       @map("error_message") @db.Text
 
   // Cost tracking
-  costCredits  Float?   @map("cost_credits")  // API credit cost
+  costCredits  Float?        @map("cost_credits")  // API credit cost
 
   // Request metadata
-  cached       Boolean  @default(false)
-  userId       String?  @map("user_id")       // if user-specific
+  cached       Boolean       @default(false)
+  userId       String?       @map("user_id")       // if user-specific
 
-  createdAt    DateTime @default(now()) @map("created_at")
+  createdAt    DateTime      @default(now()) @map("created_at")
 
   // Optimized indexes for common queries
   @@index([apiName, timestamp(sort: Desc)])
@@ -120,53 +239,52 @@ model ApiUsage {
 }
 
 model ApiUsageAggregate {
-  id              String   @id @default(cuid())
-  apiName         String   @map("api_name")
+  id              String          @id @default(cuid())
+  apiName         String          @map("api_name")
   endpoint        String?
-  aggregationType String   @map("aggregation_type") // 'HOURLY', 'DAILY', 'MONTHLY'
-  periodStart     DateTime @map("period_start")
-  periodEnd       DateTime @map("period_end")
+  aggregationType AggregationType @map("aggregation_type")
+  periodStart     DateTime        @map("period_start")
+  periodEnd       DateTime        @map("period_end")
 
   // Counts
-  totalRequests   Int      @map("total_requests")
-  successCount    Int      @map("success_count")
-  errorCount      Int      @map("error_count")
-  cachedCount     Int      @map("cached_count")
+  totalRequests   Int             @map("total_requests")
+  successCount    Int             @map("success_count")
+  errorCount      Int             @map("error_count")
+  cachedCount     Int             @map("cached_count")
 
   // Performance metrics (aggregated)
-  avgResponseTime Float?   @map("avg_response_time")
-  maxResponseTime Int?     @map("max_response_time")
-  minResponseTime Int?     @map("min_response_time")
+  avgResponseTime Float?          @map("avg_response_time")
+  maxResponseTime Int?            @map("max_response_time")
+  minResponseTime Int?            @map("min_response_time")
 
   // Error breakdown
-  rateLimitErrors Int      @default(0) @map("rate_limit_errors")
-  timeoutErrors   Int      @default(0) @map("timeout_errors")
-  serverErrors    Int      @default(0) @map("server_errors")
+  rateLimitErrors Int             @default(0) @map("rate_limit_errors")
+  timeoutErrors   Int             @default(0) @map("timeout_errors")
+  serverErrors    Int             @default(0) @map("server_errors")
 
   // Cost
-  totalCost       Float?   @map("total_cost")
+  totalCost       Float?          @map("total_cost")
 
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
 
   @@unique([apiName, aggregationType, periodStart])
-  @@index([apiName, aggregationType, periodStart])
   @@index([periodStart, aggregationType])
   @@map("api_usage_aggregates")
 }
 
 model ApiAlert {
-  id            String    @id @default(cuid())
-  apiName       String    @map("api_name")
-  alertType     String    @map("alert_type") // 'RATE_LIMIT_WARNING', 'COST_THRESHOLD', 'ERROR_SPIKE'
-  threshold     Float     // percentage or absolute value
-  period        String    // 'MINUTE', 'HOUR', 'DAY'
+  id            String      @id @default(cuid())
+  apiName       String      @map("api_name")
+  alertType     AlertType   @map("alert_type")
+  threshold     Float       // percentage or absolute value
+  period        AlertPeriod
 
-  enabled       Boolean   @default(true)
-  lastTriggered DateTime? @map("last_triggered")
+  enabled       Boolean     @default(true)
+  lastTriggered DateTime?   @map("last_triggered")
 
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
 
   @@unique([apiName, alertType, period])
   @@index([apiName, enabled])
@@ -174,27 +292,27 @@ model ApiAlert {
 }
 
 model GameScore {
-  id            String    @id @default(cuid())
-  gameId        String    @map("game_id")
-  sport         String
-  date          DateTime  @db.Date
-  homeTeam      String    @map("home_team")
-  awayTeam      String    @map("away_team")
-  homeScore     Int       @map("home_score")
-  awayScore     Int       @map("away_score")
-  homeTeamLogo  String?   @map("home_team_logo")
-  awayTeamLogo  String?   @map("away_team_logo")
-  status        String
+  id            String          @id @default(cuid())
+  gameId        String          @map("game_id")
+  sport         SportType
+  date          DateTime        @db.Date
+  homeTeam      String          @map("home_team")
+  awayTeam      String          @map("away_team")
+  homeScore     Int             @map("home_score")
+  awayScore     Int             @map("away_score")
+  homeTeamLogo  String?         @map("home_team_logo")
+  awayTeamLogo  String?         @map("away_team_logo")
+  status        GameScoreStatus
   quarter       String?
-  timeRemaining String?   @map("time_remaining")
-  startTime     DateTime  @map("start_time")
-  playoffRound  String?   @map("playoff_round")
+  timeRemaining String?         @map("time_remaining")
+  startTime     DateTime        @map("start_time")
+  playoffRound  String?         @map("playoff_round")
   odds          Json?
-  topScorer     Json?     @map("top_scorer")
-  expiresAt     DateTime? @map("expires_at")
-  lastUpdated   DateTime  @default(now()) @map("last_updated")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at")
+  topScorer     Json?           @map("top_scorer")
+  expiresAt     DateTime?       @map("expires_at")
+  lastUpdated   DateTime        @default(now()) @map("last_updated")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @default(now()) @updatedAt @map("updated_at")
 
   @@unique([gameId, sport, date])
   @@index([sport, date])
@@ -205,16 +323,16 @@ model GameScore {
 }
 
 model TopPerformer {
-  id          String   @id @default(cuid())
-  sport       String
-  date        DateTime @db.Date
+  id          String    @id @default(cuid())
+  sport       SportType
+  date        DateTime  @db.Date
   name        String
   team        String
-  imageUrl    String?  @map("image_url")
+  imageUrl    String?   @map("image_url")
   stats       Json
-  lastUpdated DateTime @default(now()) @map("last_updated")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  lastUpdated DateTime  @default(now()) @map("last_updated")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   @@unique([sport, date, name])
   @@index([sport, date])
@@ -268,7 +386,7 @@ model Tag {
   createdAt DateTime  @default(now()) @map("created_at")
   notes     NoteTag[]
 
-  @@index([name])
+  // Note: @unique already creates an index on name, no separate index needed
   @@map("tags")
 }
 
@@ -311,17 +429,17 @@ model TaskNote {
 }
 
 model Task {
-  id          String     @id @default(cuid())
+  id          String       @id @default(cuid())
   title       String
   description String?
-  status      String     @default("TODO")
-  priority    String     @default("MEDIUM")
-  dueDate     DateTime?  @map("due_date") @db.Date
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(MEDIUM)
+  dueDate     DateTime?    @map("due_date") @db.Date
   category    String?
   notes       String?
-  position    Int        @default(0)
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
+  position    Int          @default(0)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
   taskNotes   TaskNote[]
 
   @@index([status])
@@ -334,21 +452,20 @@ model Task {
 }
 
 model Game {
-  id          String   @id @default(cuid())
-  gameTitle   String   @map("game_title")
-  rawgRating  Float?   @map("rawg_rating")
-  coverArtUrl String?  @map("cover_art_url")
-  status      String   @default("PLAYLIST") // 'PLAYING' | 'PLAYED' | 'PLAYLIST'
-  rawgGameId  Int      @unique @map("rawg_game_id")
-  releaseDate String?  @map("release_date")
+  id          String             @id @default(cuid())
+  gameTitle   String             @map("game_title")
+  rawgRating  Float?             @map("rawg_rating")
+  coverArtUrl String?            @map("cover_art_url")
+  status      GamePlaylistStatus @default(PLAYLIST)
+  rawgGameId  Int                @unique @map("rawg_game_id")
+  releaseDate String?            @map("release_date")
   genres      String?
   platforms   String?
   metacritic  Int?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
 
-  @@index([status])
-  @@index([createdAt])
+  // Composite index covers both status-only and status+createdAt queries
   @@index([status, createdAt])
   @@map("games")
 }
@@ -362,7 +479,7 @@ model GmailToken {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  @@index([email])
+  // Note: @unique already creates an index on email, no separate index needed
   @@map("gmail_tokens")
 }
 
@@ -392,6 +509,6 @@ model KomgaSettings {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@index([userId])
+  // Note: @unique already creates an index on userId, no separate index needed
   @@map("komga_settings")
 }

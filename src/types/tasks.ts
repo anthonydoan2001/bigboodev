@@ -1,7 +1,17 @@
-import { Task, Note, TaskNote } from '@prisma/client';
+import {
+  Task,
+  Note,
+  TaskNote,
+  TaskStatus as PrismaTaskStatus,
+  TaskPriority as PrismaTaskPriority,
+} from '@prisma/client';
 
-export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE';
-export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH';
+// Re-export Prisma enums
+export { PrismaTaskStatus, PrismaTaskPriority };
+
+// Type aliases for backward compatibility (string literal types)
+export type TaskStatus = `${PrismaTaskStatus}`;
+export type TaskPriority = `${PrismaTaskPriority}`;
 
 export interface TaskNoteWithNote extends TaskNote {
   note: Note;

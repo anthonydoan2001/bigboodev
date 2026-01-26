@@ -27,18 +27,19 @@
 
 import { db } from './db';
 import { ApiName } from './api-usage';
+import { HttpMethod, ApiErrorType } from '@prisma/client';
 
 export interface TrackingOptions {
   apiName: ApiName;
   endpoint?: string;
-  method?: string;
+  method?: HttpMethod;
   costCredits?: number;
   userId?: string;
 }
 
 export interface ErrorDetails {
   statusCode?: number;
-  errorType?: 'RATE_LIMIT' | 'TIMEOUT' | 'SERVER_ERROR' | 'CLIENT_ERROR' | 'NETWORK_ERROR' | 'UNKNOWN';
+  errorType?: ApiErrorType;
   errorMessage?: string;
 }
 
@@ -95,7 +96,7 @@ export class ApiTracker {
   private async track(data: {
     success: boolean;
     statusCode?: number;
-    errorType?: string;
+    errorType?: ApiErrorType;
     errorMessage?: string;
     responseTime?: number;
     responseSize?: number;
@@ -111,7 +112,7 @@ export class ApiTracker {
         data: {
           apiName: this.options.apiName,
           endpoint: this.options.endpoint,
-          method: this.options.method || 'GET',
+          method: this.options.method || HttpMethod.GET,
           success: data.success,
           statusCode: data.statusCode,
           errorType: data.errorType,
@@ -256,13 +257,13 @@ export async function withTracking<T>(
     return result;
   } catch (error) {
     // Auto-track error if not already tracked
-    const errorType = error instanceof Error && error.message.includes('429')
-      ? 'RATE_LIMIT'
+    const errorType: ApiErrorType = error instanceof Error && error.message.includes('429')
+      ? ApiErrorType.RATE_LIMIT
       : error instanceof Error && error.message.toLowerCase().includes('timeout')
-      ? 'TIMEOUT'
+      ? ApiErrorType.TIMEOUT
       : error instanceof Error && error.message.toLowerCase().includes('network')
-      ? 'NETWORK_ERROR'
-      : 'UNKNOWN';
+      ? ApiErrorType.NETWORK_ERROR
+      : ApiErrorType.CLIENT_ERROR;
 
     const statusCode = error instanceof Error && error.message.includes('429')
       ? 429

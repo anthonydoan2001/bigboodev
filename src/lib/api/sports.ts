@@ -5,7 +5,8 @@ import { GameScore, PlayoffRound, SportType, TeamStanding, TopPerformer } from '
 const ESPN_BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports';
 
 // Sport league mappings for ESPN API
-const SPORT_LEAGUES: Record<SportType, { league: string; path: string }> = {
+// Currently only NBA is supported, but the enum includes other sports for future expansion
+const SPORT_LEAGUES: Partial<Record<SportType, { league: string; path: string }>> = {
   NBA: { league: 'nba', path: 'basketball/nba' },
 };
 
@@ -83,7 +84,12 @@ interface ESPNScoreboardResponse {
 
 export async function fetchScores(sport: SportType, date?: Date): Promise<GameScore[]> {
   try {
-    const { path } = SPORT_LEAGUES[sport];
+    const sportConfig = SPORT_LEAGUES[sport];
+    if (!sportConfig) {
+      console.log(`[Sports API] Sport ${sport} is not yet supported`);
+      return [];
+    }
+    const { path } = sportConfig;
 
     // Format date as YYYYMMDD for ESPN API (per documentation)
     const params = new URLSearchParams();
@@ -236,7 +242,12 @@ export async function fetchScores(sport: SportType, date?: Date): Promise<GameSc
 
 export async function fetchSchedule(sport: SportType, days: number = 7): Promise<GameScore[]> {
   try {
-    const { path } = SPORT_LEAGUES[sport];
+    const sportConfig = SPORT_LEAGUES[sport];
+    if (!sportConfig) {
+      console.log(`[Sports API] Sport ${sport} is not yet supported`);
+      return [];
+    }
+    const { path } = sportConfig;
     const response = await fetch(`${ESPN_BASE_URL}/${path}/scoreboard`, {
       next: { revalidate: 3600 }, // Cache for 1 hour
     });
@@ -345,7 +356,12 @@ interface ESPNBoxscoreResponse {
 
 export async function fetchTopPerformers(sport: SportType, date?: Date): Promise<TopPerformer[]> {
   try {
-    const { path } = SPORT_LEAGUES[sport];
+    const sportConfig = SPORT_LEAGUES[sport];
+    if (!sportConfig) {
+      console.log(`[Sports API] Sport ${sport} is not yet supported`);
+      return [];
+    }
+    const { path } = sportConfig;
 
     // Format date as YYYYMMDD for ESPN API (per documentation)
     const params = new URLSearchParams();
@@ -937,7 +953,12 @@ export async function cacheTopPerformers(sport: SportType, date: Date, performer
  */
 export async function fetchStandings(sport: SportType): Promise<TeamStanding[]> {
   try {
-    const { path } = SPORT_LEAGUES[sport];
+    const sportConfig = SPORT_LEAGUES[sport];
+    if (!sportConfig) {
+      console.log(`[Sports API] Sport ${sport} is not yet supported`);
+      return [];
+    }
+    const { path } = sportConfig;
     // Note: Standings endpoint uses /apis/v2/ instead of /apis/site/v2/
     const standingsBaseUrl = 'https://site.api.espn.com/apis/v2/sports';
     const url = `${standingsBaseUrl}/${path}/standings`;
@@ -1067,7 +1088,7 @@ export async function fetchStandings(sport: SportType): Promise<TeamStanding[]> 
   }
 }
 
-export async function fetchAllScores(): Promise<Record<SportType, GameScore[]>> {
+export async function fetchAllScores(): Promise<Partial<Record<SportType, GameScore[]>>> {
   const sports: SportType[] = ['NBA'];
 
   const results = await Promise.allSettled(
@@ -1077,7 +1098,7 @@ export async function fetchAllScores(): Promise<Record<SportType, GameScore[]>> 
     }))
   );
 
-  const allScores: Record<SportType, GameScore[]> = {
+  const allScores: Partial<Record<SportType, GameScore[]>> = {
     NBA: [],
   };
 
