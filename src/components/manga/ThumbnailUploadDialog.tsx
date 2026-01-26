@@ -233,8 +233,8 @@ export function ThumbnailUploadDialog({
             <div
               className={`p-3 rounded-lg flex items-center gap-2 ${
                 result.success
-                  ? 'bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300'
-                  : 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300'
+                  ? 'bg-success/10 text-success'
+                  : 'bg-destructive/10 text-destructive'
               }`}
             >
               {result.success ? (

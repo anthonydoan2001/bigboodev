@@ -6,7 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useSeries } from '@/lib/hooks/useManga';
 import { getSeriesThumbnailUrl } from '@/lib/api/manga';
 import { useMangaStore } from '@/lib/stores/manga-store';
-import { ThumbnailUploadDialog } from './thumbnail-upload-dialog';
+import { ThumbnailUploadDialog } from './ThumbnailUploadDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';

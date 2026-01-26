@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useKomgaSettings, useKomgaSettingsMutation } from '@/lib/hooks/useManga';
-import { SeriesThumbnailManager } from '@/components/manga/series-thumbnail-manager';
+import { SeriesThumbnailManager } from '@/components/manga/SeriesThumbnailManager';
 import {
   ArrowLeft,
   BookOpen,

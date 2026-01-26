@@ -3,7 +3,7 @@
 import { use } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useBookById, useBookPages } from '@/lib/hooks/useManga';
-import { MangaReader } from '@/components/manga/manga-reader';
+import { MangaReader } from '@/components/manga/MangaReader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft, BookOpen } from 'lucide-react';

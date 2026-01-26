@@ -44,7 +44,7 @@ function formatPercentChange(percent: number | null): string {
 function CryptoCard({ crypto }: { crypto: CryptoQuote }) {
   const percentChange = crypto.percentChange24h ?? 0;
   const isPositive = percentChange >= 0;
-  const changeColor = isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+  const changeColor = isPositive ? 'text-success' : 'text-destructive';
 
   return (
     <div className="flex items-center justify-between py-1.5 px-1.5 md:px-2 hover:bg-muted/50 transition-colors rounded-md gap-2 md:gap-3">

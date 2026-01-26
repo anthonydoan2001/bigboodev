@@ -3,10 +3,10 @@
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useSeries, useKomgaSettings, useLibraries } from '@/lib/hooks/useManga';
-import { SeriesCard } from '@/components/manga/series-card';
-import { ContinueReading } from '@/components/manga/continue-reading';
-import { ReadListSection } from '@/components/manga/readlist-section';
-import { SearchBar } from '@/components/manga/search-bar';
+import { SeriesCard } from '@/components/manga/SeriesCard';
+import { ContinueReading } from '@/components/manga/ContinueReading';
+import { ReadListSection } from '@/components/manga/ReadlistSection';
+import { SearchBar } from '@/components/manga/SearchBar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';

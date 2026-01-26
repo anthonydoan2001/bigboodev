@@ -57,7 +57,7 @@ function cleanCompanyName(name: string): string {
 
 const StockCard = memo(function StockCard({ quote }: { quote: StockQuote }) {
   const isPositive = quote.change >= 0;
-  const changeColor = isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+  const changeColor = isPositive ? 'text-success' : 'text-destructive';
 
   return (
     <div className="flex items-center justify-between py-2 px-2.5 border-b border-border/40 last:border-0 hover:bg-muted/20 transition-colors">
@@ -105,7 +105,7 @@ const StockCard = memo(function StockCard({ quote }: { quote: StockQuote }) {
 const CryptoCard = memo(function CryptoCard({ crypto }: { crypto: CryptoQuote }) {
   const percentChange = crypto.percentChange24h ?? 0;
   const isPositive = percentChange >= 0;
-  const changeColor = isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+  const changeColor = isPositive ? 'text-success' : 'text-destructive';
 
   return (
     <div className="flex items-center justify-between py-2 px-2.5 border-b border-border/40 last:border-0 hover:bg-muted/20 transition-colors">

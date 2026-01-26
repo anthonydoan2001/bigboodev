@@ -1,6 +1,7 @@
 'use client';
 
 import { MainContent } from '@/components/navigation/MainContent';
+import { PageTransition } from '@/components/navigation/PageTransition';
 import { Sidebar } from '@/components/navigation/Sidebar';
 import { SidebarProvider } from '@/lib/providers/SidebarProvider';
 import { usePathname } from 'next/navigation';
@@ -19,7 +20,9 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <Sidebar />
       <MainContent>
-        {children}
+        <PageTransition>
+          {children}
+        </PageTransition>
       </MainContent>
     </SidebarProvider>
   );

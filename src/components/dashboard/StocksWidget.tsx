@@ -56,7 +56,7 @@ function formatTimeAgo(dateString: string): string {
 
 function StockCard({ quote }: { quote: StockQuote }) {
   const isPositive = quote.change >= 0;
-  const changeColor = isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+  const changeColor = isPositive ? 'text-success' : 'text-destructive';
   const arrowIcon = isPositive ? ArrowUp : ArrowDown;
 
   return (
