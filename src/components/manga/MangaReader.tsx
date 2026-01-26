@@ -7,7 +7,7 @@ import { useMangaStore, useSeriesZoom } from '@/lib/stores/manga-store';
 import { useUpdateReadProgress, useAdjacentBooks, useReadListAdjacentBooks } from '@/lib/hooks/useManga';
 import { useDebouncedCallback } from '@/lib/hooks/useDebouncedCallback';
 import { getPageUrl } from '@/lib/api/manga';
-import { ReaderSettings } from './reader-settings';
+import { ReaderSettings } from './ReaderSettings';
 import { Button } from '@/components/ui/button';
 import { KomgaBook, KomgaPage } from '@/types/komga';
 import {

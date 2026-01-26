@@ -3,8 +3,8 @@
 import { Suspense } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useSeries, useKomgaSettings, useLibraries } from '@/lib/hooks/useManga';
-import { SeriesCard } from '@/components/manga/series-card';
-import { SearchBar } from '@/components/manga/search-bar';
+import { SeriesCard } from '@/components/manga/SeriesCard';
+import { SearchBar } from '@/components/manga/SearchBar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';

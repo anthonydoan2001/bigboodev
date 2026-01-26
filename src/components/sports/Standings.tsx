@@ -71,8 +71,8 @@ export function Standings({ standings }: StandingsProps) {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className={`text-body-sm font-semibold tabular-nums ${
-                        isWinStreak ? 'text-green-600 dark:text-green-500' :
-                        isLossStreak ? 'text-red-600 dark:text-red-500' :
+                        isWinStreak ? 'text-success' :
+                        isLossStreak ? 'text-destructive' :
                         'text-muted-foreground'
                       }`}>
                         {team.streak}

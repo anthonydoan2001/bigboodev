@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# remotion
+/public/screenshots/
+
 # production
 /build
 
