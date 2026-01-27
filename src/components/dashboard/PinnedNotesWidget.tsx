@@ -24,10 +24,10 @@ const PinnedNoteCard = memo(function PinnedNoteCard({
   note: {
     id: string;
     title: string;
-    content: string;
+    content?: string | null;
   };
 }) {
-  const preview = stripHtml(note.content).slice(0, 50);
+  const preview = note.content ? stripHtml(note.content).slice(0, 50) : '';
 
   return (
     <Link href={`/notes?note=${note.id}`}>
