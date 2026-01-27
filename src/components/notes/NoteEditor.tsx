@@ -9,7 +9,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { common, createLowlight } from 'lowlight';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
-import { useCallback, useEffect, useRef, memo, useState } from 'react';
+import { useCallback, useEffect, useRef, memo, useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -469,9 +469,9 @@ export function NoteEditor({
 }: NoteEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const editor = useEditor({
-    immediatelyRender: false,
-    extensions: [
+  // Memoize extensions to prevent duplicate registration warnings during StrictMode
+  const extensions = useMemo(
+    () => [
       StarterKit.configure({
         codeBlock: false,
       }),
@@ -492,6 +492,12 @@ export function NoteEditor({
       }),
       MarkdownBlock,
     ],
+    []
+  );
+
+  const editor = useEditor({
+    immediatelyRender: false,
+    extensions,
     content: note?.content || '',
     editorProps: {
       attributes: {
