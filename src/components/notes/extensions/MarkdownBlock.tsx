@@ -167,7 +167,7 @@ export const MarkdownBlock = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'markdown-block' }), 0];
+    return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'markdown-block' })];
   },
 
   addNodeView() {
