@@ -4,8 +4,7 @@ import { memo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { usePinnedNotes } from '@/lib/hooks/useNotes';
-import { Pin, FileText, ChevronRight, Calendar } from 'lucide-react';
-import { format } from 'date-fns';
+import { Pin, FileText, ChevronRight } from 'lucide-react';
 
 // Strip HTML tags for preview
 function stripHtml(html: string): string {
@@ -26,12 +25,9 @@ const PinnedNoteCard = memo(function PinnedNoteCard({
     id: string;
     title: string;
     content: string;
-    updatedAt: Date | string;
-    tags: { tag: { id: string; name: string; color: string } }[];
   };
 }) {
   const preview = stripHtml(note.content).slice(0, 50);
-  const hasTags = note.tags && note.tags.length > 0;
 
   return (
     <Link href={`/notes?note=${note.id}`}>
@@ -46,28 +42,6 @@ const PinnedNoteCard = memo(function PinnedNoteCard({
               {preview}
             </p>
           )}
-          <div className="flex items-center gap-1.5">
-            {hasTags && (
-              <div className="flex gap-0.5">
-                {note.tags.slice(0, 2).map((noteTag) => (
-                  <span
-                    key={noteTag.tag.id}
-                    className="inline-block px-1 py-0.5 rounded text-[0.6rem]"
-                    style={{
-                      backgroundColor: noteTag.tag.color + '20',
-                      color: noteTag.tag.color,
-                    }}
-                  >
-                    {noteTag.tag.name}
-                  </span>
-                ))}
-              </div>
-            )}
-            <span className="text-[0.6rem] text-muted-foreground flex items-center gap-0.5">
-              <Calendar className="h-2.5 w-2.5" />
-              {format(new Date(note.updatedAt), 'MMM d')}
-            </span>
-          </div>
         </div>
         <ChevronRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
       </div>
