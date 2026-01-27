@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { withAuth } from '@/lib/api-auth';
-import { getCache, setCache, invalidateCache, CACHE_KEYS } from '@/lib/cache';
+import { invalidateCache, CACHE_KEYS } from '@/lib/cache';
 
-export const GET = withAuth(async (request: Request, sessionToken: string) => {
+export const GET = withAuth(async (_request: Request, _sessionToken: string) => {
   try {
     // Check cache first (disabled for debugging)
     // const cached = getCache<{ items: any[] }>(CACHE_KEYS.TAGS);
@@ -43,7 +43,7 @@ export const GET = withAuth(async (request: Request, sessionToken: string) => {
   }
 });
 
-export const POST = withAuth(async (request: Request, sessionToken: string) => {
+export const POST = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const body = await request.json();
     const { name, color } = body;

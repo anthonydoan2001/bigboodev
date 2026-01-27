@@ -8,7 +8,7 @@ function getIdFromUrl(url: string): string | null {
   return match ? match[1] : null;
 }
 
-export const DELETE = withAuth(async (request: Request, sessionToken: string) => {
+export const DELETE = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const id = getIdFromUrl(request.url);
 

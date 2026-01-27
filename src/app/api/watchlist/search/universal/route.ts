@@ -16,6 +16,38 @@ export interface UniversalSearchResult {
   externalId: number;
 }
 
+interface TMDBMovie {
+  id: number;
+  title: string;
+  poster_path: string | null;
+  release_date?: string;
+  vote_average: number;
+}
+
+interface TMDBShow {
+  id: number;
+  name: string;
+  poster_path: string | null;
+  first_air_date?: string;
+  vote_average: number;
+}
+
+interface JikanGenre {
+  name: string;
+}
+
+interface JikanAnime {
+  mal_id: number;
+  title: string;
+  images?: { jpg?: { large_image_url?: string; image_url?: string } };
+  score: number | null;
+  rating?: string;
+  genres?: JikanGenre[];
+  explicit_genres?: JikanGenre[];
+  episodes?: number;
+  year?: number;
+}
+
 // Helper function to fetch with retry for rate limits
 async function fetchWithRetry(url: string, retries = 2, delay = 1000): Promise<Response> {
   for (let i = 0; i <= retries; i++) {
@@ -55,7 +87,7 @@ export const GET = withAuth(async (request: Request) => {
     // Parse movie results first
     if (moviesResponse && moviesResponse.ok) {
       const moviesData = await moviesResponse.json();
-      moviesData.results.slice(0, 20).forEach((movie: any) => {
+      moviesData.results.slice(0, 20).forEach((movie: TMDBMovie) => {
         const rating = movie.vote_average;
         // Only include movies with a valid rating (not null, undefined, or 0)
         if (movie.poster_path && rating && rating > 0) {
@@ -75,7 +107,7 @@ export const GET = withAuth(async (request: Request) => {
     // Parse TV results
     if (tvResponse && tvResponse.ok) {
       const tvData = await tvResponse.json();
-      tvData.results.slice(0, 20).forEach((show: any) => {
+      tvData.results.slice(0, 20).forEach((show: TMDBShow) => {
         const rating = show.vote_average;
         // Only include shows with a valid rating (not null, undefined, or 0)
         if (show.poster_path && rating && rating > 0) {
@@ -103,7 +135,7 @@ export const GET = withAuth(async (request: Request) => {
       if (animeResponse.ok) {
         const animeData = await animeResponse.json();
         if (animeData.data) {
-          animeData.data.slice(0, 20).forEach((anime: any) => {
+          animeData.data.slice(0, 20).forEach((anime: JikanAnime) => {
             const imageUrl = anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url;
             const rating = anime.score;
             
@@ -111,11 +143,11 @@ export const GET = withAuth(async (request: Request) => {
             const isHentai = 
               anime.rating === 'Rx' || 
               anime.rating === 'R+ - Mild Nudity' ||
-              (anime.genres && anime.genres.some((g: any) => 
+              (anime.genres && anime.genres.some((g: JikanGenre) => 
                 g.name?.toLowerCase().includes('hentai') || 
                 g.name?.toLowerCase() === 'hentai'
               )) ||
-              (anime.explicit_genres && anime.explicit_genres.some((g: any) => 
+              (anime.explicit_genres && anime.explicit_genres.some((g: JikanGenre) => 
                 g.name?.toLowerCase().includes('hentai') || 
                 g.name?.toLowerCase() === 'hentai'
               ));
@@ -127,7 +159,7 @@ export const GET = withAuth(async (request: Request) => {
                 type: 'anime',
                 title: anime.title,
                 image: imageUrl,
-                year: anime.year,
+                year: anime.year ?? null,
                 rating: rating,
                 episodes: anime.episodes,
                 externalId: anime.mal_id,

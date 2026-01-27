@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { fetchCryptoMap, fetchCryptoInfo, fetchCryptoQuotes, retryWithBackoff, CRYPTO_SYMBOLS_TO_TRACK } from '@/lib/api/crypto';
+import { fetchCryptoMap, fetchCryptoInfo, fetchCryptoQuotes, retryWithBackoff } from '@/lib/api/crypto';
 import { NextResponse } from 'next/server';
 import { withAuthOrCron } from '@/lib/api-auth';
 
@@ -23,7 +23,7 @@ async function handleRefresh(request: Request, auth: { type: 'session' | 'cron';
     const existingSymbols = new Set(existingIds.map(c => c.symbol));
     const needsSetup = existingSymbols.size === 0;
 
-    let idMap = new Map<string, number>();
+    const idMap = new Map<string, number>();
 
     if (needsSetup) {
       console.log('Setting up crypto IDs...');
@@ -76,7 +76,6 @@ async function handleRefresh(request: Request, auth: { type: 'session' | 'cron';
     
     for (const [id, coinData] of Object.entries(quotesResponse.data)) {
       try {
-        const cmcId = parseInt(id);
         const symbol = coinData.symbol;
         
         // Skip if not in allowed symbols

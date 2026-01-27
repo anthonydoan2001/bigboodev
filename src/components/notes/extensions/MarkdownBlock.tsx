@@ -72,9 +72,8 @@ function MarkdownBlockView({ node, updateAttributes, selected }: NodeViewProps) 
       <div
         className={cn(
           'markdown-block',
-          'relative rounded-lg border bg-muted/30 my-2 transition-all',
-          selected && 'ring-2 ring-primary/30',
-          isEditing && 'border-primary/50'
+          'relative my-2 transition-all',
+          selected && 'ring-2 ring-primary/30'
         )}
       >
         {isEditing ? (
@@ -87,7 +86,7 @@ function MarkdownBlockView({ node, updateAttributes, selected }: NodeViewProps) 
               placeholder="Enter markdown here... (Ctrl+Enter to save, Escape to cancel)"
               className="w-full min-h-[100px] bg-transparent font-mono text-sm resize-none focus:outline-none text-foreground placeholder:text-muted-foreground"
             />
-            <div className="flex items-center justify-end gap-2 mt-2 pt-2 border-t border-border/50">
+            <div className="flex items-center justify-end gap-2 mt-2 pt-2">
               <Button
                 type="button"
                 variant="ghost"
@@ -125,7 +124,7 @@ function MarkdownBlockView({ node, updateAttributes, selected }: NodeViewProps) 
             >
               <Pencil className="h-3 w-3" />
             </Button>
-            <div className="markdown-block-content p-3 prose prose-sm dark:prose-invert max-w-none">
+            <div className="markdown-block-content p-3 prose prose-sm max-w-none text-white [&_*]:text-white">
               {node.attrs.content ? (
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {node.attrs.content}

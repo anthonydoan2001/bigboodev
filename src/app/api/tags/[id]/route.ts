@@ -8,7 +8,7 @@ function getIdFromUrl(url: string): string | null {
   return match ? match[1] : null;
 }
 
-export const PATCH = withAuth(async (request: Request, sessionToken: string) => {
+export const PATCH = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const id = getIdFromUrl(request.url);
 
@@ -19,7 +19,7 @@ export const PATCH = withAuth(async (request: Request, sessionToken: string) => 
     const body = await request.json();
     const { name, color } = body;
 
-    const updateData: any = {};
+    const updateData: { name?: string; color?: string } = {};
 
     if (name !== undefined) {
       if (!name.trim()) {
@@ -60,7 +60,7 @@ export const PATCH = withAuth(async (request: Request, sessionToken: string) => 
   }
 });
 
-export const DELETE = withAuth(async (request: Request, sessionToken: string) => {
+export const DELETE = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const id = getIdFromUrl(request.url);
 

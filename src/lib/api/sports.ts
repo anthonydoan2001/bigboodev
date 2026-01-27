@@ -82,6 +82,22 @@ interface ESPNScoreboardResponse {
   events: ESPNGame[];
 }
 
+interface ESPNStandingStat {
+  name: string;
+  value?: number | string;
+  displayValue?: string;
+}
+
+interface ESPNStandingEntry {
+  team: { displayName: string; name?: string; abbreviation: string; logos?: { href: string }[] };
+  stats: ESPNStandingStat[];
+}
+
+interface ESPNConference {
+  name: string;
+  standings?: { entries: ESPNStandingEntry[] };
+}
+
 export async function fetchScores(sport: SportType, date?: Date): Promise<GameScore[]> {
   try {
     const sportConfig = SPORT_LEAGUES[sport];
@@ -290,7 +306,7 @@ export async function fetchSchedule(sport: SportType, days: number = 7): Promise
   }
 }
 
-export async function fetchUpcomingPlayoffGames(sport: SportType): Promise<GameScore[]> {
+export async function fetchUpcomingPlayoffGames(_sport: SportType): Promise<GameScore[]> {
   // Playoff games feature is not currently available for NBA
   return [];
 }
@@ -351,7 +367,7 @@ interface ESPNBoxscoreResponse {
     };
   };
   // Summary endpoint might have different structure
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export async function fetchTopPerformers(sport: SportType, date?: Date): Promise<TopPerformer[]> {
@@ -452,12 +468,12 @@ export async function fetchTopPerformers(sport: SportType, date?: Date): Promise
       if (!result) return;
 
       const { boxscoreData, event } = result;
-      const competition = event.competitions[0];
+      const _competition = event.competitions[0];
 
       // Collect all unique players across all stat categories
       // The key insight: we need to iterate through ALL stat categories and collect ALL players
       // Each stat category might only have leaders, but together they should cover all players
-      const allPlayersMap = new Map<string, { athlete: any; team: string; statsMap: Map<string, string[]> }>();
+      const allPlayersMap = new Map<string, { athlete: { displayName: string; headshot?: string }; team: string; statsMap: Map<string, string[]> }>();
 
       // Try multiple structures to find all players
       // 1. boxscore.teams[].statistics (organized by team, might have all players)
@@ -988,7 +1004,7 @@ export async function fetchStandings(sport: SportType): Promise<TeamStanding[]> 
     const standings: TeamStanding[] = [];
 
     if (data.children && Array.isArray(data.children)) {
-      data.children.forEach((conference: any) => {
+      data.children.forEach((conference: ESPNConference) => {
         const conferenceName = conference.name;
         const isEastern = conferenceName.toLowerCase().includes('east');
         const isWestern = conferenceName.toLowerCase().includes('west');
@@ -996,22 +1012,22 @@ export async function fetchStandings(sport: SportType): Promise<TeamStanding[]> 
         if (conference.standings && conference.standings.entries) {
           const conferenceTeams: TeamStanding[] = [];
 
-          conference.standings.entries.forEach((entry: any) => {
+          conference.standings.entries.forEach((entry: ESPNStandingEntry) => {
             const team = entry.team;
             const stats = entry.stats;
 
             // Find specific stats
-            const wins = stats.find((s: any) => s.name === 'wins')?.value || 0;
-            const losses = stats.find((s: any) => s.name === 'losses')?.value || 0;
-            const winPercent = stats.find((s: any) => s.name === 'winPercent')?.value || 0;
-            const streak = stats.find((s: any) => s.name === 'streak')?.displayValue || '-';
+            const wins = stats.find((s: ESPNStandingStat) => s.name === 'wins')?.value || 0;
+            const losses = stats.find((s: ESPNStandingStat) => s.name === 'losses')?.value || 0;
+            const winPercent = stats.find((s: ESPNStandingStat) => s.name === 'winPercent')?.value || 0;
+            const streak = stats.find((s: ESPNStandingStat) => s.name === 'streak')?.displayValue || '-';
             
             // Find last 10 games stat - ESPN uses "Last Ten Games" with displayValue like "5-5"
             let last10Wins: number | undefined;
             let last10Losses: number | undefined;
             
             // Look for "Last Ten Games" stat (case-insensitive match)
-            const lastTenGamesStat = stats.find((s: any) => 
+            const lastTenGamesStat = stats.find((s: ESPNStandingStat) => 
               s.name === 'Last Ten Games' ||
               s.name?.toLowerCase() === 'last ten games' ||
               s.name?.toLowerCase().includes('last ten') ||
@@ -1034,7 +1050,7 @@ export async function fetchStandings(sport: SportType): Promise<TeamStanding[]> 
             
             // Fallback: Try other variations if "Last Ten Games" not found
             if (last10Wins === undefined || last10Losses === undefined) {
-              const lastTenRecordStat = stats.find((s: any) => 
+              const lastTenRecordStat = stats.find((s: ESPNStandingStat) => 
                 s.name === 'lastTen' || 
                 s.name === 'lastTenRecord' ||
                 s.name === 'last10Record' ||
@@ -1057,11 +1073,11 @@ export async function fetchStandings(sport: SportType): Promise<TeamStanding[]> 
 
             conferenceTeams.push({
               rank: 0, // Will be assigned after sorting
-              team: team.displayName || team.name,
+              team: team.displayName || team.name || '',
               teamLogo: team.logos?.[0]?.href,
-              wins: parseInt(wins),
-              losses: parseInt(losses),
-              winPercentage: parseFloat(winPercent),
+              wins: parseInt(String(wins)),
+              losses: parseInt(String(losses)),
+              winPercentage: parseFloat(String(winPercent)),
               streak: streak,
               last10Wins,
               last10Losses,

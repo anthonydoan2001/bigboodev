@@ -7,7 +7,7 @@ function getIdFromUrl(url: string): string | null {
   return match ? match[1] : null;
 }
 
-export const GET = withAuth(async (request: Request, sessionToken: string) => {
+export const GET = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const id = getIdFromUrl(request.url);
 
@@ -85,7 +85,7 @@ export const GET = withAuth(async (request: Request, sessionToken: string) => {
   }
 });
 
-export const PATCH = withAuth(async (request: Request, sessionToken: string) => {
+export const PATCH = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const id = getIdFromUrl(request.url);
 
@@ -96,7 +96,7 @@ export const PATCH = withAuth(async (request: Request, sessionToken: string) => 
     const body = await request.json();
     const { title, content, folderId, isPinned } = body;
 
-    const updateData: any = {};
+    const updateData: { title?: string; content?: string; folderId?: string | null; isPinned?: boolean } = {};
 
     if (title !== undefined) updateData.title = title?.trim() || '';
     if (content !== undefined) updateData.content = content || '';
@@ -169,7 +169,7 @@ export const PATCH = withAuth(async (request: Request, sessionToken: string) => 
   }
 });
 
-export const DELETE = withAuth(async (request: Request, sessionToken: string) => {
+export const DELETE = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const id = getIdFromUrl(request.url);
 

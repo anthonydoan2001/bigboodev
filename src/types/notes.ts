@@ -1,4 +1,4 @@
-import { Folder, Note, Tag, NoteTag, NoteAttachment, TaskNote, Task } from '@prisma/client';
+import { Folder, Note, Tag, NoteAttachment } from '@prisma/client';
 
 // Lightweight tag for list views
 export interface TagSummary {

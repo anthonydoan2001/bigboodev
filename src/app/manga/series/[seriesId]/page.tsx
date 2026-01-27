@@ -14,7 +14,6 @@ import {
   ArrowLeft,
   Play,
   CheckCircle,
-  Loader2,
   Calendar,
   User,
   Tag,

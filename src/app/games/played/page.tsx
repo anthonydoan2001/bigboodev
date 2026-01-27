@@ -43,7 +43,7 @@ function PlayedContent() {
           <Card>
             <CardContent className="p-12 text-center text-muted-foreground space-y-4">
               <p className="text-title">No completed games yet</p>
-              <p className="text-body-sm">Games you've finished will appear here</p>
+              <p className="text-body-sm">Games you&apos;ve finished will appear here</p>
             </CardContent>
           </Card>
         )}
