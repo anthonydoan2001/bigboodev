@@ -551,6 +551,14 @@
     opacity: 0.8;
   }
 
+  /* Highlight active list item when editing */
+  .ProseMirror ul li:focus-within,
+  .ProseMirror ol li:focus-within {
+    background-color: hsl(var(--primary) / 0.05);
+    border-radius: 0.25rem;
+    transition: background-color 0.15s ease;
+  }
+
   /* Placeholder */
   .ProseMirror p.is-editor-empty:first-child::before {
     color: var(--muted-foreground);
