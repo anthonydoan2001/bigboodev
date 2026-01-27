@@ -1,12 +1,13 @@
 'use client';
 
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, Extension } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { common, createLowlight } from 'lowlight';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { useCallback, useEffect, useRef, memo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,6 +52,38 @@ import { NoteWithRelations, TagWithCount, TagSummary, TaskSummary } from '@/type
 
 // Create lowlight instance with common languages
 const lowlight = createLowlight(common);
+
+// Custom extension to handle Ctrl/Cmd+Click on links
+const LinkClickHandler = Extension.create({
+  name: 'linkClickHandler',
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        key: new PluginKey('handleLinkClick'),
+        props: {
+          handleClick(view, pos, event) {
+            // Only handle clicks with Ctrl (Windows/Linux) or Cmd (Mac)
+            if (event.ctrlKey || event.metaKey) {
+              const { doc } = view.state;
+              const resolved = doc.resolve(pos);
+
+              // Check for link mark at the clicked position
+              const marks = resolved.marks();
+              const linkMark = marks.find((mark) => mark.type.name === 'link');
+
+              if (linkMark?.attrs.href) {
+                window.open(linkMark.attrs.href, '_blank', 'noopener,noreferrer');
+                event.preventDefault();
+                return true;
+              }
+            }
+            return false;
+          },
+        },
+      }),
+    ];
+  },
+});
 
 // Attachment type for editor (matches API response)
 interface AttachmentSummary {
@@ -211,7 +244,7 @@ const EditorToolbar = memo(function EditorToolbar({ editor }: { editor: any }) {
           'transition-all',
           editor.isActive('bulletList') && 'bg-primary text-primary-foreground hover:bg-primary/90'
         )}
-        title="Bullet List"
+        title="Bullet List (Ctrl+Shift+8)"
       >
         <List className="h-4 w-4" />
       </Button>
@@ -224,7 +257,7 @@ const EditorToolbar = memo(function EditorToolbar({ editor }: { editor: any }) {
           'transition-all',
           editor.isActive('orderedList') && 'bg-primary text-primary-foreground hover:bg-primary/90'
         )}
-        title="Numbered List"
+        title="Numbered List (Ctrl+Shift+7)"
       >
         <ListOrdered className="h-4 w-4" />
       </Button>
@@ -309,9 +342,11 @@ export function NoteEditor({
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
-          class: 'text-primary underline',
+          class: 'text-primary underline cursor-pointer',
+          title: 'Ctrl+Click to open link',
         },
       }),
+      LinkClickHandler,
       Placeholder.configure({
         placeholder: 'Start writing...',
       }),
