@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { KomgaBook } from '@/types/komga';
 import {
   fetchKomgaSettings,
   saveKomgaSettings,
@@ -316,7 +317,7 @@ export function useUpdateReadProgress() {
       });
 
       // Helper function to update a book's progress
-      const updateBookProgress = (book: any) => {
+      const updateBookProgress = (book: KomgaBook) => {
         if (book?.id === bookId) {
           return {
             ...book,
@@ -332,13 +333,13 @@ export function useUpdateReadProgress() {
       };
 
       // Optimistically update individual book query
-      queryClient.setQueryData(['manga', 'book', bookId], (old: any) => {
+      queryClient.setQueryData(['manga', 'book', bookId], (old: KomgaBook | undefined) => {
         if (!old) return old;
         return updateBookProgress(old);
       });
 
       // Optimistically update all books list queries
-      queryClient.setQueriesData({ queryKey: ['manga', 'books'] }, (old: any) => {
+      queryClient.setQueriesData({ queryKey: ['manga', 'books'] }, (old: { content?: KomgaBook[] } | undefined) => {
         if (!old?.content) return old;
         return {
           ...old,
@@ -347,7 +348,7 @@ export function useUpdateReadProgress() {
       });
 
       // Optimistically update in-progress queries
-      queryClient.setQueriesData({ queryKey: ['manga', 'in-progress'] }, (old: any) => {
+      queryClient.setQueriesData({ queryKey: ['manga', 'in-progress'] }, (old: { content?: KomgaBook[] } | undefined) => {
         if (!old?.content) return old;
         return {
           ...old,
@@ -356,7 +357,7 @@ export function useUpdateReadProgress() {
       });
 
       // Optimistically update on-deck queries
-      queryClient.setQueriesData({ queryKey: ['manga', 'on-deck'] }, (old: any) => {
+      queryClient.setQueriesData({ queryKey: ['manga', 'on-deck'] }, (old: { content?: KomgaBook[] } | undefined) => {
         if (!old?.content) return old;
         return {
           ...old,

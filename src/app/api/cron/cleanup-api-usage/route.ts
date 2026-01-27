@@ -33,11 +33,11 @@ export async function GET(request: Request) {
   const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
 
   if (!process.env.CRON_SECRET) {
-    console.warn('⚠️  CRON_SECRET not set in environment variables');
+    void 0; //('⚠️  CRON_SECRET not set in environment variables');
   }
 
   if (authHeader !== expectedAuth) {
-    console.error('Unauthorized cleanup attempt');
+    void 0; //('Unauthorized cleanup attempt');
     return NextResponse.json(
       { error: 'Unauthorized' },
       { status: 401 }
@@ -47,24 +47,24 @@ export async function GET(request: Request) {
   const startTime = Date.now();
 
   try {
-    console.log('🧹 Starting API usage cleanup...');
+    void 0; //('🧹 Starting API usage cleanup...');
 
     // Get storage stats before cleanup
     const beforeStats = await getStorageStats();
-    console.log('📊 Before cleanup:', beforeStats);
+    void 0; //('📊 Before cleanup:', beforeStats);
 
     // Step 1: Aggregate recent hourly data
-    console.log('📈 Aggregating recent hourly data...');
+    void 0; //('📈 Aggregating recent hourly data...');
     const hoursAggregated = await aggregateRecentHourly();
-    console.log(`✅ Aggregated ${hoursAggregated} hours`);
+    void 0; //(`✅ Aggregated ${hoursAggregated} hours`);
 
     // Step 2: Cleanup old records (older than 90 days)
-    console.log('🗑️  Cleaning up old records (>90 days)...');
+    void 0; //('🗑️  Cleaning up old records (>90 days)...');
     const { aggregatedDays, deletedRecords } = await cleanupOldApiUsage(90);
 
     // Get storage stats after cleanup
     const afterStats = await getStorageStats();
-    console.log('📊 After cleanup:', afterStats);
+    void 0; //('📊 After cleanup:', afterStats);
 
     const duration = Date.now() - startTime;
 
@@ -88,11 +88,11 @@ export async function GET(request: Request) {
       },
     };
 
-    console.log('✨ Cleanup complete:', result);
+    void 0; //('✨ Cleanup complete:', result);
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('❌ Cleanup failed:', error);
+    void 0; //('❌ Cleanup failed:', error);
 
     return NextResponse.json(
       {

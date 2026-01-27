@@ -102,7 +102,7 @@ export async function fetchScores(sport: SportType, date?: Date): Promise<GameSc
   try {
     const sportConfig = SPORT_LEAGUES[sport];
     if (!sportConfig) {
-      console.log(`[Sports API] Sport ${sport} is not yet supported`);
+      // Sport not supported
       return [];
     }
     const { path } = sportConfig;
@@ -134,8 +134,7 @@ export async function fetchScores(sport: SportType, date?: Date): Promise<GameSc
     });
 
     if (!response.ok) {
-      console.error(`ESPN API error: ${response.status} ${response.statusText}`);
-      throw new Error(`ESPN API returned ${response.status}`);
+            throw new Error(`ESPN API returned ${response.status}`);
     }
 
     const data: ESPNScoreboardResponse = await response.json();
@@ -250,8 +249,7 @@ export async function fetchScores(sport: SportType, date?: Date): Promise<GameSc
         topScorer,
       };
     });
-  } catch (error) {
-    console.error(`Error fetching ${sport} scores:`, error);
+  } catch {
     return []; // Return empty array instead of throwing
   }
 }
@@ -260,7 +258,7 @@ export async function fetchSchedule(sport: SportType, days: number = 7): Promise
   try {
     const sportConfig = SPORT_LEAGUES[sport];
     if (!sportConfig) {
-      console.log(`[Sports API] Sport ${sport} is not yet supported`);
+      // Sport not supported
       return [];
     }
     const { path } = sportConfig;
@@ -301,8 +299,7 @@ export async function fetchSchedule(sport: SportType, days: number = 7): Promise
       })
       .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
   } catch (error) {
-    console.error(`Error fetching ${sport} schedule:`, error);
-    throw error;
+        throw error;
   }
 }
 
@@ -374,7 +371,7 @@ export async function fetchTopPerformers(sport: SportType, date?: Date): Promise
   try {
     const sportConfig = SPORT_LEAGUES[sport];
     if (!sportConfig) {
-      console.log(`[Sports API] Sport ${sport} is not yet supported`);
+      // Sport not supported
       return [];
     }
     const { path } = sportConfig;
@@ -399,8 +396,7 @@ export async function fetchTopPerformers(sport: SportType, date?: Date): Promise
     });
 
     if (!response.ok) {
-      console.error(`ESPN API error: ${response.status} ${response.statusText}`);
-      return [];
+            return [];
     }
 
     const data: ESPNScoreboardResponse = await response.json();
@@ -457,8 +453,7 @@ export async function fetchTopPerformers(sport: SportType, date?: Date): Promise
 
         const boxscoreData: ESPNBoxscoreResponse = await boxscoreResponse.json();
         boxscores.push({ event, boxscoreData });
-      } catch (error) {
-        console.error(`Error fetching boxscore for game ${event.id}:`, error);
+      } catch {
         continue;
       }
     }
@@ -691,8 +686,7 @@ export async function fetchTopPerformers(sport: SportType, date?: Date): Promise
     }
 
     return Array.from(performersMap.values());
-  } catch (error) {
-    console.error(`Error fetching ${sport} top performers:`, error);
+  } catch {
     return []; // Return empty array instead of throwing
   }
 }
@@ -749,8 +743,7 @@ export async function getCachedGameScores(sport: SportType, date: Date): Promise
       odds: game.odds ? (game.odds as GameScore['odds']) : undefined,
       topScorer: game.topScorer ? (game.topScorer as GameScore['topScorer']) : undefined,
     }));
-  } catch (error) {
-    console.error('Error getting cached game scores:', error);
+  } catch {
     return [];
   }
 }
@@ -814,8 +807,7 @@ export async function cacheGameScores(sport: SportType, date: Date, games: GameS
         },
       });
     }
-  } catch (error) {
-    console.error('Error caching game scores:', error);
+  } catch {
     // Don't throw - caching failures shouldn't break the API
   }
 }
@@ -844,8 +836,7 @@ export async function hasLiveGames(sport: SportType, date: Date): Promise<boolea
     });
 
     return liveGameCount > 0;
-  } catch (error) {
-    console.error('Error checking for live games:', error);
+  } catch {
     return false;
   }
 }
@@ -865,8 +856,7 @@ export async function cleanupExpiredLiveGames(): Promise<number> {
     });
 
     return result.count;
-  } catch (error) {
-    console.error('Error cleaning up expired live games:', error);
+  } catch {
     return 0;
   }
 }
@@ -898,8 +888,7 @@ export async function getCachedTopPerformers(sport: SportType, date: Date): Prom
       image: performer.imageUrl || undefined,
       stats: performer.stats as TopPerformer['stats'],
     }));
-  } catch (error) {
-    console.error('Error getting cached top performers:', error);
+  } catch {
     return [];
   }
 }
@@ -958,8 +947,7 @@ export async function cacheTopPerformers(sport: SportType, date: Date, performer
         },
       });
     }
-  } catch (error) {
-    console.error('Error caching top performers:', error);
+  } catch {
     // Don't throw - caching failures shouldn't break the API
   }
 }
@@ -971,7 +959,7 @@ export async function fetchStandings(sport: SportType): Promise<TeamStanding[]> 
   try {
     const sportConfig = SPORT_LEAGUES[sport];
     if (!sportConfig) {
-      console.log(`[Sports API] Sport ${sport} is not yet supported`);
+      // Sport not supported
       return [];
     }
     const { path } = sportConfig;
@@ -993,8 +981,7 @@ export async function fetchStandings(sport: SportType): Promise<TeamStanding[]> 
     });
 
     if (!response.ok) {
-      console.error(`ESPN API error: ${response.status} ${response.statusText}`);
-      throw new Error(`ESPN API returned ${response.status}`);
+            throw new Error(`ESPN API returned ${response.status}`);
     }
 
     const data = await response.json();
@@ -1098,8 +1085,7 @@ export async function fetchStandings(sport: SportType): Promise<TeamStanding[]> 
     }
 
     return standings;
-  } catch (error) {
-    console.error(`Error fetching ${sport} standings:`, error);
+  } catch {
     return []; // Return empty array instead of throwing
   }
 }

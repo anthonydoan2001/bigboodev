@@ -17,47 +17,46 @@ import { ListVideo, Loader2 } from 'lucide-react';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { useWatchlistMutations } from '@/lib/hooks/useWatchlistMutations';
 import { useViewportGrid } from '@/lib/hooks/useViewportGrid';
-import { WatchlistItem } from '@prisma/client';
 import { getAuthHeaders } from '@/lib/api-client';
 
-// Shared randomization utility - Fisher-Yates shuffle with stable order tracking
-function createStableRandomOrder<T extends { id: string }>(
-  items: T[],
-  orderMap: Map<string, number>,
-  isInitialized: { current: boolean },
-  limit: number = 21
-): T[] {
-  // Initialize order map on first call with items
-  if (!isInitialized.current && items.length > 0) {
-    const indices = items.map((_, i) => i);
-    // Fisher-Yates shuffle
-    for (let i = indices.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [indices[i], indices[j]] = [indices[j], indices[i]];
-    }
-    items.forEach((item, i) => orderMap.set(item.id, indices[i]));
-    isInitialized.current = true;
-  }
+// Stable randomization class - maintains order across renders
+class StableRandomOrder {
+  private orderMap = new Map<string, number>();
+  private isInitialized = false;
 
-  if (!isInitialized.current) return items.slice(0, limit);
-
-  // Get max existing order for new items
-  const existingOrders = Array.from(orderMap.values()).filter(v => v < 10000);
-  const maxOrder = existingOrders.length > 0 ? Math.max(...existingOrders) : -1;
-
-  // Sort by stored order, assign new order to new items
-  return items
-    .map(item => {
-      let order = orderMap.get(item.id);
-      if (order === undefined) {
-        order = Math.random() * 1000 + maxOrder + 1000;
-        orderMap.set(item.id, order);
+  getOrdered<T extends { id: string }>(items: T[], limit: number = 21): T[] {
+    // Initialize order map on first call with items
+    if (!this.isInitialized && items.length > 0) {
+      const indices = items.map((_, i) => i);
+      // Fisher-Yates shuffle
+      for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
       }
-      return { item, order };
-    })
-    .sort((a, b) => a.order - b.order)
-    .slice(0, limit)
-    .map(({ item }) => item);
+      items.forEach((item, i) => this.orderMap.set(item.id, indices[i]));
+      this.isInitialized = true;
+    }
+
+    if (!this.isInitialized) return items.slice(0, limit);
+
+    // Get max existing order for new items
+    const existingOrders = Array.from(this.orderMap.values()).filter(v => v < 10000);
+    const maxOrder = existingOrders.length > 0 ? Math.max(...existingOrders) : -1;
+
+    // Sort by stored order, assign new order to new items
+    return items
+      .map(item => {
+        let order = this.orderMap.get(item.id);
+        if (order === undefined) {
+          order = Math.random() * 1000 + maxOrder + 1000;
+          this.orderMap.set(item.id, order);
+        }
+        return { item, order };
+      })
+      .sort((a, b) => a.order - b.order)
+      .slice(0, limit)
+      .map(({ item }) => item);
+  }
 }
 
 function WatchlistContent() {
@@ -70,15 +69,11 @@ function WatchlistContent() {
   const { watchlistItems, watchedItems, watchingItems, allItems, isLoading: listLoading } = useWatchlist();
   const { addMutation, deleteMutation, markWatchedMutation, markWatchingMutation } = useWatchlistMutations();
 
-  // Stable randomized order refs - created once per page load
-  const randomizedOrderRef = useRef<Map<string, number>>(new Map());
-  const hasInitializedRef = useRef({ current: false });
-  const animeOrderRef = useRef<Map<string, number>>(new Map());
-  const hasInitializedAnimeRef = useRef({ current: false });
-  const moviesOrderRef = useRef<Map<string, number>>(new Map());
-  const hasInitializedMoviesRef = useRef({ current: false });
-  const showsOrderRef = useRef<Map<string, number>>(new Map());
-  const hasInitializedShowsRef = useRef({ current: false });
+  // Stable randomized order instances - created once per page load
+  const watchlistOrderRef = useRef(new StableRandomOrder());
+  const animeOrderRef = useRef(new StableRandomOrder());
+  const moviesOrderRef = useRef(new StableRandomOrder());
+  const showsOrderRef = useRef(new StableRandomOrder());
 
   // Search query - static import instead of dynamic
   const { data: searchData, isLoading: searchLoading } = useQuery<{ results: UniversalSearchResult[] }>({
@@ -102,26 +97,29 @@ function WatchlistContent() {
     allShows: watchlistItems.filter(item => item.type === 'SHOW'),
   }), [watchlistItems]);
 
-  // Randomized lists using shared utility
+  // Randomized lists using stable order instances
+  // Note: Accessing ref.current here is safe because StableRandomOrder instances are stable
+  /* eslint-disable react-hooks/refs */
   const randomizedWatchlist = useMemo(() =>
-    createStableRandomOrder(watchlistItems, randomizedOrderRef.current, hasInitializedRef.current),
+    watchlistOrderRef.current.getOrdered(watchlistItems),
     [watchlistItems]
   );
 
   const animeList = useMemo(() =>
-    createStableRandomOrder(allAnime, animeOrderRef.current, hasInitializedAnimeRef.current),
+    animeOrderRef.current.getOrdered(allAnime),
     [allAnime]
   );
 
   const moviesList = useMemo(() =>
-    createStableRandomOrder(allMovies, moviesOrderRef.current, hasInitializedMoviesRef.current),
+    moviesOrderRef.current.getOrdered(allMovies),
     [allMovies]
   );
 
   const showsList = useMemo(() =>
-    createStableRandomOrder(allShows, showsOrderRef.current, hasInitializedShowsRef.current),
+    showsOrderRef.current.getOrdered(allShows),
     [allShows]
   );
+  /* eslint-enable react-hooks/refs */
 
   // Filter search results - memoized
   const searchResults = useMemo(() =>
@@ -372,13 +370,13 @@ function WatchlistContent() {
                 searchResults.length > 0 ? (
                   <Card>
                     <CardContent className="p-12 text-center text-body text-muted-foreground">
-                      <p>No {searchFilter === 'all' ? '' : searchFilter} results found for "{searchQuery}"</p>
+                      <p>No {searchFilter === 'all' ? '' : searchFilter} results found for &ldquo;{searchQuery}&rdquo;</p>
                     </CardContent>
                   </Card>
                 ) : (
                   <Card>
                     <CardContent className="p-12 text-center text-body text-muted-foreground">
-                      <p>No results found for "{searchQuery}"</p>
+                      <p>No results found for &ldquo;{searchQuery}&rdquo;</p>
                     </CardContent>
                   </Card>
                 )

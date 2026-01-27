@@ -43,18 +43,6 @@ function formatPercentChange(percent: number | null): string {
   return `${sign}${percent.toFixed(2)}%`;
 }
 
-function cleanCompanyName(name: string): string {
-  // Remove common suffixes: Inc, Inc., Corporation, Corp, Corp., Platforms, Platform, etc.
-  return name
-    .replace(/\s+Inc\.?$/i, '')
-    .replace(/\s+Corporation$/i, '')
-    .replace(/\s+Corp\.?$/i, '')
-    .replace(/\s+Platforms?$/i, '')
-    .replace(/\s+LLC\.?$/i, '')
-    .replace(/\s+Ltd\.?$/i, '')
-    .trim();
-}
-
 const StockCard = memo(function StockCard({ quote }: { quote: StockQuote }) {
   const isPositive = quote.change >= 0;
   const changeColor = isPositive ? 'text-success' : 'text-destructive';

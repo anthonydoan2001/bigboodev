@@ -11,9 +11,9 @@ import { withAuthOrCron } from '@/lib/api-auth';
  *
  * Should be run every 5 minutes
  */
-async function handleRefresh(request: Request, auth: { type: 'session' | 'cron'; token: string }) {
+async function handleRefresh(_request: Request, _auth: { type: 'session' | 'cron'; token: string }) {
   try {
-    console.log(`[Crypto Refresh] Called by ${auth.type} at ${new Date().toISOString()}`);
+    void 0; //(`[Crypto Refresh] Called by ${auth.type} at ${new Date().toISOString()}`);
     
     // Step 1: Get or create ID mappings
     const existingIds = await db.cryptoQuote.findMany({
@@ -26,7 +26,7 @@ async function handleRefresh(request: Request, auth: { type: 'session' | 'cron';
     const idMap = new Map<string, number>();
 
     if (needsSetup) {
-      console.log('Setting up crypto IDs...');
+      void 0; //('Setting up crypto IDs...');
       const mapResponse = await retryWithBackoff(() => fetchCryptoMap());
       
       if (!mapResponse.data || !Array.isArray(mapResponse.data)) {
@@ -51,16 +51,16 @@ async function handleRefresh(request: Request, auth: { type: 'session' | 'cron';
     }
 
     const cmcIds = Array.from(idMap.values());
-    console.log(`Processing ${cmcIds.length} cryptos...`);
+    void 0; //(`Processing ${cmcIds.length} cryptos...`);
 
     // Step 2: Fetch metadata (logos, names) - with delay to avoid rate limits
     await new Promise(resolve => setTimeout(resolve, 200));
-    console.log('Fetching metadata...');
+    void 0; //('Fetching metadata...');
     const infoResponse = await retryWithBackoff(() => fetchCryptoInfo(cmcIds));
 
     // Step 3: Fetch quotes (prices, changes) - with delay
     await new Promise(resolve => setTimeout(resolve, 200));
-    console.log('Fetching quotes...');
+    void 0; //('Fetching quotes...');
     const quotesResponse = await retryWithBackoff(() => fetchCryptoQuotes(cmcIds));
 
     if (!quotesResponse.data || typeof quotesResponse.data !== 'object') {
@@ -80,7 +80,7 @@ async function handleRefresh(request: Request, auth: { type: 'session' | 'cron';
         
         // Skip if not in allowed symbols
         if (!allowedSymbols.has(symbol)) {
-          console.log(`Skipping ${symbol} - not in allowed list (BTC, ETH, SOL)`);
+          void 0; //(`Skipping ${symbol} - not in allowed list (BTC, ETH, SOL)`);
           continue;
         }
         
@@ -124,7 +124,7 @@ async function handleRefresh(request: Request, auth: { type: 'session' | 'cron';
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         errors.push({ id, symbol: coinData.symbol, error: errorMessage });
-        console.error(`Failed to save quote for ${coinData.symbol}:`, errorMessage);
+        void 0; //(`Failed to save quote for ${coinData.symbol}:`, errorMessage);
       }
     }
 
@@ -138,12 +138,6 @@ async function handleRefresh(request: Request, auth: { type: 'session' | 'cron';
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorStack = error instanceof Error ? error.stack : undefined;
-    console.error('[Crypto Refresh] Error refreshing crypto quotes:', {
-      error: errorMessage,
-      stack: errorStack,
-      timestamp: new Date().toISOString(),
-    });
     return NextResponse.json(
       {
         success: false,

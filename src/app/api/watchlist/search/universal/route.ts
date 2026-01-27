@@ -55,7 +55,6 @@ async function fetchWithRetry(url: string, retries = 2, delay = 1000): Promise<R
     
     // If rate limited (429), wait and retry
     if (response.status === 429 && i < retries) {
-      console.log(`Rate limited, waiting ${delay}ms before retry ${i + 1}...`);
       await new Promise(resolve => setTimeout(resolve, delay));
       continue;
     }
@@ -167,17 +166,13 @@ export const GET = withAuth(async (request: Request) => {
             }
           });
         }
-      } else if (animeResponse.status === 429) {
-        console.warn('Jikan API rate limited, skipping anime results');
       }
-    } catch (animeError) {
-      console.warn('Failed to fetch anime results:', animeError);
+    } catch {
       // Continue without anime results
     }
 
     return NextResponse.json({ results });
-  } catch (error) {
-    console.error('Universal search error:', error);
+  } catch {
     return NextResponse.json({ error: 'Search failed' }, { status: 500 });
   }
 });

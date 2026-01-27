@@ -15,7 +15,6 @@ import {
   ArrowLeft,
   ChevronLeft,
   ChevronRight,
-  BookOpen,
   Loader2,
   ZoomIn,
   ZoomOut,
@@ -102,10 +101,9 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
   const totalPages = pages.length;
   const isPageMode = readingMode === 'page-ltr' || readingMode === 'page-rtl';
   const isRTL = readingMode === 'page-rtl' || readingMode === 'horizontal-scroll-rtl';
-  const isVerticalScroll = readingMode === 'vertical-scroll';
-  const isHorizontalScroll = readingMode === 'horizontal-scroll-ltr' || readingMode === 'horizontal-scroll-rtl';
 
   // Wait for zustand to hydrate from localStorage
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const unsubFinishHydration = useMangaStore.persist.onFinishHydration(() => {
       setIsHydrated(true);
@@ -120,6 +118,7 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
       unsubFinishHydration();
     };
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Initialize session only after hydration
   useEffect(() => {
@@ -129,13 +128,16 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
   }, [isHydrated, book, pages, setSession]);
 
   // Reset state when book changes
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     hasScrolledToSavedPage.current = false;
     setIsInitializing(true);
     // Don't clear pageRefs - they'll be updated naturally and the observer needs them
   }, [book.id]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Scroll to saved page position in scroll modes (after hydration and session init)
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     // If in page mode or starting from page 1, no need to scroll - ready immediately
     if (!isHydrated) return;
@@ -185,6 +187,7 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
       timeoutIds.forEach(id => clearTimeout(id));
     };
   }, [isHydrated, isPageMode, currentPage, book.id]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Track visible page in scroll modes using Intersection Observer
   useEffect(() => {

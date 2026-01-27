@@ -169,9 +169,6 @@ const FeatureLayer = ({
   frame: number;
   kenBurnsConfigs: KenBurnsConfig[];
 }) => {
-  const localFrame = frame - feature.startFrame;
-  const featureDuration = feature.endFrame - feature.startFrame;
-
   // Calculate opacity for smooth fade in/out
   const fadeIn = interpolate(
     frame,

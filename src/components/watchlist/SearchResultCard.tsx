@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Check, CheckCircle2, Eye, Plus, Trash2 } from 'lucide-react';
 import Image from 'next/image';
-import { useState, useEffect, useRef, memo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 // Blur placeholder for poster images (2:3 aspect ratio)
 const BLUR_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAPCAYAAADd/14OAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAQklEQVQoz2NgGAUwwAjE/0HYgBj1/6F8A2LU/4fy/5Oh/j+Ub0CM+v9Q/n8y1P+H8v+Tof4/lP+fDPX/ofz/ZKgfBAA4cRITSQqCYAAAAABJRU5ErkJggg==';
@@ -47,7 +47,6 @@ export function SearchResultCard({
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
-  const menuIdRef = useRef(`menu-${result.id}-${Math.random().toString(36).substr(2, 9)}`);
 
   useEffect(() => {
     if (open && position.x > 0 && position.y > 0) {

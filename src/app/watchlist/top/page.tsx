@@ -59,23 +59,30 @@ function TopContent() {
   // Use useMemo to recalculate when watchlist data loads
   const topItems: TopItem[] = useMemo(() => {
     if (!topData?.results) return [];
-    
+
     return topData.results.filter(
       (item: TopItem) => {
         // Basic filters
         if (!item.image || item.image.trim() === '' || !item.rating || item.rating <= 0) {
           return false;
         }
-        
+
         // Only filter out watchlist/watched/watching items if watchlist data has loaded
         if (!watchlistLoading) {
-          if (isInWatchlist(item.externalId, item.type) || 
-              isWatched(item.externalId, item.type) || 
-              isWatching(item.externalId, item.type)) {
+          const inWatchlist = watchlistItems.some(
+            w => w.externalId === String(item.externalId) && w.type === item.type.toUpperCase()
+          );
+          const inWatched = watchedItems.some(
+            w => w.externalId === String(item.externalId) && w.type === item.type.toUpperCase()
+          );
+          const inWatching = watchingItems.some(
+            w => w.externalId === String(item.externalId) && w.type === item.type.toUpperCase()
+          );
+          if (inWatchlist || inWatched || inWatching) {
             return false;
           }
         }
-        
+
         return true;
       }
     );
@@ -121,7 +128,7 @@ function TopContent() {
           </div>
         ) : topItems.length > 0 && sections.length > 0 ? (
           <div className="space-y-8">
-            {sections.map((section, index) => (
+            {sections.map((section) => (
               <div key={section.key}>
                   {section.key === 'anime' && (
                     <Carousel title={section.title} count={section.items.length} icon={<ListVideo className="h-4 w-4" />} showCount={false}>

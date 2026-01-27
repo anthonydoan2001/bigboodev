@@ -89,7 +89,6 @@ export class KomgaClient {
     try {
       // Use /api/v1/libraries as a test endpoint - it requires auth and is widely supported
       const url = `${this.serverUrl}/api/v1/libraries`;
-      console.log('[Komga] Testing connection to:', url);
 
       const response = await fetch(url, {
         headers: {
@@ -97,8 +96,6 @@ export class KomgaClient {
         },
         redirect: 'follow', // Follow redirects (e.g., HTTP -> HTTPS)
       });
-
-      console.log('[Komga] Response status:', response.status);
 
       if (response.ok) {
         return { success: true };
@@ -113,7 +110,6 @@ export class KomgaClient {
       }
       return { success: false, error: `Server returned ${response.status}: ${errorText}` };
     } catch (error) {
-      console.error('[Komga] Connection error:', error);
       const message = error instanceof Error ? error.message : 'Unknown error';
       // Check for common network errors
       if (message.includes('ECONNREFUSED')) {

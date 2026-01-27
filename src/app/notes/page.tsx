@@ -63,7 +63,7 @@ function NotesContent() {
 
   // Editing state for note
   const [editTitle, setEditTitle] = useState('');
-  const [editContent, setEditContent] = useState('');
+  const [, setEditContent] = useState('');
   const [editFolderId, setEditFolderId] = useState<string | null>(null);
   const [editIsPinned, setEditIsPinned] = useState(false);
 
@@ -85,9 +85,9 @@ function NotesContent() {
     { includeCounts: false, enabled: showTrash }
   );
 
-  const { note: selectedNote, isLoading: noteLoading, refetch: refetchNote } = useNote(selectedNoteId);
-  const { folders, tree: folderTree, isLoading: foldersLoading } = useFolders();
-  const { tags, isLoading: tagsLoading } = useTags();
+  const { note: selectedNote, refetch: refetchNote } = useNote(selectedNoteId);
+  const { folders, tree: folderTree } = useFolders();
+  const { tags } = useTags();
   const { tasks } = useTasks();
 
   // Mutations
@@ -97,15 +97,20 @@ function NotesContent() {
   const { uploadAttachment, deleteAttachment } = useAttachmentsMutations();
   const { linkTask, unlinkTask } = useTaskNoteMutations();
 
-  // Sync note data to edit state
+  // Sync note data to edit state when note changes
+  const prevNoteIdRef = useRef<string | null>(null);
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    if (selectedNote) {
+    // Only update when the note itself changes, not on every render
+    if (selectedNote && selectedNote.id !== prevNoteIdRef.current) {
+      prevNoteIdRef.current = selectedNote.id;
       setEditTitle(selectedNote.title);
       setEditContent(selectedNote.content);
       setEditFolderId(selectedNote.folderId);
       setEditIsPinned(selectedNote.isPinned);
     }
   }, [selectedNote]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Update URL when selection changes
   const updateUrl = useCallback(
@@ -165,16 +170,16 @@ function NotesContent() {
 
     // Optimistically update the cache immediately so switching notes preserves changes
     if (selectedNoteId) {
-      queryClient.setQueryData(['note', selectedNoteId], (oldData: any) => {
+      queryClient.setQueryData(['note', selectedNoteId], (oldData: { item?: { title?: string } } | undefined) => {
         if (!oldData?.item) return oldData;
         return { ...oldData, item: { ...oldData.item, title } };
       });
       // Also update in notes list
-      queryClient.setQueriesData({ queryKey: ['notes'] }, (oldData: any) => {
+      queryClient.setQueriesData({ queryKey: ['notes'] }, (oldData: { items?: Array<{ id: string; title?: string }> } | undefined) => {
         if (!oldData?.items) return oldData;
         return {
           ...oldData,
-          items: oldData.items.map((note: any) =>
+          items: oldData.items.map((note) =>
             note.id === selectedNoteId ? { ...note, title } : note
           ),
         };
@@ -197,7 +202,7 @@ function NotesContent() {
 
     // Optimistically update the cache immediately so switching notes preserves changes
     if (selectedNoteId) {
-      queryClient.setQueryData(['note', selectedNoteId], (oldData: any) => {
+      queryClient.setQueryData(['note', selectedNoteId], (oldData: { item?: { content?: string } } | undefined) => {
         if (!oldData?.item) return oldData;
         return { ...oldData, item: { ...oldData.item, content } };
       });
