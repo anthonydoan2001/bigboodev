@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { withAuth } from '@/lib/api-auth';
 import { TaskStatus, TaskPriority } from '@/types/tasks';
 
-export const GET = withAuth(async (request: Request, sessionToken: string) => {
+export const GET = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
@@ -11,7 +11,7 @@ export const GET = withAuth(async (request: Request, sessionToken: string) => {
     const priority = searchParams.get('priority');
     const search = searchParams.get('search');
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (status) {
       const statuses = status.split(',') as TaskStatus[];
@@ -63,10 +63,10 @@ export const GET = withAuth(async (request: Request, sessionToken: string) => {
   }
 });
 
-export const POST = withAuth(async (request: Request, sessionToken: string) => {
+export const POST = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const body = await request.json();
-    const { title, description, status, priority, dueDate, category, notes, noteId } = body;
+    const { title, description, status, priority, dueDate, category, notes } = body;
 
     if (!title || !title.trim()) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });

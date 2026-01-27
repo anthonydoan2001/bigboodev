@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { withAuth } from '@/lib/api-auth';
 import { TaskStatus } from '@/types/tasks';
 
-export const POST = withAuth(async (request: Request, sessionToken: string) => {
+export const POST = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const body = await request.json();
     const { taskId, newStatus, newPosition } = body;

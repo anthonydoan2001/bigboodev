@@ -211,13 +211,13 @@ export class ApiTracker {
     }
   }
 
-  private getLimit(apiName: string, period: string): number | null {
+  private getLimit(_apiName: string, _period: string): number | null {
     // This would fetch from your API_LIMITS config
     // For now, return null - implement based on your needs
     return null;
   }
 
-  private async triggerAlert(alert: any, count: number, limit: number, percentage: number) {
+  private async triggerAlert(alert: { apiName: string; alertType: string; threshold: number; period: string }, count: number, limit: number, percentage: number) {
     console.warn(`🚨 API Alert Triggered: ${alert.apiName}`);
     console.warn(`   Type: ${alert.alertType}`);
     console.warn(`   Usage: ${count}/${limit} (${percentage.toFixed(1)}%)`);

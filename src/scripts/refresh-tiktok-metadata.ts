@@ -54,7 +54,7 @@ async function getRedirectedUrl(url: string): Promise<string | null> {
 
     // The final URL after redirects
     return response.url;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -79,7 +79,7 @@ async function fetchOEmbed(url: string): Promise<OEmbedResponse | null> {
     }
 
     return await response.json();
-  } catch (error) {
+  } catch {
     return null;
   }
 }

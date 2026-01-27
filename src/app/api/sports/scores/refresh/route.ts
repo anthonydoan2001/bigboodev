@@ -18,7 +18,7 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
 
     // Check for force parameter (for manual testing)
     const url = new URL(request.url);
-    const force = url.searchParams.get('force') === 'true';
+    const _force = url.searchParams.get('force') === 'true';
     const sportParam = url.searchParams.get('sport') as SportType | null;
 
     // Clean up expired live games first

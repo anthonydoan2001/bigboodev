@@ -8,10 +8,26 @@ const BASE_URL = 'https://api.openweathermap.org/data/2.5';
 const LAT = '29.9717'; // Cypress, TX Latitude
 const LON = '-95.6938'; // Cypress, TX Longitude
 
-function processDailyForecast(list: any[]): any[] {
+interface OpenWeatherForecastItem {
+  dt: number;
+  main: { temp: number; temp_max: number; temp_min: number };
+  weather: { main: string; icon: string }[];
+  pop: number;
+}
+
+interface DailyForecast {
+  date: string;
+  high: number;
+  low: number;
+  condition: string;
+  icon: string;
+  precipitation: number;
+}
+
+function processDailyForecast(list: OpenWeatherForecastItem[]): DailyForecast[] {
   const dailyMap = new Map();
 
-  list.forEach((item: any) => {
+  list.forEach((item) => {
     const date = new Date(item.dt * 1000).toLocaleDateString('en-US', { weekday: 'short' });
     if (!dailyMap.has(date)) {
       dailyMap.set(date, {
@@ -95,7 +111,7 @@ export const GET = withAuth(async () => {
         low: Math.round(currentData.main.temp_min),
       },
       // Map first 12 forecast items as "hourly" (they are 3-hour steps)
-      hourly: forecastData?.list.slice(0, 12).map((item: any) => {
+      hourly: forecastData?.list.slice(0, 12).map((item: OpenWeatherForecastItem) => {
         const date = new Date(item.dt * 1000);
         const hour = date.getHours();
         const isToday = date.toDateString() === new Date().toDateString();

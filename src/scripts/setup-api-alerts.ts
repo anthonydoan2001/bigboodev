@@ -11,7 +11,7 @@
  */
 
 import { db } from '../lib/db';
-import { API_LIMITS, ApiName } from '../lib/api-usage';
+import type { ApiName } from '../lib/api-usage';
 
 interface AlertConfig {
   apiName: ApiName;

@@ -108,7 +108,7 @@ export const GET = withAuth(async (request: Request) => {
           source: 'quotable',
         };
       }
-    } catch (apiError) {
+    } catch {
       // API failed, will use fallback
       console.log('Quotable API unavailable, using fallback quotes');
     }

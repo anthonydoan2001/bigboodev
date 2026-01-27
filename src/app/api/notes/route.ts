@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { withAuth } from '@/lib/api-auth';
 
-export const GET = withAuth(async (request: Request, sessionToken: string) => {
+export const GET = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
@@ -13,7 +13,7 @@ export const GET = withAuth(async (request: Request, sessionToken: string) => {
     const limit = searchParams.get('limit');
     const includeContent = searchParams.get('includeContent') === 'true';
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     // Handle soft delete filter
     if (isDeleted === 'true') {
@@ -117,7 +117,7 @@ export const GET = withAuth(async (request: Request, sessionToken: string) => {
     ]);
 
     // Build response
-    const response: any = { items: notes };
+    const response: { items: typeof notes; counts?: { total: number; trashed: number } } = { items: notes };
 
     // Add counts if requested
     if (counts) {
@@ -133,7 +133,7 @@ export const GET = withAuth(async (request: Request, sessionToken: string) => {
   }
 });
 
-export const POST = withAuth(async (request: Request, sessionToken: string) => {
+export const POST = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const body = await request.json();
     const { title, content, folderId, isPinned } = body;

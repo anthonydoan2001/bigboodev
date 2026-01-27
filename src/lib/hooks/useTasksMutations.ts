@@ -33,13 +33,13 @@ export function useTasksMutations() {
       try {
         // Try to get more details from the error if it's a Response
         if (error instanceof Error && 'response' in error) {
-          const response = (error as any).response;
+          const response = (error as Error & { response?: Response }).response;
           if (response) {
             const data = await response.json();
             errorMessage = data.error || data.details || errorMessage;
           }
         }
-      } catch (e) {
+      } catch {
         // Ignore parsing errors
       }
       alert(`Failed to create task: ${errorMessage}`);

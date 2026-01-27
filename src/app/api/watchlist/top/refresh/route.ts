@@ -17,6 +17,42 @@ interface TopItemData {
   externalId: number;
 }
 
+interface TMDBMovie {
+  id: number;
+  title: string;
+  poster_path: string | null;
+  release_date?: string;
+  vote_average: number;
+}
+
+interface TMDBShow {
+  id: number;
+  name: string;
+  poster_path: string | null;
+  first_air_date?: string;
+  vote_average: number;
+}
+
+interface TMDBResponse {
+  results: (TMDBMovie | TMDBShow)[];
+}
+
+interface JikanGenre {
+  name: string;
+}
+
+interface JikanAnime {
+  mal_id: number;
+  title: string;
+  images?: { jpg?: { large_image_url?: string; image_url?: string } };
+  score: number | null;
+  rating?: string;
+  genres?: JikanGenre[];
+  explicit_genres?: JikanGenre[];
+  episodes?: number;
+  year?: number;
+}
+
 /**
  * API route to refresh top items from external APIs and store in database
  * This should be called by a cron job daily, or manually when needed
@@ -107,7 +143,7 @@ export const GET = withAuthOrCron(async (request: Request) => {
         const animeList = animeData?.data || animeData || [];
         if (Array.isArray(animeList)) {
           const validItems: TopItemData[] = [];
-          animeList.forEach((anime: any) => {
+          animeList.forEach((anime: JikanAnime) => {
             const imageUrl = anime.images?.jpg?.large_image_url || anime.images?.jpg?.image_url;
             const rating = anime.score;
             
@@ -115,11 +151,11 @@ export const GET = withAuthOrCron(async (request: Request) => {
             const isHentai = 
               anime.rating === 'Rx' || 
               anime.rating === 'R+ - Mild Nudity' ||
-              (anime.genres && anime.genres.some((g: any) => 
+              (anime.genres && anime.genres.some((g: JikanGenre) => 
                 g.name?.toLowerCase().includes('hentai') || 
                 g.name?.toLowerCase() === 'hentai'
               )) ||
-              (anime.explicit_genres && anime.explicit_genres.some((g: any) => 
+              (anime.explicit_genres && anime.explicit_genres.some((g: JikanGenre) => 
                 g.name?.toLowerCase().includes('hentai') || 
                 g.name?.toLowerCase() === 'hentai'
               ));
@@ -130,9 +166,9 @@ export const GET = withAuthOrCron(async (request: Request) => {
                 type: 'anime' as const,
                 title: anime.title,
                 image: imageUrl,
-                year: anime.year,
+                year: anime.year ?? null,
                 rating: rating,
-                episodes: anime.episodes,
+                episodes: anime.episodes ?? null,
                 externalId: anime.mal_id,
               });
             }
@@ -162,10 +198,10 @@ export const GET = withAuthOrCron(async (request: Request) => {
       
       const allMovies = [
         ...moviesData.results,
-        ...additionalPages.flatMap((page: any) => page?.results || [])
+        ...additionalPages.flatMap((page: TMDBResponse | null) => page?.results || [])
       ];
       
-      allMovies.slice(0, 50).forEach((movie: any) => {
+      allMovies.slice(0, 50).forEach((movie: TMDBMovie) => {
         const rating = movie.vote_average;
         if (movie.poster_path && rating && rating > 0) {
           results.push({
@@ -191,10 +227,10 @@ export const GET = withAuthOrCron(async (request: Request) => {
       
       const allShows = [
         ...tvData.results,
-        ...additionalPages.flatMap((page: any) => page?.results || [])
+        ...additionalPages.flatMap((page: TMDBResponse | null) => page?.results || [])
       ];
       
-      allShows.slice(0, 50).forEach((show: any) => {
+      allShows.slice(0, 50).forEach((show: TMDBShow) => {
         const rating = show.vote_average;
         if (show.poster_path && rating && rating > 0) {
           results.push({
