@@ -203,7 +203,15 @@ export async function getAllApiUsageStats(): Promise<
       successCount: number;
       errorCount: number;
     }
-  > = {} as any;
+  > = {} as Record<string, {
+    perSecond?: { count: number; limit?: number };
+    perMinute?: { count: number; limit?: number };
+    perHour?: { count: number; limit?: number };
+    perDay?: { count: number; limit?: number };
+    perMonth?: { count: number; limit?: number };
+    successCount: number;
+    errorCount: number;
+  }>;
 
   for (const apiName of Object.keys(API_LIMITS) as ApiName[]) {
     const limits = API_LIMITS[apiName].limits;

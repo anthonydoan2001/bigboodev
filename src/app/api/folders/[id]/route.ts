@@ -45,7 +45,7 @@ async function wouldCreateCycle(folderId: string, newParentId: string): Promise<
   return false;
 }
 
-export const PATCH = withAuth(async (request: Request, sessionToken: string) => {
+export const PATCH = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const id = getIdFromUrl(request.url);
 
@@ -56,7 +56,7 @@ export const PATCH = withAuth(async (request: Request, sessionToken: string) => 
     const body = await request.json();
     const { name, parentId } = body;
 
-    const updateData: any = {};
+    const updateData: { name?: string; parentId?: string | null } = {};
 
     if (name !== undefined) {
       if (!name.trim()) {
@@ -128,7 +128,7 @@ export const PATCH = withAuth(async (request: Request, sessionToken: string) => 
   }
 });
 
-export const DELETE = withAuth(async (request: Request, sessionToken: string) => {
+export const DELETE = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const id = getIdFromUrl(request.url);
 

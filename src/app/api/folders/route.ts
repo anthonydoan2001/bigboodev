@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { withAuth } from '@/lib/api-auth';
 import { FolderTreeNode, FolderWithChildren } from '@/types/notes';
-import { getCache, setCache, invalidateCache, CACHE_KEYS } from '@/lib/cache';
+import { invalidateCache, CACHE_KEYS } from '@/lib/cache';
 
 // Build tree structure from flat list
 function buildFolderTree(folders: FolderWithChildren[]): FolderTreeNode[] {
@@ -53,7 +53,7 @@ async function getFolderDepth(folderId: string | null): Promise<number> {
   return depth;
 }
 
-export const GET = withAuth(async (request: Request, sessionToken: string) => {
+export const GET = withAuth(async (_request: Request, _sessionToken: string) => {
   try {
     // Check cache first (disabled for debugging)
     // const cached = getCache<{ items: FolderWithChildren[]; tree: FolderTreeNode[] }>(CACHE_KEYS.FOLDERS);
@@ -93,7 +93,7 @@ export const GET = withAuth(async (request: Request, sessionToken: string) => {
   }
 });
 
-export const POST = withAuth(async (request: Request, sessionToken: string) => {
+export const POST = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const body = await request.json();
     const { name, parentId } = body;

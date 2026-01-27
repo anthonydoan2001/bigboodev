@@ -11,7 +11,7 @@ function getIdsFromUrl(url: string): { noteId: string | null; attachmentId: stri
   };
 }
 
-export const DELETE = withAuth(async (request: Request, sessionToken: string) => {
+export const DELETE = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const { noteId, attachmentId } = getIdsFromUrl(request.url);
 

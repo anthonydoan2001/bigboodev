@@ -4,7 +4,7 @@ import { getAllApiUsageStatsOptimized } from '@/lib/api-usage-optimized';
 import { API_LIMITS } from '@/lib/api-usage';
 import { db } from '@/lib/db';
 
-export const GET = withAuth(async (request: Request, sessionToken: string) => {
+export const GET = withAuth(async (_request: Request, _sessionToken: string) => {
   try {
     // Check if apiUsage model exists in Prisma client (for debugging)
     if (!('apiUsage' in db)) {
@@ -25,7 +25,7 @@ export const GET = withAuth(async (request: Request, sessionToken: string) => {
       const limits = apiInfo.limits;
 
       // Calculate usage percentages for each limit
-      const usageDetails: Record<string, any> = {};
+      const usageDetails: Record<string, { count: number; limit: number | null; percentage: number; unit: string }> = {};
       
       if (usage.perSecond) {
         usageDetails.perSecond = {

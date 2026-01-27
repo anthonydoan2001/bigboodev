@@ -2,13 +2,14 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { withAuth } from '@/lib/api-auth';
 import { TaskStatus, TaskPriority } from '@/types/tasks';
+import { Prisma } from '@prisma/client';
 
 function getIdFromUrl(url: string): string | null {
   const match = url.match(/\/api\/tasks\/([^/?]+)/);
   return match ? match[1] : null;
 }
 
-export const PATCH = withAuth(async (request: Request, sessionToken: string) => {
+export const PATCH = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const id = getIdFromUrl(request.url);
 
@@ -17,9 +18,9 @@ export const PATCH = withAuth(async (request: Request, sessionToken: string) => 
     }
 
     const body = await request.json();
-    const { title, description, status, priority, dueDate, category, notes, noteId, position } = body;
+    const { title, description, status, priority, dueDate, category, notes, position } = body;
 
-    const updateData: any = {};
+    const updateData: Prisma.TaskUpdateInput = {};
 
     if (title !== undefined) updateData.title = title?.trim() || null;
     if (description !== undefined) updateData.description = description?.trim() || null;
@@ -49,7 +50,7 @@ export const PATCH = withAuth(async (request: Request, sessionToken: string) => 
   }
 });
 
-export const DELETE = withAuth(async (request: Request, sessionToken: string) => {
+export const DELETE = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const id = getIdFromUrl(request.url);
 

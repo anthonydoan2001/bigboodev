@@ -43,7 +43,7 @@ function PlayingContent() {
           <Card>
             <CardContent className="p-12 text-center text-muted-foreground space-y-4">
               <p className="text-title">No games currently playing</p>
-              <p className="text-body-sm">Games you're currently playing will appear here</p>
+              <p className="text-body-sm">Games you&apos;re currently playing will appear here</p>
             </CardContent>
           </Card>
         )}

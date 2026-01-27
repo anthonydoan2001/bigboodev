@@ -7,7 +7,7 @@ function getIdFromUrl(url: string): string | null {
   return match ? match[1] : null;
 }
 
-export const GET = withAuth(async (request: Request, sessionToken: string) => {
+export const GET = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const noteId = getIdFromUrl(request.url);
 
@@ -40,7 +40,7 @@ export const GET = withAuth(async (request: Request, sessionToken: string) => {
   }
 });
 
-export const POST = withAuth(async (request: Request, sessionToken: string) => {
+export const POST = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const noteId = getIdFromUrl(request.url);
 
@@ -83,7 +83,7 @@ export const POST = withAuth(async (request: Request, sessionToken: string) => {
   }
 });
 
-export const DELETE = withAuth(async (request: Request, sessionToken: string) => {
+export const DELETE = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const url = new URL(request.url);
     const noteId = getIdFromUrl(request.url);

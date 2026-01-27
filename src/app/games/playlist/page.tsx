@@ -85,7 +85,7 @@ function PlaylistContent() {
           ) : (
             <Card>
               <CardContent className="p-12 text-center text-muted-foreground">
-                <p>No results found for "{searchQuery}"</p>
+                <p>No results found for &quot;{searchQuery}&quot;</p>
               </CardContent>
             </Card>
           )

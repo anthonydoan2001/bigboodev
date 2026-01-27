@@ -100,7 +100,7 @@ async function aggregateOldRecords(beforeDate: Date): Promise<number> {
     });
 
     // Aggregate each day
-    for (const [dayStr, timestamps] of dayMap.entries()) {
+    for (const [dayStr, _timestamps] of dayMap.entries()) {
       const startOfDay = new Date(dayStr);
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(startOfDay);

@@ -31,7 +31,7 @@ export const GET = withAuth(async (request: NextRequest) => {
 
     const games = await fetchUpcomingPlayoffGames(sport);
     
-    const response: any = { sport, games };
+    const response: { sport: SportType; games: typeof games; debug?: { gamesFound: number; currentDate: string; gamesWithRounds: number; roundsFound: (string | undefined)[] } } = { sport, games };
     
     // Include debug info if requested
     if (debug) {

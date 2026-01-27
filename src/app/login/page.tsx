@@ -3,7 +3,6 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createSession } from '@/lib/auth';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, FormEvent, Suspense } from 'react';
 
@@ -46,7 +45,7 @@ function LoginForm() {
       // Redirect to the originally requested page or home
       router.push(redirectTo);
       router.refresh();
-    } catch (err) {
+    } catch {
       setError('An error occurred. Please try again.');
       setIsLoading(false);
     }

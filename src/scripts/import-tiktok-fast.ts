@@ -115,7 +115,6 @@ async function main() {
   // Batch upsert for efficiency
   const BATCH_SIZE = 500;
   let imported = 0;
-  let updated = 0;
   let errors = 0;
 
   for (let i = 0; i < videos.length; i += BATCH_SIZE) {
