@@ -1,6 +1,7 @@
 'use client';
 
-import { useEditor, EditorContent, Extension } from '@tiptap/react';
+import { useEditor, EditorContent, Extension, useEditorState } from '@tiptap/react';
+import type { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Underline from '@tiptap/extension-underline';
@@ -18,6 +19,16 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { MarkdownBlock } from './extensions/MarkdownBlock';
 import {
   Bold,
   Italic,
@@ -119,191 +130,318 @@ interface NoteEditorProps {
   isUploading?: boolean;
 }
 
-const EditorToolbar = memo(function EditorToolbar({ editor }: { editor: any }) {
-  if (!editor) return null;
+const EditorToolbar = memo(function EditorToolbar({ editor }: { editor: Editor | null }) {
+  // Link dialog state
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [isEditingLink, setIsEditingLink] = useState(false);
 
-  const addLink = useCallback(() => {
-    const previousUrl = editor.getAttributes('link').href;
-    const url = window.prompt('URL', previousUrl);
+  // Use useEditorState for reactive active state updates (TipTap v3 optimization)
+  const activeStates = useEditorState({
+    editor,
+    selector: (ctx) => {
+      if (!ctx.editor) {
+        return {
+          bold: false,
+          italic: false,
+          underline: false,
+          strike: false,
+          heading1: false,
+          heading2: false,
+          heading3: false,
+          bulletList: false,
+          orderedList: false,
+          codeBlock: false,
+          blockquote: false,
+          link: false,
+          markdownBlock: false,
+        };
+      }
+      return {
+        bold: ctx.editor.isActive('bold'),
+        italic: ctx.editor.isActive('italic'),
+        underline: ctx.editor.isActive('underline'),
+        strike: ctx.editor.isActive('strike'),
+        heading1: ctx.editor.isActive('heading', { level: 1 }),
+        heading2: ctx.editor.isActive('heading', { level: 2 }),
+        heading3: ctx.editor.isActive('heading', { level: 3 }),
+        bulletList: ctx.editor.isActive('bulletList'),
+        orderedList: ctx.editor.isActive('orderedList'),
+        codeBlock: ctx.editor.isActive('codeBlock'),
+        blockquote: ctx.editor.isActive('blockquote'),
+        link: ctx.editor.isActive('link'),
+        markdownBlock: ctx.editor.isActive('markdownBlock'),
+      };
+    },
+  });
 
-    if (url === null) return;
-
-    if (url === '') {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run();
-      return;
-    }
-
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  const openLinkDialog = useCallback(() => {
+    if (!editor) return;
+    const previousUrl = editor.getAttributes('link').href || '';
+    setLinkUrl(previousUrl);
+    setIsEditingLink(!!previousUrl);
+    setLinkDialogOpen(true);
   }, [editor]);
 
+  const handleSetLink = useCallback(() => {
+    if (!editor) return;
+    if (linkUrl) {
+      // Validate URL - only allow http/https protocols to prevent XSS
+      let validatedUrl = linkUrl.trim();
+      try {
+        const url = new URL(validatedUrl);
+        if (!['http:', 'https:'].includes(url.protocol)) {
+          return; // Reject non-http(s) URLs (e.g., javascript:)
+        }
+      } catch {
+        // If URL is invalid, try prepending https://
+        validatedUrl = `https://${validatedUrl}`;
+        try {
+          new URL(validatedUrl); // Validate the normalized URL
+        } catch {
+          return; // Still invalid, reject
+        }
+      }
+      editor.chain().focus().extendMarkRange('link').setLink({ href: validatedUrl }).run();
+    }
+    setLinkDialogOpen(false);
+    setLinkUrl('');
+  }, [editor, linkUrl]);
+
+  const handleRemoveLink = useCallback(() => {
+    if (!editor) return;
+    editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    setLinkDialogOpen(false);
+    setLinkUrl('');
+  }, [editor]);
+
+  if (!editor || !activeStates) return null;
+
   return (
-    <div className="flex flex-wrap items-center gap-0.5 p-1.5 border-b border-border bg-muted/40 sticky top-0 z-10">
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        onClick={() => editor.chain().focus().toggleBold().run()}
-        className={cn(
-          'transition-all',
-          editor.isActive('bold') && 'bg-primary text-primary-foreground hover:bg-primary/90'
-        )}
-        title="Bold (Cmd+B)"
-      >
-        <Bold className="h-4 w-4" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        onClick={() => editor.chain().focus().toggleItalic().run()}
-        className={cn(
-          'transition-all',
-          editor.isActive('italic') && 'bg-primary text-primary-foreground hover:bg-primary/90'
-        )}
-        title="Italic (Cmd+I)"
-      >
-        <Italic className="h-4 w-4" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        onClick={() => editor.chain().focus().toggleUnderline().run()}
-        className={cn(
-          'transition-all',
-          editor.isActive('underline') && 'bg-primary text-primary-foreground hover:bg-primary/90'
-        )}
-        title="Underline (Cmd+U)"
-      >
-        <UnderlineIcon className="h-4 w-4" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        onClick={() => editor.chain().focus().toggleStrike().run()}
-        className={cn(
-          'transition-all',
-          editor.isActive('strike') && 'bg-primary text-primary-foreground hover:bg-primary/90'
-        )}
-        title="Strikethrough"
-      >
-        <Strikethrough className="h-4 w-4" />
-      </Button>
+    <>
+      <div className="flex flex-wrap items-center gap-0.5 p-1.5 border-b border-border bg-muted/40 sticky top-0 z-10">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => editor.chain().focus().toggleBold().run()}
+          className={cn(
+            'transition-all',
+            activeStates.bold && 'bg-primary text-primary-foreground hover:bg-primary/90'
+          )}
+          title="Bold (Cmd+B)"
+        >
+          <Bold className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+          className={cn(
+            'transition-all',
+            activeStates.italic && 'bg-primary text-primary-foreground hover:bg-primary/90'
+          )}
+          title="Italic (Cmd+I)"
+        >
+          <Italic className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => editor.chain().focus().toggleUnderline().run()}
+          className={cn(
+            'transition-all',
+            activeStates.underline && 'bg-primary text-primary-foreground hover:bg-primary/90'
+          )}
+          title="Underline (Cmd+U)"
+        >
+          <UnderlineIcon className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => editor.chain().focus().toggleStrike().run()}
+          className={cn(
+            'transition-all',
+            activeStates.strike && 'bg-primary text-primary-foreground hover:bg-primary/90'
+          )}
+          title="Strikethrough"
+        >
+          <Strikethrough className="h-4 w-4" />
+        </Button>
 
-      <div className="w-px h-6 bg-border mx-1.5" />
+        <div className="w-px h-6 bg-border mx-1.5" />
 
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-        className={cn(
-          'transition-all',
-          editor.isActive('heading', { level: 1 }) && 'bg-primary text-primary-foreground hover:bg-primary/90'
-        )}
-        title="Heading 1"
-      >
-        <Heading1 className="h-4 w-4" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-        className={cn(
-          'transition-all',
-          editor.isActive('heading', { level: 2 }) && 'bg-primary text-primary-foreground hover:bg-primary/90'
-        )}
-        title="Heading 2"
-      >
-        <Heading2 className="h-4 w-4" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-        className={cn(
-          'transition-all',
-          editor.isActive('heading', { level: 3 }) && 'bg-primary text-primary-foreground hover:bg-primary/90'
-        )}
-        title="Heading 3"
-      >
-        <Heading3 className="h-4 w-4" />
-      </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+          className={cn(
+            'transition-all',
+            activeStates.heading1 && 'bg-primary text-primary-foreground hover:bg-primary/90'
+          )}
+          title="Heading 1"
+        >
+          <Heading1 className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+          className={cn(
+            'transition-all',
+            activeStates.heading2 && 'bg-primary text-primary-foreground hover:bg-primary/90'
+          )}
+          title="Heading 2"
+        >
+          <Heading2 className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+          className={cn(
+            'transition-all',
+            activeStates.heading3 && 'bg-primary text-primary-foreground hover:bg-primary/90'
+          )}
+          title="Heading 3"
+        >
+          <Heading3 className="h-4 w-4" />
+        </Button>
 
-      <div className="w-px h-6 bg-border mx-1.5" />
+        <div className="w-px h-6 bg-border mx-1.5" />
 
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        onClick={() => editor.chain().focus().toggleBulletList().run()}
-        className={cn(
-          'transition-all',
-          editor.isActive('bulletList') && 'bg-primary text-primary-foreground hover:bg-primary/90'
-        )}
-        title="Bullet List (Ctrl+Shift+8)"
-      >
-        <List className="h-4 w-4" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        className={cn(
-          'transition-all',
-          editor.isActive('orderedList') && 'bg-primary text-primary-foreground hover:bg-primary/90'
-        )}
-        title="Numbered List (Ctrl+Shift+7)"
-      >
-        <ListOrdered className="h-4 w-4" />
-      </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          className={cn(
+            'transition-all',
+            activeStates.bulletList && 'bg-primary text-primary-foreground hover:bg-primary/90'
+          )}
+          title="Bullet List (Ctrl+Shift+8)"
+        >
+          <List className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          className={cn(
+            'transition-all',
+            activeStates.orderedList && 'bg-primary text-primary-foreground hover:bg-primary/90'
+          )}
+          title="Numbered List (Ctrl+Shift+7)"
+        >
+          <ListOrdered className="h-4 w-4" />
+        </Button>
 
-      <div className="w-px h-6 bg-border mx-1.5" />
+        <div className="w-px h-6 bg-border mx-1.5" />
 
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-        className={cn(
-          'transition-all',
-          editor.isActive('codeBlock') && 'bg-primary text-primary-foreground hover:bg-primary/90'
-        )}
-        title="Code Block"
-      >
-        <Code className="h-4 w-4" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        onClick={() => editor.chain().focus().toggleBlockquote().run()}
-        className={cn(
-          'transition-all',
-          editor.isActive('blockquote') && 'bg-primary text-primary-foreground hover:bg-primary/90'
-        )}
-        title="Quote"
-      >
-        <Quote className="h-4 w-4" />
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        onClick={addLink}
-        className={cn(
-          'transition-all',
-          editor.isActive('link') && 'bg-primary text-primary-foreground hover:bg-primary/90'
-        )}
-        title="Add Link"
-      >
-        <LinkIcon className="h-4 w-4" />
-      </Button>
-    </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+          className={cn(
+            'transition-all',
+            activeStates.codeBlock && 'bg-primary text-primary-foreground hover:bg-primary/90'
+          )}
+          title="Code Block"
+        >
+          <Code className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => editor.chain().focus().setMarkdownBlock({}).run()}
+          className={cn(
+            'transition-all',
+            activeStates.markdownBlock && 'bg-primary text-primary-foreground hover:bg-primary/90'
+          )}
+          title="Markdown Block"
+        >
+          <FileText className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => editor.chain().focus().toggleBlockquote().run()}
+          className={cn(
+            'transition-all',
+            activeStates.blockquote && 'bg-primary text-primary-foreground hover:bg-primary/90'
+          )}
+          title="Quote"
+        >
+          <Quote className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={openLinkDialog}
+          className={cn(
+            'transition-all',
+            activeStates.link && 'bg-primary text-primary-foreground hover:bg-primary/90'
+          )}
+          title="Add Link"
+        >
+          <LinkIcon className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Link Dialog */}
+      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{isEditingLink ? 'Edit Link' : 'Add Link'}</DialogTitle>
+            <DialogDescription>
+              {isEditingLink ? 'Update the URL or remove the link.' : 'Enter the URL for your link.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="link-url">URL</Label>
+              <Input
+                id="link-url"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                placeholder="https://example.com"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSetLink();
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            {isEditingLink && (
+              <Button type="button" variant="destructive" onClick={handleRemoveLink}>
+                Remove Link
+              </Button>
+            )}
+            <Button type="button" variant="outline" onClick={() => setLinkDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleSetLink} disabled={!linkUrl.trim()}>
+              {isEditingLink ? 'Update Link' : 'Add Link'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 });
 
@@ -353,6 +491,7 @@ export function NoteEditor({
       CodeBlockLowlight.configure({
         lowlight,
       }),
+      MarkdownBlock,
     ],
     content: note?.content || '',
     editorProps: {
