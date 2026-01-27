@@ -89,7 +89,7 @@ export function WebVitals({
       navigationType: metric.navigationType || 'unknown',
     };
 
-    // Debug logging
+    // Debug logging (intentional for development diagnostics)
     if (debug) {
       const color = webVitalsMetric.rating === 'good'
         ? '#0f0'
@@ -97,6 +97,7 @@ export function WebVitals({
           ? '#ff0'
           : '#f00';
 
+      // eslint-disable-next-line no-console -- Intentional debug output for Web Vitals monitoring
       console.log(
         `%c[Web Vitals] ${metric.name}: ${formatMetricValue(metric.name, metric.value)} (${webVitalsMetric.rating})`,
         `color: ${color}; font-weight: bold;`

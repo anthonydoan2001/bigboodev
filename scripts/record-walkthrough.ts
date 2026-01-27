@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- CLI script requires console output */
 import 'dotenv/config';
 import puppeteer, { Page, Browser } from 'puppeteer';
 import fs from 'fs';
@@ -234,7 +235,7 @@ async function moveCursor(page: Page, x: number, y: number) {
   await sleep(100); // Small delay for transition to start
 }
 
-async function simulateClick(page: Page) {
+async function _simulateClick(page: Page) {
   await page.evaluate(() => {
     const cursor = document.getElementById('fake-cursor');
     if (cursor) {
@@ -269,7 +270,7 @@ async function zoomOut(page: Page) {
   await sleep(800); // Wait for zoom animation
 }
 
-async function zoomToElement(page: Page, selector: string, scale: number = 1.5) {
+async function _zoomToElement(page: Page, selector: string, scale: number = 1.5) {
   const element = await page.$(selector);
   if (element) {
     const box = await element.boundingBox();
@@ -444,7 +445,7 @@ async function recordWalkthrough() {
         path.join(OUTPUT_DIR, 'walkthrough.mp4'),
       ]);
 
-      ffmpeg.stderr.on('data', (data) => {
+      ffmpeg.stderr.on('data', (_data) => {
         // ffmpeg outputs to stderr
       });
 

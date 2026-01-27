@@ -13,8 +13,7 @@ import { fetchWeather } from "@/lib/api/weather";
 import { fetchStockQuotes } from "@/lib/api/stocks";
 import { fetchCryptoQuotesFromDB } from "@/lib/api/crypto";
 import { useQuery } from "@tanstack/react-query";
-import { memo, useEffect, useState, useMemo } from "react";
-import { Loader2 } from "lucide-react";
+import { memo, useEffect, useState, useMemo, useRef } from "react";
 
 // Memoized greeting calculation - only recalculates when hour changes
 function getGreeting(hour: number): string {
@@ -76,14 +75,14 @@ const QuoteDisplay = memo(function QuoteDisplay({
   if (quote) {
     return (
       <p className="text-muted-foreground text-base md:text-lg italic font-normal truncate max-w-3xl">
-        "{quote.content}" — {quote.author}
+        &ldquo;{quote.content}&rdquo; — {quote.author}
       </p>
     );
   }
 
   return (
     <p className="text-muted-foreground text-base md:text-lg font-normal">
-      Here's what's happening today
+      Here&apos;s what&apos;s happening today
     </p>
   );
 });
@@ -92,10 +91,26 @@ const QuoteDisplay = memo(function QuoteDisplay({
 const Clock = memo(function Clock() {
   const [mounted, setMounted] = useState(false);
   const [currentTime, setCurrentTime] = useState(() => new Date());
+  const mountedRef = useRef(false);
 
   useEffect(() => {
-    setMounted(true);
-    setCurrentTime(new Date()); // Sync time on mount
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      // Use setTimeout to avoid synchronous setState in effect
+      const mountTimer = setTimeout(() => {
+        setMounted(true);
+        setCurrentTime(new Date()); // Sync time on mount
+      }, 0);
+
+      const timeInterval = setInterval(() => {
+        setCurrentTime(new Date());
+      }, 1000);
+
+      return () => {
+        clearTimeout(mountTimer);
+        clearInterval(timeInterval);
+      };
+    }
 
     const timeInterval = setInterval(() => {
       setCurrentTime(new Date());
@@ -138,7 +153,7 @@ export default function Home() {
   });
 
   // Fetch weather data
-  const { isLoading: weatherLoading } = useQuery({
+  useQuery({
     queryKey: ['weather'],
     queryFn: fetchWeather,
     staleTime: 0,
@@ -147,7 +162,7 @@ export default function Home() {
   });
 
   // Fetch stocks data
-  const { isLoading: stocksLoading } = useQuery({
+  useQuery({
     queryKey: ['stockQuotes'],
     queryFn: fetchStockQuotes,
     staleTime: 3600000,
@@ -156,7 +171,7 @@ export default function Home() {
   });
 
   // Fetch crypto data
-  const { isLoading: cryptoLoading } = useQuery({
+  useQuery({
     queryKey: ['cryptoQuotes'],
     queryFn: fetchCryptoQuotesFromDB,
     staleTime: 3600000,

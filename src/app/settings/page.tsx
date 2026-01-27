@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback, memo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -154,7 +154,7 @@ export default function SettingsPage() {
             {apiStats.map((stat) => {
               // Get the most relevant limit to display (prioritize shorter time periods)
               const usageEntries = Object.entries(stat.usage).filter(
-                ([_, value]) => value.limit !== undefined
+                ([, value]) => value.limit !== undefined
               );
 
               if (usageEntries.length === 0) {

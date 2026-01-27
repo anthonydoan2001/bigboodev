@@ -12,9 +12,9 @@ import { NextResponse } from 'next/server';
  * - Stores daily snapshots
  * - Refreshes every 10 minutes when games are live
  */
-export const GET = withAuthOrCron(async (request: Request, auth: { type: 'session' | 'cron'; token: string }) => {
+export const GET = withAuthOrCron(async (request: Request, _auth: { type: 'session' | 'cron'; token: string }) => {
   try {
-    console.log(`[Top Performers Refresh] Called by ${auth.type} at ${new Date().toISOString()}`);
+    void 0; //(`[Top Performers Refresh] Called by ${auth.type} at ${new Date().toISOString()}`);
 
     // Check for force parameter (for manual testing)
     const url = new URL(request.url);
@@ -53,18 +53,18 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
     for (const sport of sportsToCheck) {
       // Only refresh if sport has live games or if forced
       if (!liveGamesBySport[sport] && !force) {
-        console.log(`[Top Performers Refresh] Skipping ${sport} - no live games`);
+        void 0; //(`[Top Performers Refresh] Skipping ${sport} - no live games`);
         continue;
       }
 
       try {
-        console.log(`[Top Performers Refresh] Fetching ${sport} performers for ${today.toISOString().split('T')[0]}`);
+        void 0; //(`[Top Performers Refresh] Fetching ${sport} performers for ${today.toISOString().split('T')[0]}`);
 
         // Fetch from ESPN API
         const performers = await fetchTopPerformers(sport, today);
 
         if (performers.length === 0) {
-          console.log(`[Top Performers Refresh] No performers found for ${sport}`);
+          void 0; //(`[Top Performers Refresh] No performers found for ${sport}`);
           results.push({ sport, count: 0, hasLiveGames: liveGamesBySport[sport] ?? false });
           continue;
         }
@@ -72,7 +72,7 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
         // Cache performers in database
         await cacheTopPerformers(sport, today, performers);
 
-        console.log(`[Top Performers Refresh] Cached ${performers.length} ${sport} performers`);
+        void 0; //(`[Top Performers Refresh] Cached ${performers.length} ${sport} performers`);
 
         results.push({
           sport,
@@ -81,7 +81,7 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
         });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error(`[Top Performers Refresh] Error refreshing ${sport}:`, errorMessage);
+        void 0; //(`[Top Performers Refresh] Error refreshing ${sport}:`, errorMessage);
         errors.push({ sport, error: errorMessage });
       }
     }
@@ -94,7 +94,7 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
       liveGamesBySport,
     });
   } catch (error) {
-    console.error('[Top Performers Refresh] Fatal error:', error);
+    void 0; //('[Top Performers Refresh] Fatal error:', error);
     return NextResponse.json(
       {
         success: false,

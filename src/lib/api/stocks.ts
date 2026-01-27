@@ -5,14 +5,6 @@ const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY || 'd5hhjthr01qqequ2hnigd5hh
 const FINNHUB_BASE_URL = 'https://finnhub.io/api/v1';
 const STOCKS_TO_TRACK = ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'TSLA', 'AMZN', 'META'];
 
-// Log API key status (without exposing the full key) - only on server
-if (typeof window === 'undefined') {
-  if (!process.env.FINNHUB_API_KEY) {
-    console.warn('⚠️  FINNHUB_API_KEY not found in environment variables, using fallback key');
-  } else {
-    console.log('✅ Using FINNHUB_API_KEY from environment variables');
-  }
-}
 
 export const STOCK_SYMBOLS = STOCKS_TO_TRACK;
 
@@ -35,40 +27,19 @@ export async function fetchCompanyProfile(symbol: string): Promise<FinnhubCompan
     });
 
     if (response.status === 429) {
-      console.warn(`Rate limit hit for company profile ${symbol}`);
       return null;
     }
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.warn(`Failed to fetch company profile for ${symbol}:`, {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorText,
-      });
       return null;
     }
 
     const data = await response.json();
-    
+
     // Check if API returned an error object
     if (data.error) {
-      console.warn(`Finnhub API error for ${symbol} profile:`, data.error);
       return null;
     }
-
-    // Validate that we got the expected data
-    if (!data.name || !data.logo) {
-      console.warn(`Incomplete profile data for ${symbol}:`, {
-        hasName: !!data.name,
-        hasLogo: !!data.logo,
-      });
-    }
-
-    console.log(`Successfully fetched profile for ${symbol}:`, {
-      name: data.name,
-      hasLogo: !!data.logo,
-    });
 
     return data;
   } catch (error) {
@@ -104,12 +75,6 @@ export async function fetchStockQuote(symbol: string): Promise<FinnhubQuoteRespo
     }
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Finnhub API error for ${symbol}:`, {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorText,
-      });
       throw new Error(`Failed to fetch quote for ${symbol}: ${response.status} ${response.statusText}`);
     }
 
@@ -122,10 +87,7 @@ export async function fetchStockQuote(symbol: string): Promise<FinnhubQuoteRespo
 
     // Check if response is empty or invalid (Finnhub returns {c: 0, d: 0, ...} when no data)
     // Only check current price (c) being 0, as other values can legitimately be 0
-    if (data.c === 0 && data.pc === 0) {
-      console.warn(`Warning: Received zero values for ${symbol} - market may be closed or symbol invalid`);
-      // Don't throw error, just log warning - let it proceed as API might return zeros when market is closed
-    }
+    // Don't throw error - let it proceed as API might return zeros when market is closed
 
     // Validate required fields exist
     if (typeof data.c !== 'number' || typeof data.d !== 'number' || typeof data.dp !== 'number') {

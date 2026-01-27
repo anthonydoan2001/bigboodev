@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Tag, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Tag, Plus, Pencil, Trash2 } from 'lucide-react';
 
 // Preset colors for tags
 const PRESET_COLORS = [

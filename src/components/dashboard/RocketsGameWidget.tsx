@@ -5,7 +5,7 @@ import { GameScore } from '@/types/sports';
 import { useQuery } from '@tanstack/react-query';
 import { Clock } from 'lucide-react';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { getAuthHeaders } from '@/lib/api-client';
 
 // Helper to format date string for API
@@ -30,7 +30,7 @@ async function fetchScoresForDate(date: Date): Promise<GameScore[]> {
   }
 
   const data = await response.json();
-  return data.scores.map((game: any) => ({
+  return data.scores.map((game: Omit<GameScore, 'startTime'> & { startTime: string }) => ({
     ...game,
     startTime: new Date(game.startTime),
   })) as GameScore[];
@@ -103,9 +103,15 @@ async function fetchRocketsGames(): Promise<{
 
 export function RocketsGameWidget() {
   const [isHydrated, setIsHydrated] = useState(false);
+  const isHydratedRef = useRef(false);
 
   useEffect(() => {
-    setIsHydrated(true);
+    if (!isHydratedRef.current) {
+      isHydratedRef.current = true;
+      // Use setTimeout to avoid synchronous setState in effect body
+      const timer = setTimeout(() => setIsHydrated(true), 0);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   const { data, isLoading, error } = useQuery({

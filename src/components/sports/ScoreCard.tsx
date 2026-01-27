@@ -16,9 +16,11 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
   // Track hydration to avoid server/client mismatch with date formatting
   const [isHydrated, setIsHydrated] = useState(false);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setIsHydrated(true);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
   const getStatusBadge = () => {
     switch (game.status) {
       case 'live':

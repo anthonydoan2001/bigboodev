@@ -60,11 +60,11 @@ export function useNotesMutations() {
       if (variables.input.title !== undefined || variables.input.content !== undefined) {
         queryClient.setQueriesData(
           { queryKey: ['notes'] },
-          (oldData: any) => {
+          (oldData: { items?: Array<{ id: string; title?: string }> } | undefined) => {
             if (!oldData?.items) return oldData;
             return {
               ...oldData,
-              items: oldData.items.map((note: any) =>
+              items: oldData.items.map((note) =>
                 note.id === variables.id
                   ? { ...note, ...data.item, title: data.item?.title ?? note.title }
                   : note
@@ -75,11 +75,11 @@ export function useNotesMutations() {
         // Also update pinned notes widget
         queryClient.setQueriesData(
           { queryKey: ['pinnedNotes'] },
-          (oldData: any) => {
+          (oldData: { items?: Array<{ id: string; title?: string }> } | undefined) => {
             if (!oldData?.items) return oldData;
             return {
               ...oldData,
-              items: oldData.items.map((note: any) =>
+              items: oldData.items.map((note) =>
                 note.id === variables.id
                   ? { ...note, ...data.item, title: data.item?.title ?? note.title }
                   : note

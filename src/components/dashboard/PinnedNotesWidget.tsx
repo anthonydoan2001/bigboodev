@@ -135,7 +135,7 @@ export const PinnedNotesWidget = memo(function PinnedNotesWidget() {
         </div>
         <div className="divide-y divide-border/40">
           {notes.map((note) => (
-            <PinnedNoteCard key={note.id} note={note as any} />
+            <PinnedNoteCard key={note.id} note={{ id: note.id, title: note.title, content: note.content }} />
           ))}
         </div>
         <Link

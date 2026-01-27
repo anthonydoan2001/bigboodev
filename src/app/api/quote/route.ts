@@ -110,7 +110,6 @@ export const GET = withAuth(async (request: Request) => {
       }
     } catch {
       // API failed, will use fallback
-      console.log('Quotable API unavailable, using fallback quotes');
     }
 
     // If API failed, use fallback quotes

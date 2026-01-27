@@ -110,9 +110,6 @@ export function useViewportGrid({
         availableWidth = 800;
       }
 
-      const isMobile = availableWidth < 640;
-      const isTablet = availableWidth >= 640 && availableWidth < 1024;
-
       // Calculate columns with the same logic as calculateGrid
       const maxColumnsWithMaxWidth = Math.floor((availableWidth + estimate.gap) / (estimate.maxWidth + estimate.gap));
       const maxColumnsWithMinWidth = Math.floor((availableWidth + estimate.gap) / (estimate.minWidth + estimate.gap));
@@ -259,19 +256,6 @@ export function useViewportGrid({
       // This will vary based on viewport size: larger screens = more items, smaller screens = fewer items
       const totalItems = targetColumns * targetRows;
 
-      // Debug logging
-      console.log('🎯 Grid Calculation:', {
-        containerWidth,
-        viewportHeight,
-        availableHeight,
-        columns: targetColumns,
-        rows: targetRows,
-        cardWidth: calculatedWidth,
-        cardHeight: totalCardHeight,
-        itemsPerPage: totalItems,
-        gap: responsiveGap
-      });
-
       // Update state immediately - don't wait for requestAnimationFrame
       // This ensures React re-renders with new itemsPerPage value
       setItemWidth(calculatedWidth);
@@ -323,7 +307,7 @@ export function useViewportGrid({
     };
 
     // Check if container width is stable before calculating
-    const checkStabilityAndCalculate = () => {
+    const _checkStabilityAndCalculate = () => {
       // Only run on client side
       if (typeof window === 'undefined') return;
       if (!containerRef.current) return;
@@ -349,14 +333,14 @@ export function useViewportGrid({
           calculateGrid();
         } else if (width1 < 200 || Math.abs(width1 - width2) >= 5) {
           // Width is still changing or too small, retry
-          setTimeout(checkStabilityAndCalculate, 100);
+          setTimeout(_checkStabilityAndCalculate, 100);
         }
       }, 50);
     };
 
     // Use ResizeObserver for responsive updates with debouncing
     let resizeTimeout: NodeJS.Timeout | null = null;
-    const resizeObserver = new ResizeObserver((entries) => {
+    const resizeObserver = new ResizeObserver((_entries) => {
       // Only recalculate if we've already initialized and container size actually changed
       if (!hasInitializedRef.current) return;
 

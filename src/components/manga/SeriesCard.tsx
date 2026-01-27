@@ -22,7 +22,6 @@ export function SeriesCard({ series }: SeriesCardProps) {
   const totalBooks = series.booksCount;
   const readBooks = series.booksReadCount;
   const inProgressBooks = series.booksInProgressCount;
-  const unreadBooks = series.booksUnreadCount;
 
   const isComplete = readBooks === totalBooks && totalBooks > 0;
   const hasProgress = readBooks > 0 || inProgressBooks > 0;

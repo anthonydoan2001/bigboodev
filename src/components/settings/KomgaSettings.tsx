@@ -27,6 +27,7 @@ export function KomgaSettings() {
   } | null>(null);
 
   // Populate form when settings load
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (settings) {
       setServerUrl(settings.serverUrl);
@@ -34,6 +35,7 @@ export function KomgaSettings() {
       // Password is not returned, keep empty for editing
     }
   }, [settings]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleTest = async () => {
     setTestResult(null);

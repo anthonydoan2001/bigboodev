@@ -1,11 +1,11 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { fetchStockQuotes } from '@/lib/api/stocks';
 import { cn } from '@/lib/utils';
 import { StockQuote } from '@/types/stocks';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowUp, ArrowDown, TrendingUp } from 'lucide-react';
+import { ArrowUp, ArrowDown } from 'lucide-react';
 import { useEffect } from 'react';
 import Image from 'next/image';
 
@@ -35,29 +35,9 @@ function cleanCompanyName(name: string): string {
     .trim();
 }
 
-function formatTimeAgo(dateString: string): string {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-
-  if (diffMins < 1) return 'Just now';
-  if (diffMins === 1) return '1 minute ago';
-  if (diffMins < 60) return `${diffMins} minutes ago`;
-
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours === 1) return '1 hour ago';
-  if (diffHours < 24) return `${diffHours} hours ago`;
-
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays === 1) return '1 day ago';
-  return `${diffDays} days ago`;
-}
-
 function StockCard({ quote }: { quote: StockQuote }) {
   const isPositive = quote.change >= 0;
   const changeColor = isPositive ? 'text-success' : 'text-destructive';
-  const arrowIcon = isPositive ? ArrowUp : ArrowDown;
 
   return (
     <div className="flex items-center justify-between py-2.5 px-2.5 md:px-3 hover:bg-white/5 dark:hover:bg-white/10 transition-colors rounded-md gap-3 md:gap-4">

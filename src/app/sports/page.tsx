@@ -38,7 +38,7 @@ async function fetchScores(sport: SportType, date: Date) {
   }
   const data = await response.json();
   // Convert date strings back to Date objects
-  return data.scores.map((game: any) => ({
+  return data.scores.map((game: Omit<GameScore, 'startTime'> & { startTime: string }) => ({
     ...game,
     startTime: new Date(game.startTime),
   })) as GameScore[];
@@ -97,6 +97,8 @@ function SportsPageContent() {
   });
   const [favorites, setFavorites] = useState<string[]>([]);
   const [isMounted, setIsMounted] = useState(false);
+  // Stable timestamp for 24-hour filter calculations (updated periodically)
+  const [filterTimestamp, setFilterTimestamp] = useState(() => Date.now());
 
   // Track previous game statuses to detect when games finish
   const previousGameStatuses = useRef<Map<string, 'scheduled' | 'live' | 'final'>>(new Map());
@@ -105,6 +107,13 @@ function SportsPageContent() {
   useEffect(() => {
     setFavorites(getFavorites());
     setIsMounted(true);
+
+    // Update filter timestamp every 5 minutes for 24-hour game filtering
+    const interval = setInterval(() => {
+      setFilterTimestamp(Date.now());
+    }, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Ensure date is in URL for games/performers tabs
@@ -150,7 +159,8 @@ function SportsPageContent() {
         }
       }
     }
-  }, [searchParams]); // Re-run when URL params change
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally only sync from URL to state when URL changes
+  }, [searchParams]);
 
   // Update URL when state changes - memoized
   const updateURL = useCallback((params: { sport?: string; tab?: string; date?: string; removeDate?: boolean }) => {
@@ -196,7 +206,6 @@ function SportsPageContent() {
     updateURL({ date: dateStr });
   }, [updateURL]);
 
-  const showPerformers = selectedSport === 'NBA'; // Only show performers for NBA
   const isFavoritesView = selectedSport === 'FAVORITES';
 
   // For favorites view, we need to fetch all sports and filter by favorites
@@ -209,7 +218,6 @@ function SportsPageContent() {
     data: scores,
     isLoading: scoresLoading,
     error: scoresError,
-    isFetching: scoresFetching,
   } = useQuery({
     queryKey: ['scores', selectedSport, dateForScores.toDateString()],
     queryFn: () => fetchScores(selectedSport as SportType, dateForScores),
@@ -301,8 +309,6 @@ function SportsPageContent() {
     data: standings,
     isLoading: standingsLoading,
     error: standingsError,
-    isFetching: standingsFetching,
-    refetch: refetchStandings,
   } = useQuery({
     queryKey: ['standings', selectedSport],
     queryFn: () => {
@@ -339,7 +345,6 @@ function SportsPageContent() {
   const gamesToShow = useMemo(() => {
     if (!currentScores) return [];
 
-    const now = Date.now();
     const twentyFourHoursMs = 24 * 60 * 60 * 1000;
 
     // Filter by favorites if in favorites view
@@ -347,19 +352,18 @@ function SportsPageContent() {
       ? currentScores.filter(game => favorites.includes(game.id))
       : currentScores;
 
-    // Exclude completed games older than 24 hours
+    // Exclude completed games older than 24 hours (using stable timestamp)
     return filtered.filter(game => {
       if (game.status !== 'final') return true;
-      return (now - game.startTime.getTime()) <= twentyFourHoursMs;
+      return (filterTimestamp - game.startTime.getTime()) <= twentyFourHoursMs;
     });
-  }, [currentScores, isFavoritesView, favorites]);
+  }, [currentScores, isFavoritesView, favorites, filterTimestamp]);
 
-  // Check if there are any live games - memoized
-  const hasLiveGames = useMemo(() =>
+  // Check if there are any live games - memoized (used by query refetchInterval)
+  useMemo(() =>
     gamesToShow.some(game => game.status === 'live'),
     [gamesToShow]
   );
-  const isAutoRefreshing = hasLiveGames && (scoresFetching || favoriteQueries.isFetching);
 
   // Detect when games finish and update standings
   useEffect(() => {

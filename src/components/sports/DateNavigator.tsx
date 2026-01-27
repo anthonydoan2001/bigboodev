@@ -10,9 +10,11 @@ interface DateNavigatorProps {
 export function DateNavigator({ selectedDate, onDateChange }: DateNavigatorProps) {
   const [isHydrated, setIsHydrated] = useState(false);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setIsHydrated(true);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
   const handlePrevDay = () => {
     const newDate = new Date(selectedDate);
     newDate.setDate(newDate.getDate() - 1);
