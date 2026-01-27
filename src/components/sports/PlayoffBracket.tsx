@@ -330,7 +330,7 @@ const AFC_TEAMS = [
   'Chiefs', 'Chargers', 'Raiders', 'Broncos',
 ];
 
-const NFC_TEAMS = [
+const _NFC_TEAMS = [
   'Cowboys', 'Giants', 'Eagles', 'Commanders',
   'Bears', 'Lions', 'Packers', 'Vikings',
   'Falcons', 'Panthers', 'Saints', 'Buccaneers',
@@ -339,10 +339,6 @@ const NFC_TEAMS = [
 
 function isAFCTeam(teamName: string): boolean {
   return AFC_TEAMS.some(t => teamName.includes(t));
-}
-
-function isNFCTeam(teamName: string): boolean {
-  return NFC_TEAMS.some(t => teamName.includes(t));
 }
 
 function isAFCGame(game: GameScore): boolean {
@@ -637,7 +633,6 @@ function MatchupCard({ matchup, conference, isChampionship }: MatchupCardProps) 
   const isScheduled = matchup.status === 'scheduled';
 
   const borderColor = conference === 'AFC' ? 'border-blue-500/30' : 'border-red-500/30';
-  const accentColor = conference === 'AFC' ? 'bg-blue-500' : 'bg-red-500';
 
   return (
     <div
@@ -696,7 +691,7 @@ interface TeamRowProps {
   showScore: boolean;
 }
 
-function TeamRow({ team, isTBD, showScore }: TeamRowProps) {
+function TeamRow({ team, isTBD: _isTBD, showScore }: TeamRowProps) {
   const isTBDTeam = team.name === 'TBD';
 
   return (

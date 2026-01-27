@@ -50,15 +50,7 @@ export function CalendarWidget() {
   ];
   
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  
-  // Format current date as M/D/YYYY
-  const formatCurrentDate = () => {
-    const month = today.getMonth() + 1; // getMonth() returns 0-11
-    const day = today.getDate();
-    const year = today.getFullYear();
-    return `${month}/${day}/${year}`;
-  };
-  
+
   return (
     <Card className="w-full border-white/10 shadow-sm bg-background/40 backdrop-blur-md py-0 gap-0 transition-all hover:shadow-md">
       <CardHeader className="pt-4 pb-2 px-4">

@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- CLI script requires console output */
 import 'dotenv/config';
 import puppeteer, { Page, Browser } from 'puppeteer';
 import fs from 'fs';
@@ -23,7 +24,7 @@ const features: FeatureCapture[] = [
     name: 'dashboard',
     path: '/',
     frameCount: 3,
-    actions: async (page) => {
+    actions: async () => {
       // Wait for dashboard to fully load
       await sleep(2000); // Wait for clock, weather, widgets to render
     },
@@ -32,7 +33,7 @@ const features: FeatureCapture[] = [
     name: 'manga-reader',
     path: '/manga',
     frameCount: 3,
-    actions: async (page) => {
+    actions: async () => {
       // Wait for manga grid to load
       await sleep(2000);
     },
@@ -41,7 +42,7 @@ const features: FeatureCapture[] = [
     name: 'watchlist',
     path: '/watchlist',
     frameCount: 3,
-    actions: async (page) => {
+    actions: async () => {
       // Wait for carousels to load
       await sleep(2000);
     },
@@ -50,7 +51,7 @@ const features: FeatureCapture[] = [
     name: 'sports',
     path: '/sports',
     frameCount: 2,
-    actions: async (page) => {
+    actions: async () => {
       // Wait for sports data to load
       await sleep(2000);
     },
@@ -59,7 +60,7 @@ const features: FeatureCapture[] = [
     name: 'notes',
     path: '/notes',
     frameCount: 2,
-    actions: async (page) => {
+    actions: async () => {
       // Wait for notes editor to load
       await sleep(2000);
     },

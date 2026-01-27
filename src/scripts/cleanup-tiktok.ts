@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- CLI script requires console output */
 /**
  * TikTok Cleanup Script
  *

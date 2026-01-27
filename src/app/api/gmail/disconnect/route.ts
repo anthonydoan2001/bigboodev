@@ -18,14 +18,11 @@ export const DELETE = withAuth(async () => {
       );
     }
 
-    console.log(`Disconnected Gmail (deleted ${result.count} token(s))`);
-
     return NextResponse.json({
       success: true,
       message: 'Gmail disconnected successfully',
     });
-  } catch (error) {
-    console.error('Error disconnecting Gmail:', error);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to disconnect Gmail' },
       { status: 500 }

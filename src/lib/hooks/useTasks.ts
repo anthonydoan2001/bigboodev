@@ -87,7 +87,7 @@ export function useTasks(filters?: TaskFilters) {
       inProgress: inProgressList,
       done: doneList,
     };
-  }, [data?.items, filters?.dueDate]);
+  }, [data?.items, filters]);
 
   return {
     tasks,

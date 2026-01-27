@@ -42,7 +42,6 @@ export function TopItemCard({
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
-  const menuIdRef = useRef(`menu-${item.id}-${Math.random().toString(36).substr(2, 9)}`);
 
   useEffect(() => {
     if (open && position.x > 0 && position.y > 0) {

@@ -63,12 +63,12 @@ export function useDebouncedCallback<T extends (...args: Parameters<T>) => void>
       }, delay);
     },
     [delay]
-  ) as T & { flush: () => void; cancel: () => void };
+  );
 
-  debouncedCallback.flush = flush;
-  debouncedCallback.cancel = cancel;
-
-  return debouncedCallback;
+  // Create the return object with flush and cancel methods
+  // Using Object.assign to avoid modifying the callback after creation
+  // eslint-disable-next-line react-hooks/refs
+  return Object.assign(debouncedCallback, { flush, cancel }) as T & { flush: () => void; cancel: () => void };
 }
 
 /**

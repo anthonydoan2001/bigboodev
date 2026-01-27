@@ -14,7 +14,7 @@ import { withAuthOrCron } from '@/lib/api-auth';
 async function handleRefresh(request: Request, auth: { type: 'session' | 'cron'; token: string }) {
   try {
     // Auth is handled by wrapper or bypassed in dev mode
-    console.log(`[Stocks Refresh] Called by ${auth.type} at ${new Date().toISOString()}`);
+    void 0; //(`[Stocks Refresh] Called by ${auth.type} at ${new Date().toISOString()}`);
 
     // Check for force parameter (for manual testing)
     const url = new URL(request.url);
@@ -26,7 +26,7 @@ async function handleRefresh(request: Request, auth: { type: 'session' | 'cron';
     const hasData = await db.stockQuote.count() > 0;
     const shouldRefresh = isCronCall || force || !hasData || isMarketHours() || await shouldRefreshOutsideMarketHours();
     
-    console.log(`[Stocks Refresh] Should refresh: ${shouldRefresh}, isCronCall: ${isCronCall}, hasData: ${hasData}, isMarketHours: ${isMarketHours()}`);
+    void 0; //(`[Stocks Refresh] Should refresh: ${shouldRefresh}, isCronCall: ${isCronCall}, hasData: ${hasData}, isMarketHours: ${isMarketHours()}`);
     
     if (!shouldRefresh) {
       return NextResponse.json({
@@ -43,25 +43,16 @@ async function handleRefresh(request: Request, auth: { type: 'session' | 'cron';
     // Fetch all stocks with retry logic
     for (const symbol of STOCK_SYMBOLS) {
       try {
-        console.log(`Fetching quote for ${symbol}...`);
+        void 0; //(`Fetching quote for ${symbol}...`);
         const quote = await retryWithBackoff(() => fetchStockQuote(symbol));
         
         // Small delay before fetching profile to avoid rate limits
         await new Promise(resolve => setTimeout(resolve, 100));
         
         // Fetch company profile (logo and name) - don't fail if this fails
-        console.log(`Fetching company profile for ${symbol}...`);
+        void 0; //(`Fetching company profile for ${symbol}...`);
         const profile = await fetchCompanyProfile(symbol);
-        
-        console.log(`Successfully fetched ${symbol}:`, {
-          current: quote.c,
-          change: quote.d,
-          percentChange: quote.dp,
-          hasProfile: !!profile,
-          companyName: profile?.name || 'N/A',
-          hasLogo: !!profile?.logo,
-        });
-        
+
         // Upsert the quote in the database
         await db.stockQuote.upsert({
           where: { symbol },
@@ -96,7 +87,7 @@ async function handleRefresh(request: Request, auth: { type: 'session' | 'cron';
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         errors.push({ symbol, error: errorMessage });
-        console.error(`Failed to fetch quote for ${symbol}:`, errorMessage);
+        void 0; //(`Failed to fetch quote for ${symbol}:`, errorMessage);
       }
     }
 
@@ -110,12 +101,6 @@ async function handleRefresh(request: Request, auth: { type: 'session' | 'cron';
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorStack = error instanceof Error ? error.stack : undefined;
-    console.error('[Stocks Refresh] Error refreshing stock quotes:', {
-      error: errorMessage,
-      stack: errorStack,
-      timestamp: new Date().toISOString(),
-    });
     return NextResponse.json(
       { 
         success: false, 

@@ -109,7 +109,6 @@ export const GET = withAuth(async () => {
     const isExpired = new Date(gmailToken.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000);
 
     if (isExpired) {
-      console.log('Gmail access token expired, refreshing...');
 
       if (!gmailToken.refreshToken) {
         // No refresh token, need to re-authenticate
@@ -138,7 +137,6 @@ export const GET = withAuth(async () => {
       });
 
       accessToken = newTokens.accessToken;
-      console.log('Gmail token refreshed successfully');
     }
 
     // Fetch list of messages (last 10 from Primary and Updates categories)

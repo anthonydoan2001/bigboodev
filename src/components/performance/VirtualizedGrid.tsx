@@ -1,6 +1,6 @@
 'use client';
 
-import { Grid, CellComponentProps } from 'react-window';
+import { Grid } from 'react-window';
 import { useCallback, useRef, useEffect, useState, memo, useMemo, CSSProperties, ReactElement } from 'react';
 
 interface VirtualizedGridProps<T> {

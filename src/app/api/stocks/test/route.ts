@@ -10,8 +10,8 @@ export const GET = withAuth(async () => {
   const testSymbol = 'AAPL'; // Test with Apple stock
   
   try {
-    console.log('Testing Finnhub API with symbol:', testSymbol);
-    console.log('API Key present:', !!process.env.FINNHUB_API_KEY);
+    void 0; //('Testing Finnhub API with symbol:', testSymbol);
+    void 0; //('API Key present:', !!process.env.FINNHUB_API_KEY);
     
     const quote = await fetchStockQuote(testSymbol);
     
@@ -24,12 +24,7 @@ export const GET = withAuth(async () => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? error.stack : undefined;
-    
-    console.error('Finnhub API test failed:', {
-      error: errorMessage,
-      stack: errorStack,
-    });
-    
+
     return NextResponse.json({
       success: false,
       symbol: testSymbol,

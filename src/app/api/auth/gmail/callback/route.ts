@@ -130,12 +130,9 @@ export async function GET(request: Request) {
       },
     });
 
-    console.log(`Gmail connected successfully for ${userInfo.email}`);
-
     // Redirect to dashboard with success
     return NextResponse.redirect(`${baseUrl}/?gmail_connected=true`);
-  } catch (error) {
-    console.error('Gmail OAuth callback error:', error);
+  } catch {
     return NextResponse.redirect(`${baseUrl}/?gmail_error=unknown`);
   }
 }

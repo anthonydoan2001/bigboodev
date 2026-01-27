@@ -12,8 +12,7 @@ export const GET = withAuth(async () => {
     });
 
     return NextResponse.json({ items });
-  } catch (error) {
-    console.error('Error fetching watchlist:', error);
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch watchlist' }, { status: 500 });
   }
 });
@@ -21,13 +20,11 @@ export const GET = withAuth(async () => {
 export const POST = withAuth(async (request: Request) => {
   try {
     const body = await request.json();
-    console.log('Received POST body:', body);
 
     const { externalId, type, title, imageUrl, year, rating, episodes, status } = body;
 
     // Validate required fields
     if (!externalId || !type || !title) {
-      console.error('Missing required fields:', { externalId, type, title });
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -55,7 +52,6 @@ export const POST = withAuth(async (request: Request) => {
         
         return NextResponse.json({ item: updated });
       }
-      console.log('Item already exists:', existing);
       return NextResponse.json({ error: 'Item already in watchlist' }, { status: 400 });
     }
 
@@ -73,19 +69,15 @@ export const POST = withAuth(async (request: Request) => {
       }
     });
 
-    console.log('Successfully created item:', item);
-    
     // Trigger top items refresh in background (fire and forget, no await)
     // Only refresh if it's been more than 5 minutes since last refresh
     // This ensures the top page filters out newly added items without blocking the response
     triggerTopItemsRefreshIfNeeded(request);
     
     return NextResponse.json({ item });
-  } catch (error) {
-    console.error('Error adding to watchlist:', error);
+  } catch {
     return NextResponse.json({
-      error: 'Failed to add to watchlist',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      error: 'Failed to add to watchlist'
     }, { status: 500 });
   }
 });
@@ -108,9 +100,8 @@ function triggerTopItemsRefreshIfNeeded(request: Request): void {
     headers: {
       'Authorization': `Bearer ${process.env.CRON_SECRET || ''}`,
     },
-  }).catch(err => {
+  }).catch(() => {
     // Silently fail - this is background work
-    console.error('Top items refresh fetch failed:', err);
   });
 }
 
@@ -129,8 +120,7 @@ export const PATCH = withAuth(async (request: Request) => {
     });
 
     return NextResponse.json({ item });
-  } catch (error) {
-    console.error('Error updating watchlist item:', error);
+  } catch {
     return NextResponse.json({ error: 'Failed to update item' }, { status: 500 });
   }
 });
@@ -149,8 +139,7 @@ export const DELETE = withAuth(async (request: Request) => {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting from watchlist:', error);
+  } catch {
     return NextResponse.json({ error: 'Failed to delete from watchlist' }, { status: 500 });
   }
 });

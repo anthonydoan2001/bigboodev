@@ -76,9 +76,8 @@ export const GET = withAuthOrCron(async (request: Request) => {
         orderBy: { lastUpdated: 'desc' },
         select: { lastUpdated: true },
       });
-    } catch (error) {
-      // If table doesn't exist or model not available, log and continue
-      console.warn('Error checking lastUpdated, will proceed with refresh:', error);
+    } catch {
+      // If table doesn't exist or model not available, proceed with refresh
     }
 
     const shouldRefresh = force || !lastUpdated || 
@@ -95,7 +94,7 @@ export const GET = withAuthOrCron(async (request: Request) => {
       });
     }
 
-    console.log('Fetching top items from external APIs...');
+    void 0; //('Fetching top items from external APIs...');
     const results: TopItemData[] = [];
 
     // Fetch top items from all sources in parallel with error handling
@@ -106,25 +105,13 @@ export const GET = withAuthOrCron(async (request: Request) => {
 
     try {
       [animeResponse1, animeResponse2, moviesResponse, tvResponse] = await Promise.all([
-        fetch(`${JIKAN_BASE_URL}/top/anime?limit=25&page=1`).catch(err => {
-          console.error('Error fetching anime page 1:', err);
-          return null;
-        }),
-        fetch(`${JIKAN_BASE_URL}/top/anime?limit=25&page=2`).catch(err => {
-          console.error('Error fetching anime page 2:', err);
-          return null;
-        }),
-        TMDB_API_KEY ? fetch(`${TMDB_BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}&page=1`).catch(err => {
-          console.error('Error fetching movies:', err);
-          return null;
-        }) : Promise.resolve(null),
-        TMDB_API_KEY ? fetch(`${TMDB_BASE_URL}/tv/popular?api_key=${TMDB_API_KEY}&page=1`).catch(err => {
-          console.error('Error fetching TV shows:', err);
-          return null;
-        }) : Promise.resolve(null),
+        fetch(`${JIKAN_BASE_URL}/top/anime?limit=25&page=1`).catch(() => null),
+        fetch(`${JIKAN_BASE_URL}/top/anime?limit=25&page=2`).catch(() => null),
+        TMDB_API_KEY ? fetch(`${TMDB_BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}&page=1`).catch(() => null) : Promise.resolve(null),
+        TMDB_API_KEY ? fetch(`${TMDB_BASE_URL}/tv/popular?api_key=${TMDB_API_KEY}&page=1`).catch(() => null) : Promise.resolve(null),
       ]);
     } catch (error) {
-      console.error('Error fetching from APIs:', error);
+      void 0; //('Error fetching from APIs:', error);
       return NextResponse.json({
         success: false,
         error: 'Failed to fetch from external APIs',
@@ -175,8 +162,8 @@ export const GET = withAuthOrCron(async (request: Request) => {
           });
           return validItems;
         }
-      } catch (error) {
-        console.error('Error parsing anime response:', error);
+      } catch {
+        // Failed to parse anime response
       }
       return [];
     };
@@ -246,7 +233,7 @@ export const GET = withAuthOrCron(async (request: Request) => {
       });
     }
 
-    console.log(`Fetched ${results.length} top items. Storing in database...`);
+    void 0; //(`Fetched ${results.length} top items. Storing in database...`);
 
     if (results.length === 0) {
       return NextResponse.json({
@@ -272,8 +259,7 @@ export const GET = withAuthOrCron(async (request: Request) => {
           type: true,
         },
       });
-    } catch (error) {
-      console.error('Error fetching existing items:', error);
+    } catch {
       // Continue anyway - all items will be treated as new
     }
     const existingSet = new Set(
@@ -287,7 +273,7 @@ export const GET = withAuthOrCron(async (request: Request) => {
 
         // Validate required fields
         if (!item.image || !item.rating || item.rating <= 0) {
-          console.warn(`Skipping item ${item.id} - missing image or invalid rating`);
+          void 0; //(`Skipping item ${item.id} - missing image or invalid rating`);
           continue;
         }
 
@@ -325,9 +311,9 @@ export const GET = withAuthOrCron(async (request: Request) => {
           updated++;
         }
       } catch (error) {
-        console.error(`Error upserting item ${item.id} (${item.title}):`, error);
+        void 0; //(`Error upserting item ${item.id} (${item.title}):`, error);
         if (error instanceof Error) {
-          console.error('Error details:', error.message, error.stack);
+          void 0; //('Error details:', error.message, error.stack);
         }
         errors++;
       }
@@ -347,12 +333,11 @@ export const GET = withAuthOrCron(async (request: Request) => {
         },
       });
       deletedCount = deleted.count;
-    } catch (error) {
-      console.error('Error cleaning up old items:', error);
+    } catch {
       // Don't fail the whole operation if cleanup fails
     }
 
-    console.log(`Refresh complete: ${created} created, ${updated} updated, ${deletedCount} deleted, ${errors} errors`);
+    void 0; //(`Refresh complete: ${created} created, ${updated} updated, ${deletedCount} deleted, ${errors} errors`);
 
     return NextResponse.json({
       success: true,
@@ -363,10 +348,9 @@ export const GET = withAuthOrCron(async (request: Request) => {
       errors,
       timestamp: now.toISOString(),
     });
-  } catch (error) {
-    console.error('Top items refresh error:', error);
+  } catch {
     return NextResponse.json(
-      { error: 'Failed to refresh top items', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to refresh top items' },
       { status: 500 }
     );
   }

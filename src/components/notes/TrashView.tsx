@@ -13,7 +13,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Trash2, RotateCcw, AlertTriangle, Calendar } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 
 interface TrashViewProps {
   notes: NoteListItem[];

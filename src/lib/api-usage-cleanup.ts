@@ -32,8 +32,6 @@ export async function cleanupOldApiUsage(retentionDays: number = 90): Promise<{
 }> {
   const cutoffDate = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
 
-  console.log(`Starting API usage cleanup (retention: ${retentionDays} days)`);
-  console.log(`Cutoff date: ${cutoffDate.toISOString()}`);
 
   try {
     // Step 1: Aggregate old records before deletion
@@ -46,17 +44,13 @@ export async function cleanupOldApiUsage(retentionDays: number = 90): Promise<{
       },
     });
 
-    console.log(`✅ Cleanup complete:`);
-    console.log(`   - Aggregated: ${aggregatedDays} days`);
-    console.log(`   - Deleted: ${result.count} records`);
 
     return {
       aggregatedDays,
       deletedRecords: result.count,
     };
   } catch (error) {
-    console.error('❌ Failed to cleanup API usage:', error);
-    throw error;
+        throw error;
   }
 }
 

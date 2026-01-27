@@ -1,4 +1,4 @@
-import { easeInOutCubic, easeOutCubic, cubicBezier2D, clamp, mapRange } from './easing';
+import { easeInOutCubic, easeOutCubic, cubicBezier2D, clamp } from './easing';
 
 /**
  * Keyframe types

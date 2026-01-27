@@ -15,6 +15,7 @@ import {
   CreateTagInput,
   UpdateTagInput,
 } from '@/types/notes';
+import { Task, Note } from '@prisma/client';
 
 const BASE_URL = '/api';
 
@@ -272,7 +273,7 @@ export async function deleteAttachment(noteId: string, attachmentId: string): Pr
 
 // ============ Task-Note Linking API ============
 
-export async function getNoteTasks(noteId: string): Promise<{ items: { taskId: string; task: any }[] }> {
+export async function getNoteTasks(noteId: string): Promise<{ items: { taskId: string; task: Task }[] }> {
   const res = await fetch(`${BASE_URL}/notes/${noteId}/tasks`, {
     headers: getAuthHeaders(),
     credentials: 'include',
@@ -300,7 +301,7 @@ export async function unlinkTaskFromNote(noteId: string, taskId: string): Promis
   if (!res.ok) throw new Error('Failed to unlink task from note');
 }
 
-export async function getTaskNotes(taskId: string): Promise<{ items: { noteId: string; note: any }[] }> {
+export async function getTaskNotes(taskId: string): Promise<{ items: { noteId: string; note: Note }[] }> {
   const res = await fetch(`${BASE_URL}/tasks/${taskId}/notes`, {
     headers: getAuthHeaders(),
     credentials: 'include',

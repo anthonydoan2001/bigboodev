@@ -93,7 +93,7 @@ function TasksContent() {
   const handleReorder = (taskId: string, newStatus: string, newPosition: number) => {
     reorderMutation.mutate({
       taskId,
-      newStatus: newStatus as any,
+      newStatus: newStatus as 'TODO' | 'IN_PROGRESS' | 'DONE',
       newPosition,
     });
   };

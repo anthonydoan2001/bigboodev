@@ -17,7 +17,7 @@ export function useWatchlist() {
     staleTime: 60000,
   });
 
-  const allItems: WatchlistItem[] = data?.items || [];
+  const allItems: WatchlistItem[] = useMemo(() => data?.items || [], [data?.items]);
 
   // Memoize categorized items - single pass through all items
   const { watchlistItems, watchedItems, watchingItems } = useMemo(() => {

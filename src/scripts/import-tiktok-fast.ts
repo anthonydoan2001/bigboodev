@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- CLI script requires console output */
 /**
  * TikTok Likes Fast Import Script (No Metadata)
  *

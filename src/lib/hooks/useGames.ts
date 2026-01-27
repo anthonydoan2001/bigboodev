@@ -17,7 +17,7 @@ export function useGames() {
     staleTime: 60000,
   });
 
-  const allGames: Game[] = data?.items || [];
+  const allGames: Game[] = useMemo(() => data?.items || [], [data?.items]);
 
   // Memoize filtered and sorted arrays to avoid recalculation on every render
   const { playingGames, playedGames, playlistGames } = useMemo(() => {

@@ -35,9 +35,9 @@ export const GET = withAuth(async (request: NextRequest) => {
       headers: { 'Accept': 'application/json' },
     });
 
-    let scoreboardData = null;
+    let _scoreboardData = null;
     if (scoreboardResponse.ok) {
-      scoreboardData = await scoreboardResponse.json();
+      _scoreboardData = await scoreboardResponse.json();
     }
 
     // Extract key structures to inspect

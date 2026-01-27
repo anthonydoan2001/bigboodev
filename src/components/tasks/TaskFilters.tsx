@@ -23,7 +23,7 @@ export function TaskFilters({ filters, onFiltersChange, categories }: TaskFilter
 
   const handleStatusChange = (value: string) => {
     if (value === 'all') {
-      const { status, ...rest } = filters;
+      const { status: _status, ...rest } = filters;
       onFiltersChange(rest);
     } else {
       onFiltersChange({ ...filters, status: [value as TaskStatus] });
@@ -32,7 +32,7 @@ export function TaskFilters({ filters, onFiltersChange, categories }: TaskFilter
 
   const handleCategoryChange = (value: string) => {
     if (value === 'all') {
-      const { category, ...rest } = filters;
+      const { category: _category, ...rest } = filters;
       onFiltersChange(rest);
     } else {
       onFiltersChange({ ...filters, category: value });
@@ -41,7 +41,7 @@ export function TaskFilters({ filters, onFiltersChange, categories }: TaskFilter
 
   const handlePriorityChange = (value: string) => {
     if (value === 'all') {
-      const { priority, ...rest } = filters;
+      const { priority: _priority, ...rest } = filters;
       onFiltersChange(rest);
     } else {
       onFiltersChange({ ...filters, priority: [value as TaskPriority] });
@@ -50,7 +50,7 @@ export function TaskFilters({ filters, onFiltersChange, categories }: TaskFilter
 
   const handleDueDateChange = (value: string) => {
     if (value === 'all') {
-      const { dueDate, ...rest } = filters;
+      const { dueDate: _dueDate, ...rest } = filters;
       onFiltersChange(rest);
     } else {
       onFiltersChange({ ...filters, dueDate: value as TaskFiltersType['dueDate'] });

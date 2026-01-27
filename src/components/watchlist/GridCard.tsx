@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { CheckCircle2, Eye, Trash2 } from 'lucide-react';
 import Image from 'next/image';
-import { useState, useEffect, memo } from 'react';
+import { useState, useEffect } from 'react';
 
 // Blur placeholder for poster images (2:3 aspect ratio)
 const BLUR_DATA_URL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAPCAYAAADd/14OAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAQklEQVQoz2NgGAUwwAjE/0HYgBj1/6F8A2LU/4fy/5Oh/j+Ub0CM+v9Q/n8y1P+H8v+Tof4/lP+fDPX/ofz/ZKgfBAA4cRITSQqCYAAAAABJRU5ErkJggg==';

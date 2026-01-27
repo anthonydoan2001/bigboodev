@@ -52,7 +52,6 @@ import {
   Trash2,
   X,
   FileText,
-  Image as ImageIcon,
   ChevronDown,
   Check,
   FileSpreadsheet,
@@ -456,7 +455,7 @@ export function NoteEditor({
   noteTags,
   onAddTag,
   onRemoveTag,
-  onCreateTag,
+  onCreateTag: _onCreateTag,
   folders,
   currentFolderId,
   onFolderChange,
@@ -513,7 +512,8 @@ export function NoteEditor({
         editor.commands.setContent(note.content || '');
       }
     }
-  }, [editor, note?.id]); // Only update when note ID changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Only update editor content when switching notes, not on every content change
+  }, [editor, note?.id]);
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -758,6 +758,7 @@ export function NoteEditor({
                     rel="noopener noreferrer"
                     className="block aspect-square"
                   >
+                    {/* eslint-disable-next-line @next/next/no-img-element -- External attachment URLs require native img */}
                     <img
                       src={attachment.fileUrl}
                       alt={attachment.fileName}

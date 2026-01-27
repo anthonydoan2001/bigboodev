@@ -2,11 +2,28 @@
 
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useRef, ReactNode } from "react";
+import { useEffect, useState, useRef, ReactNode, useSyncExternalStore } from "react";
 
 interface PageTransitionProps {
   children: ReactNode;
   className?: string;
+}
+
+// Reduced motion preference using useSyncExternalStore
+function getReducedMotionSnapshot(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function getReducedMotionServerSnapshot(): boolean {
+  return false;
+}
+
+function subscribeReducedMotion(callback: () => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  mediaQuery.addEventListener('change', callback);
+  return () => mediaQuery.removeEventListener('change', callback);
 }
 
 /**
@@ -18,33 +35,24 @@ export function PageTransition({ children, className }: PageTransitionProps) {
   const [isAnimating, setIsAnimating] = useState(false);
   const [displayChildren, setDisplayChildren] = useState(children);
   const previousPathname = useRef(pathname);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-
-  // Check for reduced motion preference
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setPrefersReducedMotion(mediaQuery.matches);
-
-    const handleChange = (event: MediaQueryListEvent) => {
-      setPrefersReducedMotion(event.matches);
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
+  const prefersReducedMotion = useSyncExternalStore(
+    subscribeReducedMotion,
+    getReducedMotionSnapshot,
+    getReducedMotionServerSnapshot
+  );
 
   useEffect(() => {
     // Skip animation if user prefers reduced motion
     if (prefersReducedMotion) {
-      setDisplayChildren(children);
-      return;
+      // Use setTimeout to avoid synchronous setState in effect
+      const timer = setTimeout(() => setDisplayChildren(children), 0);
+      return () => clearTimeout(timer);
     }
 
     // Only animate when pathname changes
     if (pathname !== previousPathname.current) {
-      setIsAnimating(true);
+      // Use setTimeout to make setState asynchronous
+      const startTimer = setTimeout(() => setIsAnimating(true), 0);
 
       // Wait for exit animation, then update content
       const exitTimer = setTimeout(() => {
@@ -57,10 +65,14 @@ export function PageTransition({ children, className }: PageTransitionProps) {
         });
       }, 150);
 
-      return () => clearTimeout(exitTimer);
+      return () => {
+        clearTimeout(startTimer);
+        clearTimeout(exitTimer);
+      };
     } else {
       // No pathname change, just update children
-      setDisplayChildren(children);
+      const timer = setTimeout(() => setDisplayChildren(children), 0);
+      return () => clearTimeout(timer);
     }
   }, [pathname, children, prefersReducedMotion]);
 

@@ -28,6 +28,7 @@ export function TaskForm({ task, open, onOpenChange, onSubmit, isSubmitting }: T
   const [category, setCategory] = useState('');
   const [notes, setNotes] = useState('');
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (task) {
       setTitle(task.title);
@@ -48,6 +49,7 @@ export function TaskForm({ task, open, onOpenChange, onSubmit, isSubmitting }: T
       setNotes('');
     }
   }, [task, open]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

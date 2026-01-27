@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 /**
- * Middleware to protect all routes except /login and /api/auth/*
+ * Proxy to protect all routes except /login and /api/auth/*
  * Checks for valid session token in cookies or headers
  * Also allows cron jobs with valid CRON_SECRET
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow login page and auth API routes
@@ -24,19 +24,11 @@ export function middleware(request: NextRequest) {
     (pathname.includes('/refresh') || pathname.includes('/cron-test'));
   
   if (isRefreshEndpoint) {
-    // Log for debugging
-    console.log('[Middleware] Checking cron auth for', pathname, {
-      hasAuthHeader: !!authHeader,
-      hasCronSecret: !!cronSecret,
-      authHeaderPrefix: authHeader ? authHeader.substring(0, 30) : 'none',
-    });
-    
     if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
-      console.log('[Middleware] ✓ Cron authentication successful for', pathname);
       return NextResponse.next();
     } else if (cronSecret && authHeader) {
       // Secret exists and header exists but doesn't match - log details
-      console.warn('[Middleware] ✗ Cron auth failed - header mismatch', {
+      console.warn('[Proxy] ✗ Cron auth failed - header mismatch', {
         headerLength: authHeader.length,
         secretLength: cronSecret.length,
         headerStartsWithBearer: authHeader.startsWith('Bearer '),
@@ -44,9 +36,9 @@ export function middleware(request: NextRequest) {
         secretValue: cronSecret.substring(0, 13),
       });
     } else if (cronSecret && !authHeader) {
-      console.warn('[Middleware] ✗ Cron auth failed - no Authorization header');
+      console.warn('[Proxy] ✗ Cron auth failed - no Authorization header');
     } else if (!cronSecret) {
-      console.warn('[Middleware] ✗ CRON_SECRET not set in environment');
+      console.warn('[Proxy] ✗ CRON_SECRET not set in environment');
     }
   }
 
@@ -80,7 +72,7 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
-// Configure which routes to run middleware on
+// Configure which routes to run proxy on
 export const config = {
   matcher: [
     /*

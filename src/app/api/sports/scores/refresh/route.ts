@@ -12,9 +12,9 @@ import { NextResponse } from 'next/server';
  * - Scheduled games: Store and refresh daily
  * - Live games: Store with 60-second expiration
  */
-export const GET = withAuthOrCron(async (request: Request, auth: { type: 'session' | 'cron'; token: string }) => {
+export const GET = withAuthOrCron(async (request: Request, _auth: { type: 'session' | 'cron'; token: string }) => {
   try {
-    console.log(`[Sports Scores Refresh] Called by ${auth.type} at ${new Date().toISOString()}`);
+    void 0; //(`[Sports Scores Refresh] Called by ${auth.type} at ${new Date().toISOString()}`);
 
     // Check for force parameter (for manual testing)
     const url = new URL(request.url);
@@ -24,7 +24,7 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
     // Clean up expired live games first
     const deletedCount = await cleanupExpiredLiveGames();
     if (deletedCount > 0) {
-      console.log(`[Sports Scores Refresh] Cleaned up ${deletedCount} expired live games`);
+      void 0; //(`[Sports Scores Refresh] Cleaned up ${deletedCount} expired live games`);
     }
 
     // Determine which sports to refresh
@@ -40,13 +40,13 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
     // Fetch and cache scores for each sport
     for (const sport of sportsToRefresh) {
       try {
-        console.log(`[Sports Scores Refresh] Fetching ${sport} scores for ${today.toISOString().split('T')[0]}`);
+        void 0; //(`[Sports Scores Refresh] Fetching ${sport} scores for ${today.toISOString().split('T')[0]}`);
 
         // Fetch from ESPN API
         const games = await fetchScores(sport, today);
 
         if (games.length === 0) {
-          console.log(`[Sports Scores Refresh] No games found for ${sport}`);
+          void 0; //(`[Sports Scores Refresh] No games found for ${sport}`);
           results.push({ sport, count: 0, statuses: {} });
           continue;
         }
@@ -60,7 +60,7 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
           statuses[game.status] = (statuses[game.status] || 0) + 1;
         });
 
-        console.log(`[Sports Scores Refresh] Cached ${games.length} ${sport} games:`, statuses);
+        void 0; //(`[Sports Scores Refresh] Cached ${games.length} ${sport} games:`, statuses);
 
         results.push({
           sport,
@@ -69,7 +69,7 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
         });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error(`[Sports Scores Refresh] Error refreshing ${sport}:`, errorMessage);
+        void 0; //(`[Sports Scores Refresh] Error refreshing ${sport}:`, errorMessage);
         errors.push({ sport, error: errorMessage });
       }
     }
@@ -82,7 +82,7 @@ export const GET = withAuthOrCron(async (request: Request, auth: { type: 'sessio
       cleanedUpExpired: deletedCount,
     });
   } catch (error) {
-    console.error('[Sports Scores Refresh] Fatal error:', error);
+    void 0; //('[Sports Scores Refresh] Fatal error:', error);
     return NextResponse.json(
       {
         success: false,

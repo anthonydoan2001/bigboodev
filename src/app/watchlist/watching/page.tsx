@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useMemo, Suspense, useEffect, useState } from 'react';
+import { useMemo, Suspense, useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { WatchlistNav } from '@/components/watchlist/WatchlistNav';
@@ -48,11 +48,11 @@ function WatchingContent() {
   const totalPages = Math.ceil(filteredWatchingItems.length / itemsPerPage);
 
   // Track if this is the initial mount to prevent unnecessary redirects
-  const [hasMounted, setHasMounted] = useState(false);
+  const hasMountedRef = useRef(false);
   const [isStable, setIsStable] = useState(false);
 
   useEffect(() => {
-    setHasMounted(true);
+    hasMountedRef.current = true;
   }, []);
 
   // Wait for grid to stabilize before showing content
@@ -62,16 +62,18 @@ function WatchingContent() {
       const timer = setTimeout(() => {
         setIsStable(true);
       }, 150);
-      return () => clearTimeout(timer);
-    } else {
-      setIsStable(false);
+      return () => {
+        clearTimeout(timer);
+        setIsStable(false);
+      };
     }
+    return undefined;
   }, [isReady, isLoading]);
 
   // Adjust page when itemsPerPage changes (e.g., on window resize)
   // Only redirect if we've mounted AND grid is ready to prevent initial flash
   useEffect(() => {
-    if (!hasMounted || !isReady) return;
+    if (!hasMountedRef.current || !isReady) return;
 
     if (totalPages > 0 && page > totalPages) {
       // Current page is invalid, redirect to last valid page
@@ -82,7 +84,7 @@ function WatchingContent() {
       params.set('page', totalPages.toString());
       router.replace(`/watchlist/watching?${params.toString()}`);
     }
-  }, [itemsPerPage, totalPages, page, filter, router, hasMounted, isReady]);
+  }, [itemsPerPage, totalPages, page, filter, router, isReady]);
 
   const handleFilterChange = (newFilter: 'all' | 'anime' | 'movie' | 'show') => {
     const params = new URLSearchParams();

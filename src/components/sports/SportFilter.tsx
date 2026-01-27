@@ -1,13 +1,13 @@
 import { SportType } from '@/types/sports';
 import { cn } from '@/lib/utils';
-import { Trophy, Star } from 'lucide-react';
+import { Trophy, Star, LucideIcon } from 'lucide-react';
 
 interface SportFilterProps {
   selectedSport: SportType | 'FAVORITES';
   onSportChange: (sport: SportType | 'FAVORITES') => void;
 }
 
-const SPORTS: { value: SportType | 'FAVORITES'; label: string; icon: any }[] = [
+const SPORTS: { value: SportType | 'FAVORITES'; label: string; icon: LucideIcon }[] = [
   { value: 'FAVORITES', label: 'Favorites', icon: Star },
   { value: 'NBA', label: 'NBA', icon: Trophy },
 ];

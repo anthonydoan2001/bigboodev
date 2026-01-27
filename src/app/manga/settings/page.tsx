@@ -44,13 +44,15 @@ export default function MangaSettingsPage() {
     message: string;
   } | null>(null);
 
-  // Populate form when settings load
+  // Populate form when settings load - sync server state to form
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (settings) {
       setServerUrl(settings.serverUrl);
       setEmail(settings.email);
     }
   }, [settings]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleTest = async () => {
     setTestResult(null);

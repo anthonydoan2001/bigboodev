@@ -30,7 +30,7 @@ export function Standings({ standings }: StandingsProps) {
               </tr>
             </thead>
             <tbody>
-              {teams.map((team, index) => {
+              {teams.map((team) => {
                 const isWinStreak = team.streak.startsWith('W');
                 const isLossStreak = team.streak.startsWith('L');
 

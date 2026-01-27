@@ -79,7 +79,7 @@ export const PATCH = withAuth(async (request: Request, _sessionToken: string) =>
       // Validate max nesting depth
       if (parentId) {
         const parentDepth = await getFolderDepth(parentId);
-        const folder = await db.folder.findUnique({
+        const _folder = await db.folder.findUnique({
           where: { id },
           include: { children: true },
         });
