@@ -1,15 +1,17 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { fetchLeagueStats } from '@/lib/api/league-of-legends';
+import { fetchLeagueStats, fetchAramChallenge } from '@/lib/api/league-of-legends';
 import { cn } from '@/lib/utils';
-import { RankedEntry } from '@/types/league-of-legends';
+import { RankedEntry, AramChallengeResponse } from '@/types/league-of-legends';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import Image from 'next/image';
+import { Swords } from 'lucide-react';
 
 // Tier colors for visual distinction
 const tierColors: Record<string, string> = {
+  NONE: 'text-gray-500',
   IRON: 'text-gray-400',
   BRONZE: 'text-amber-700',
   SILVER: 'text-gray-300',
@@ -23,6 +25,7 @@ const tierColors: Record<string, string> = {
 };
 
 const tierBgColors: Record<string, string> = {
+  NONE: 'bg-gray-500/20',
   IRON: 'bg-gray-400/20',
   BRONZE: 'bg-amber-700/20',
   SILVER: 'bg-gray-300/20',
@@ -33,6 +36,21 @@ const tierBgColors: Record<string, string> = {
   MASTER: 'bg-purple-500/20',
   GRANDMASTER: 'bg-red-500/20',
   CHALLENGER: 'bg-yellow-400/20',
+};
+
+// Progress bar gradient colors based on tier
+const tierProgressColors: Record<string, string> = {
+  NONE: 'bg-gray-500',
+  IRON: 'bg-gradient-to-r from-gray-500 to-gray-400',
+  BRONZE: 'bg-gradient-to-r from-amber-800 to-amber-600',
+  SILVER: 'bg-gradient-to-r from-gray-400 to-gray-300',
+  GOLD: 'bg-gradient-to-r from-yellow-600 to-yellow-400',
+  PLATINUM: 'bg-gradient-to-r from-cyan-500 to-cyan-300',
+  EMERALD: 'bg-gradient-to-r from-emerald-600 to-emerald-400',
+  DIAMOND: 'bg-gradient-to-r from-blue-500 to-blue-300',
+  MASTER: 'bg-gradient-to-r from-purple-600 to-purple-400',
+  GRANDMASTER: 'bg-gradient-to-r from-red-600 to-red-400',
+  CHALLENGER: 'bg-gradient-to-r from-yellow-500 to-amber-300',
 };
 
 function formatTier(tier: string): string {
@@ -100,6 +118,49 @@ function RankCard({ entry, queueLabel }: { entry: RankedEntry | null; queueLabel
   );
 }
 
+function AramProgressBar({ data }: { data: AramChallengeResponse }) {
+  const tierColor = tierColors[data.tier] || 'text-foreground';
+  const progressColor = tierProgressColors[data.tier] || 'bg-gray-500';
+  const isAramGod = data.currentPoints >= data.targetPoints;
+
+  return (
+    <div className="py-2.5 px-3 rounded-md bg-muted/30">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1.5">
+          <Swords className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-xs text-muted-foreground">ARAM God Progress</span>
+        </div>
+        <span className={cn('text-xs font-medium', tierColor)}>
+          {formatTier(data.tier)}
+        </span>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="relative h-3 bg-muted/50 rounded-full overflow-hidden mb-1.5">
+        <div
+          className={cn(
+            'absolute inset-y-0 left-0 rounded-full transition-all duration-500',
+            progressColor,
+            isAramGod && 'animate-pulse'
+          )}
+          style={{ width: `${Math.min(100, data.percentage)}%` }}
+        />
+      </div>
+
+      {/* Stats */}
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-muted-foreground">
+          {data.currentPoints.toLocaleString()} / {data.targetPoints.toLocaleString()}
+        </span>
+        <span className={cn('font-medium', isAramGod ? 'text-yellow-400' : 'text-muted-foreground')}>
+          {isAramGod ? 'ARAM GOD!' : `${data.percentage}%`}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function LeagueOfLegendsWidget() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['leagueStats'],
@@ -108,10 +169,18 @@ export function LeagueOfLegendsWidget() {
     refetchInterval: 300000, // Auto-refresh every 5 minutes
   });
 
+  const { data: aramData, refetch: refetchAram } = useQuery({
+    queryKey: ['aramChallenge'],
+    queryFn: fetchAramChallenge,
+    staleTime: 300000, // 5 minutes
+    refetchInterval: 300000, // Auto-refresh every 5 minutes
+  });
+
   // Refetch on mount
   useEffect(() => {
     refetch();
-  }, [refetch]);
+    refetchAram();
+  }, [refetch, refetchAram]);
 
   if (isLoading) {
     return (
@@ -175,6 +244,9 @@ export function LeagueOfLegendsWidget() {
             <RankCard entry={data.soloQueue} queueLabel="Solo/Duo" />
             <RankCard entry={data.flexQueue} queueLabel="Flex" />
           </div>
+
+          {/* ARAM Progress */}
+          {aramData && <AramProgressBar data={aramData} />}
         </div>
       </CardContent>
     </Card>

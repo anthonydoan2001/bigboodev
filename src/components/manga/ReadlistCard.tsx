@@ -10,13 +10,16 @@ import { useState } from 'react';
 
 interface ReadListCardProps {
   readList: KomgaReadList;
+  /** Set to true for above-the-fold images to load with high priority */
+  priority?: boolean;
 }
 
-export function ReadListCard({ readList }: ReadListCardProps) {
+export function ReadListCard({ readList, priority = false }: ReadListCardProps) {
   const [imageError, setImageError] = useState(false);
 
-  // Use lastModifiedDate as cache buster
-  const thumbnailUrl = `${getReadListThumbnailUrl(readList.id)}?t=${new Date(readList.lastModifiedDate).getTime()}`;
+  // Use lastModifiedDate as stable cache key (only changes when readlist actually changes)
+  const lastModifiedTime = new Date(readList.lastModifiedDate).getTime();
+  const thumbnailUrl = `${getReadListThumbnailUrl(readList.id)}?lm=${lastModifiedTime}`;
   const bookCount = readList.bookIds?.length ?? readList.bookCount ?? 0;
 
   return (
@@ -31,6 +34,8 @@ export function ReadListCard({ readList }: ReadListCardProps) {
             alt={readList.name}
             fill
             unoptimized
+            priority={priority}
+            loading={priority ? 'eager' : 'lazy'}
             className="object-cover transition-opacity group-hover:opacity-90"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
             onError={() => setImageError(true)}
