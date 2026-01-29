@@ -8,8 +8,8 @@ const SUMMONER_TAG = 'NA1';
 const REGION = 'na1';
 const AMERICAS_REGION = 'americas';
 
-// ARAM Authority challenge ID
-const ARAM_AUTHORITY_CHALLENGE_ID = 2022000;
+// ARAM Authority challenge ID (capstone challenge for ARAM)
+const ARAM_AUTHORITY_CHALLENGE_ID = 402000;
 
 // ARAM God requires 1850 points
 const ARAM_GOD_THRESHOLD = 1850;
