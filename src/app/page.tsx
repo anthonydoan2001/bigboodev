@@ -226,13 +226,14 @@ export default function Home() {
           {/* Tablet (768px): 2 columns */}
           {/* Laptop (1024px): 3 columns */}
 
-          {/* Calendar Widget with Countdown and Continue Reading in a row below */}
+          {/* Calendar Widget with Countdown, Continue Reading, and League below */}
           <div className="col-span-1 flex flex-col gap-4">
             <CalendarWidget />
             <div className="grid grid-cols-2 gap-4">
               <ContinueReadingWidget />
               <CountdownWidget />
             </div>
+            <LeagueOfLegendsWidget />
           </div>
 
           {/* Gmail Widget with Pinned Notes stacked below */}
@@ -241,10 +242,9 @@ export default function Home() {
             <PinnedNotesWidget />
           </div>
 
-          {/* Rockets Game Widget with League and Stocks stacked below */}
+          {/* Rockets Game Widget with Stocks stacked below */}
           <div className="col-span-1 flex flex-col gap-4">
             <RocketsGameWidget />
-            <LeagueOfLegendsWidget />
             <StocksCryptoWidget />
           </div>
         </div>
