@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { KomgaBook } from '@/types/komga';
+import { KomgaBook, KomgaSeries } from '@/types/komga';
 import {
   fetchKomgaSettings,
   saveKomgaSettings,
@@ -20,6 +20,8 @@ import {
   fetchReadListById,
   fetchReadListBooks,
   fetchReadListAdjacentBook,
+  fetchDashboard,
+  DashboardData,
 } from '@/lib/api/manga';
 import { KomgaSettingsInput, UpdateReadProgressRequest } from '@/types/komga';
 
@@ -78,6 +80,48 @@ export function useKomgaSettingsMutation() {
     remove: deleteMutation.mutateAsync,
     isRemoving: deleteMutation.isPending,
     removeError: deleteMutation.error,
+  };
+}
+
+// ============ Dashboard Hook (Combined Data) ============
+
+export function useDashboard(options?: { enabled?: boolean }) {
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['manga', 'dashboard'],
+    queryFn: fetchDashboard,
+    staleTime: 60 * 1000, // 1 minute
+    refetchOnWindowFocus: true,
+    enabled: options?.enabled !== false,
+  });
+
+  // Pre-populate individual query caches from dashboard data
+  // This prevents re-fetching when navigating to individual pages
+  if (data) {
+    // Cache libraries
+    queryClient.setQueryData(['manga', 'libraries'], data.libraries);
+
+    // Cache in-progress books
+    queryClient.setQueryData(['manga', 'in-progress', undefined, 50], data.inProgressBooks);
+
+    // Cache read lists
+    queryClient.setQueryData(['manga', 'readlists', undefined, 50, undefined], data.readLists);
+
+    // Cache individual series
+    Object.entries(data.seriesMap).forEach(([seriesId, series]) => {
+      queryClient.setQueryData(['manga', 'series', seriesId], series);
+    });
+  }
+
+  return {
+    libraries: data?.libraries ?? [],
+    inProgressBooks: data?.inProgressBooks?.content ?? [],
+    readLists: data?.readLists?.content ?? [],
+    seriesMap: data?.seriesMap ?? {} as Record<string, KomgaSeries>,
+    isLoading,
+    error,
+    refetch,
   };
 }
 

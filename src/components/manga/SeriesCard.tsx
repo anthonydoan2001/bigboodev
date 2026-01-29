@@ -11,14 +11,19 @@ import { useState } from 'react';
 
 interface SeriesCardProps {
   series: KomgaSeries;
+  /** Set to true for above-the-fold images to load with high priority */
+  priority?: boolean;
 }
 
-export function SeriesCard({ series }: SeriesCardProps) {
+export function SeriesCard({ series, priority = false }: SeriesCardProps) {
   const [imageError, setImageError] = useState(false);
   const thumbnailVersion = useThumbnailVersion();
 
-  // Use lastModified + global thumbnail version as cache buster
-  const thumbnailUrl = `${getSeriesThumbnailUrl(series.id)}?t=${new Date(series.lastModified).getTime()}&v=${thumbnailVersion}`;
+  // Use lastModified timestamp for cache invalidation (only changes when series actually changes)
+  // Plus thumbnailVersion for manual refreshes after user uploads a new thumbnail
+  // This allows browser caching while still showing updated thumbnails when needed
+  const lastModifiedTime = new Date(series.lastModified).getTime();
+  const thumbnailUrl = `${getSeriesThumbnailUrl(series.id)}?lm=${lastModifiedTime}${thumbnailVersion > 0 ? `&v=${thumbnailVersion}` : ''}`;
   const totalBooks = series.booksCount;
   const readBooks = series.booksReadCount;
   const inProgressBooks = series.booksInProgressCount;
@@ -39,6 +44,8 @@ export function SeriesCard({ series }: SeriesCardProps) {
             alt={series.name}
             fill
             unoptimized
+            priority={priority}
+            loading={priority ? 'eager' : 'lazy'}
             className="object-cover transition-opacity group-hover:opacity-90"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
             onError={() => setImageError(true)}

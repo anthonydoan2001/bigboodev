@@ -15,6 +15,29 @@ import {
 
 const BASE_URL = '/api';
 
+// ============ Dashboard API (Combined Endpoint) ============
+
+export interface DashboardData {
+  libraries: KomgaLibrary[];
+  inProgressBooks: KomgaBooksResponse;
+  readLists: KomgaReadListsResponse;
+  seriesMap: Record<string, KomgaSeries>;
+}
+
+export async function fetchDashboard(): Promise<DashboardData> {
+  const res = await fetch(`${BASE_URL}/komga/dashboard`, {
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'Failed to fetch dashboard' }));
+    throw new Error(error.error || 'Failed to fetch dashboard');
+  }
+
+  return res.json();
+}
+
 // ============ Settings API ============
 
 export async function fetchKomgaSettings(): Promise<{

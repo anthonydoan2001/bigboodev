@@ -46,3 +46,14 @@ export interface RiotLeagueEntry {
   freshBlood: boolean;
   inactive: boolean;
 }
+
+// ARAM Challenge types
+export interface AramChallengeResponse {
+  currentPoints: number;
+  targetPoints: number;
+  tier: string;
+  percentile: number;
+  percentage: number;
+  lastUpdated: string;
+  stale?: boolean;
+}

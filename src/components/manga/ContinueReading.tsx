@@ -8,15 +8,36 @@ import { SeriesCard } from './SeriesCard';
 import { ReadListCard } from './ReadlistCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PlayCircle } from 'lucide-react';
-import { KomgaSeries } from '@/types/komga';
+import { KomgaSeries, KomgaBook, KomgaReadList } from '@/types/komga';
 
 interface ContinueReadingProps {
   limit?: number;
+  // Preloaded data from dashboard endpoint (optional for backward compatibility)
+  preloadedBooks?: KomgaBook[];
+  preloadedReadLists?: KomgaReadList[];
+  preloadedSeriesMap?: Record<string, KomgaSeries>;
 }
 
-export function ContinueReading({ limit = 10 }: ContinueReadingProps) {
-  const { books: inProgressBooks, isLoading: booksLoading } = useBooksInProgress({ size: 50 });
-  const { readLists, isLoading: readListsLoading } = useReadLists({ size: 50 });
+export function ContinueReading({
+  limit = 10,
+  preloadedBooks,
+  preloadedReadLists,
+  preloadedSeriesMap,
+}: ContinueReadingProps) {
+  // Use preloaded data if available, otherwise fall back to individual queries
+  const hasPreloadedData = preloadedBooks !== undefined;
+
+  const { books: fetchedBooks, isLoading: booksLoading } = useBooksInProgress({
+    size: 50,
+    enabled: !hasPreloadedData,
+  });
+  const { readLists: fetchedReadLists, isLoading: readListsLoading } = useReadLists({
+    size: 50,
+    enabled: !hasPreloadedData,
+  });
+
+  const inProgressBooks = preloadedBooks ?? fetchedBooks;
+  const readLists = preloadedReadLists ?? fetchedReadLists;
 
   // Get in-progress book IDs for matching with reading lists
   const inProgressBookIds = useMemo(() => {
@@ -57,7 +78,15 @@ export function ContinueReading({ limit = 10 }: ContinueReadingProps) {
     return Array.from(ids);
   }, [inProgressBooks, booksInReadLists]);
 
-  // Fetch series data for each unique series ID (only for books not in reading lists)
+  // Use preloaded series map if available, otherwise fetch individually (fallback)
+  const seriesFromPreload = useMemo(() => {
+    if (!preloadedSeriesMap) return [];
+    return uniqueSeriesIds
+      .map((id) => preloadedSeriesMap[id])
+      .filter((s): s is KomgaSeries => s !== undefined);
+  }, [preloadedSeriesMap, uniqueSeriesIds]);
+
+  // Only fetch series if we don't have preloaded data
   const seriesQueries = useQuery({
     queryKey: ['manga', 'continue-reading-series', uniqueSeriesIds],
     queryFn: async () => {
@@ -68,12 +97,15 @@ export function ContinueReading({ limit = 10 }: ContinueReadingProps) {
       const results = await Promise.all(seriesPromises);
       return results.filter((s): s is KomgaSeries => s !== null);
     },
-    enabled: uniqueSeriesIds.length > 0,
+    enabled: !hasPreloadedData && uniqueSeriesIds.length > 0,
     staleTime: 2 * 60 * 1000,
   });
 
-  const isLoading = booksLoading || readListsLoading || seriesQueries.isLoading;
-  const series = seriesQueries.data || [];
+  const isLoading = hasPreloadedData
+    ? false
+    : booksLoading || readListsLoading || seriesQueries.isLoading;
+
+  const series = hasPreloadedData ? seriesFromPreload : (seriesQueries.data || []);
 
   // Combine and limit results
   const hasContent = series.length > 0 || inProgressReadLists.length > 0;
@@ -114,11 +146,11 @@ export function ContinueReading({ limit = 10 }: ContinueReadingProps) {
         <h2 className="text-lg font-semibold">Continue Reading</h2>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-        {limitedReadLists.map((readList) => (
-          <ReadListCard key={readList.id} readList={readList} />
+        {limitedReadLists.map((readList, index) => (
+          <ReadListCard key={readList.id} readList={readList} priority={index < 6} />
         ))}
-        {limitedSeries.map((s) => (
-          <SeriesCard key={s.id} series={s} />
+        {limitedSeries.map((s, index) => (
+          <SeriesCard key={s.id} series={s} priority={limitedReadLists.length + index < 6} />
         ))}
       </div>
     </div>
