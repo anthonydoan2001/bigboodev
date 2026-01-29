@@ -16,6 +16,12 @@ function isImagePath(path: string[]): boolean {
   return false;
 }
 
+// Check if path is a thumbnail request (for resize optimization)
+function isThumbnailPath(path: string[]): boolean {
+  if (path.length < 2) return false;
+  return path[path.length - 1] === 'thumbnail';
+}
+
 async function getKomgaCredentials() {
   const settings = await db.komgaSettings.findUnique({
     where: { userId: DEFAULT_USER_ID },
@@ -39,7 +45,17 @@ async function proxyRequest(
 ) {
   const komgaPath = `/api/v1/${path.join('/')}`;
   const url = new URL(request.url);
-  const queryString = url.search;
+
+  // Build query string, adding resize optimization for thumbnails
+  const params = new URLSearchParams(url.search);
+
+  // Add resize parameter for thumbnails if not already set
+  // 300px is optimal for card displays while reducing payload size
+  if (isThumbnailPath(path) && !params.has('resize')) {
+    params.set('resize', '300');
+  }
+
+  const queryString = params.toString() ? `?${params.toString()}` : '';
   const fullUrl = `${credentials.serverUrl}${komgaPath}${queryString}`;
 
   const headers: HeadersInit = {

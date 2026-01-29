@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useSeries, useKomgaSettings, useLibraries } from '@/lib/hooks/useManga';
+import { useSeries, useKomgaSettings, useDashboard } from '@/lib/hooks/useManga';
 import { SeriesCard } from '@/components/manga/SeriesCard';
 import { ContinueReading } from '@/components/manga/ContinueReading';
 import { ReadListSection } from '@/components/manga/ReadlistSection';
@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BookOpen, Library, ChevronLeft, ChevronRight, Settings, Loader2, BookMarked } from 'lucide-react';
 import Link from 'next/link';
-import { KomgaLibrary } from '@/types/komga';
+import { KomgaLibrary, KomgaSeries, KomgaBook, KomgaReadList } from '@/types/komga';
 
 // Library section component
 function LibrarySection({
@@ -132,8 +132,8 @@ function LibrarySection({
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-          {series.map((s) => (
-            <SeriesCard key={s.id} series={s} />
+          {series.map((s, index) => (
+            <SeriesCard key={s.id} series={s} priority={index < 6} />
           ))}
         </div>
 
@@ -184,7 +184,17 @@ function MangaLibraryContent() {
   const page = parseInt(searchParams.get('page') || '0', 10);
 
   const { configured, isLoading: settingsLoading } = useKomgaSettings();
-  const { libraries, isLoading: librariesLoading } = useLibraries({ enabled: configured });
+
+  // Use combined dashboard endpoint for faster initial load
+  const {
+    libraries,
+    inProgressBooks,
+    readLists,
+    seriesMap,
+    isLoading: dashboardLoading
+  } = useDashboard({ enabled: configured });
+
+  const librariesLoading = dashboardLoading;
 
   // Settings not loaded yet
   if (settingsLoading) {
@@ -268,7 +278,14 @@ function MangaLibraryContent() {
         </div>
 
         {/* Continue Reading - shows both manga and comics */}
-        {!search && <ContinueReading limit={6} />}
+        {!search && (
+          <ContinueReading
+            limit={6}
+            preloadedBooks={inProgressBooks}
+            preloadedReadLists={readLists}
+            preloadedSeriesMap={seriesMap}
+          />
+        )}
 
         {/* Library Sections */}
         {librariesLoading ? (
