@@ -552,10 +552,10 @@ export function PlayoffBracket({ games }: PlayoffBracketProps) {
         {/* Header */}
         <div className="grid grid-cols-7 gap-4 mb-6">
           <div className="col-span-3 text-center">
-            <h2 className="text-2xl font-bold text-blue-500">AFC</h2>
+            <h2 className="text-2xl font-bold text-info">AFC</h2>
           </div>
           <div className="col-span-3 text-center">
-            <h2 className="text-2xl font-bold text-red-500">NFC</h2>
+            <h2 className="text-2xl font-bold text-live">NFC</h2>
           </div>
         </div>
 
@@ -632,21 +632,21 @@ function MatchupCard({ matchup, conference, isChampionship }: MatchupCardProps) 
   const isFinal = matchup.status === 'final';
   const isScheduled = matchup.status === 'scheduled';
 
-  const borderColor = conference === 'AFC' ? 'border-blue-500/30' : 'border-red-500/30';
+  const borderColor = conference === 'AFC' ? 'border-info/30' : 'border-live/30';
 
   return (
     <div
       className={cn(
         "relative rounded-lg border-2 bg-card overflow-hidden transition-all",
         borderColor,
-        isLive && "ring-2 ring-green-500 border-green-500",
+        isLive && "ring-2 ring-success border-success",
         isTBD && "opacity-50",
         isChampionship && "scale-105"
       )}
     >
       {/* Live indicator */}
       {isLive && (
-        <div className="absolute top-0 left-0 right-0 bg-green-500 text-white text-xs text-center py-0.5 font-semibold">
+        <div className="absolute top-0 left-0 right-0 bg-success text-success-foreground text-xs text-center py-0.5 font-semibold">
           LIVE {matchup.quarter && `- ${matchup.quarter}`} {matchup.timeRemaining && matchup.timeRemaining}
         </div>
       )}
@@ -698,7 +698,7 @@ function TeamRow({ team, isTBD: _isTBD, showScore }: TeamRowProps) {
     <div
       className={cn(
         "flex items-center gap-2 px-2 py-2 min-h-[44px]",
-        team.isWinner && "bg-green-500/10",
+        team.isWinner && "bg-success/10",
         team.isLoser && "opacity-50"
       )}
     >
@@ -735,7 +735,7 @@ function TeamRow({ team, isTBD: _isTBD, showScore }: TeamRowProps) {
       {showScore && team.score !== undefined && (
         <div className={cn(
           "text-lg font-bold min-w-[24px] text-right",
-          team.isWinner && "text-green-500"
+          team.isWinner && "text-success"
         )}>
           {team.score}
         </div>
@@ -757,19 +757,19 @@ function SuperBowlCard({ matchup }: SuperBowlCardProps) {
   return (
     <div
       className={cn(
-        "relative rounded-xl border-4 border-yellow-500/50 bg-gradient-to-b from-yellow-500/10 to-transparent overflow-hidden w-full max-w-[200px]",
-        isLive && "ring-2 ring-green-500 border-green-500"
+        "relative rounded-xl border-4 border-favorite/50 bg-gradient-to-b from-favorite/10 to-transparent overflow-hidden w-full max-w-[200px]",
+        isLive && "ring-2 ring-success border-success"
       )}
     >
       {/* Trophy Header */}
-      <div className="bg-yellow-500/20 px-3 py-2 text-center border-b border-yellow-500/30">
+      <div className="bg-favorite/20 px-3 py-2 text-center border-b border-favorite/30">
         <div className="text-2xl">🏆</div>
-        <div className="text-xs font-bold text-yellow-600 dark:text-yellow-400">SUPER BOWL</div>
+        <div className="text-xs font-bold text-favorite">SUPER BOWL</div>
       </div>
 
       {/* Live indicator */}
       {isLive && (
-        <div className="bg-green-500 text-white text-xs text-center py-1 font-semibold">
+        <div className="bg-success text-success-foreground text-xs text-center py-1 font-semibold">
           LIVE {matchup.quarter && `- ${matchup.quarter}`} {matchup.timeRemaining && matchup.timeRemaining}
         </div>
       )}
@@ -781,7 +781,7 @@ function SuperBowlCard({ matchup }: SuperBowlCardProps) {
 
       {/* Game time for scheduled games */}
       {isScheduled && matchup.startTime && (
-        <div className="bg-muted/50 px-2 py-2 text-center border-t border-yellow-500/30">
+        <div className="bg-muted/50 px-2 py-2 text-center border-t border-favorite/30">
           <div className="text-xs text-muted-foreground">
             {matchup.startTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
           </div>
@@ -793,8 +793,8 @@ function SuperBowlCard({ matchup }: SuperBowlCardProps) {
 
       {/* Final indicator */}
       {isFinal && (
-        <div className="bg-yellow-500/20 px-2 py-2 text-center border-t border-yellow-500/30">
-          <span className="text-sm font-bold text-yellow-600 dark:text-yellow-400">CHAMPION</span>
+        <div className="bg-favorite/20 px-2 py-2 text-center border-t border-favorite/30">
+          <span className="text-sm font-bold text-favorite">CHAMPION</span>
         </div>
       )}
 

@@ -37,7 +37,7 @@ export default function RootLayout({
           attribute="class"
           defaultTheme="dark"
           enableSystem
-          disableTransitionOnChange
+          themes={['light', 'dark', 'midnight', 'sunset', 'ocean', 'forest', 'rose', 'slate']}
         >
           <QueryProvider>
             <WebVitals debug={process.env.NODE_ENV === 'development'} />

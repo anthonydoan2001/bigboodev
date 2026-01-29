@@ -52,12 +52,12 @@ export function SeriesCard({ series }: SeriesCardProps) {
         {/* Progress/Status Badge */}
         <div className="absolute top-2 right-2">
           {isComplete ? (
-            <Badge className="bg-green-600 hover:bg-green-600 text-white border-0">
+            <Badge className="bg-success hover:bg-success text-success-foreground border-0">
               <CheckCircle className="h-3 w-3 mr-1" />
               Complete
             </Badge>
           ) : hasProgress ? (
-            <Badge variant="secondary" className="bg-blue-600 hover:bg-blue-600 text-white border-0">
+            <Badge variant="secondary" className="bg-in-progress hover:bg-in-progress text-in-progress-foreground border-0">
               {readBooks}/{totalBooks}
             </Badge>
           ) : null}
@@ -74,7 +74,7 @@ export function SeriesCard({ series }: SeriesCardProps) {
         {hasProgress && !isComplete && (
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/30">
             <div
-              className="h-full bg-blue-500"
+              className="h-full bg-in-progress"
               style={{ width: `${progressPercent}%` }}
             />
           </div>

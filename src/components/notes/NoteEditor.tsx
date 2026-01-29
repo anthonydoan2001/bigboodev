@@ -568,7 +568,7 @@ export function NoteEditor({
               className="h-7 px-2.5 text-xs gap-1.5 border-input hover:bg-accent hover:border-primary/30 transition-all shadow-sm"
             >
               {currentFolder ? (
-                <Folder className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500/20" />
+                <Folder className="h-3.5 w-3.5 text-favorite fill-favorite/20" />
               ) : (
                 <FolderOpen className="h-3.5 w-3.5 text-muted-foreground" />
               )}
@@ -596,7 +596,7 @@ export function NoteEditor({
                     onClick={() => onFolderChange(folder.id)}
                     className="gap-2 cursor-pointer"
                   >
-                    <Folder className="h-4 w-4 text-yellow-500" />
+                    <Folder className="h-4 w-4 text-favorite" />
                     <span className="flex-1 truncate">{folder.name}</span>
                     {currentFolderId === folder.id && (
                       <Check className="h-4 w-4 text-primary" />
@@ -726,9 +726,9 @@ export function NoteEditor({
               >
                 <span className={cn(
                   'w-1.5 h-1.5 rounded-full flex-shrink-0',
-                  task.status === 'DONE' && 'bg-green-500',
-                  task.status === 'IN_PROGRESS' && 'bg-yellow-500',
-                  task.status === 'TODO' && 'bg-gray-400'
+                  task.status === 'DONE' && 'bg-success',
+                  task.status === 'IN_PROGRESS' && 'bg-in-progress',
+                  task.status === 'TODO' && 'bg-muted-foreground'
                 )} />
                 <span className="truncate max-w-[150px] font-medium">{task.title}</span>
                 <button
@@ -779,11 +779,11 @@ export function NoteEditor({
                     className="flex items-center justify-center aspect-square bg-muted hover:bg-muted/70 transition-colors"
                   >
                     {attachment.fileType === 'spreadsheet' ? (
-                      <FileSpreadsheet className="h-8 w-8 text-green-600" />
+                      <FileSpreadsheet className="h-8 w-8 text-success" />
                     ) : attachment.fileType === 'pdf' ? (
-                      <FileText className="h-8 w-8 text-red-500" />
+                      <FileText className="h-8 w-8 text-destructive" />
                     ) : attachment.fileType === 'text' ? (
-                      <FileText className="h-8 w-8 text-blue-500" />
+                      <FileText className="h-8 w-8 text-info" />
                     ) : (
                       <File className="h-8 w-8 text-muted-foreground" />
                     )}
