@@ -137,7 +137,7 @@ export function GameCard({
           {/* Metacritic Badge - Top Left */}
           {game.metacritic && (
             <div className={`absolute left-1.5 top-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm z-10 shadow-md ${
-              game.metacritic >= 75 ? 'bg-green-600/90' : game.metacritic >= 50 ? 'bg-yellow-600/90' : 'bg-red-600/90'
+              game.metacritic >= 75 ? 'bg-success/90' : game.metacritic >= 50 ? 'bg-warning/90' : 'bg-destructive/90'
             }`}>
               {game.metacritic}
             </div>
@@ -145,14 +145,14 @@ export function GameCard({
 
           {/* Status Badges - Bottom Left */}
           {!hideStatusBadge && isPlaying && (
-            <div className="absolute left-1.5 bottom-1.5 flex items-center gap-0.5 rounded-md bg-blue-500/95 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm shadow-md z-10">
+            <div className="absolute left-1.5 bottom-1.5 flex items-center gap-0.5 rounded-md bg-in-progress/95 px-1.5 py-0.5 text-[9px] font-bold text-in-progress-foreground backdrop-blur-sm shadow-md z-10">
               <Gamepad2 className="h-2.5 w-2.5" />
               <span>Playing</span>
             </div>
           )}
 
           {!hideStatusBadge && isPlayed && (
-            <div className="absolute left-1.5 bottom-1.5 flex items-center gap-0.5 rounded-md bg-emerald-500/95 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm shadow-md z-10">
+            <div className="absolute left-1.5 bottom-1.5 flex items-center gap-0.5 rounded-md bg-success/95 px-1.5 py-0.5 text-[9px] font-bold text-success-foreground backdrop-blur-sm shadow-md z-10">
               <Trophy className="h-2.5 w-2.5" />
               <span>Played</span>
             </div>

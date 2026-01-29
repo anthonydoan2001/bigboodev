@@ -139,7 +139,7 @@ export function GameSearchCard({
           {/* Metacritic Badge - Top Left */}
           {result.metacritic && (
             <div className={`absolute left-1.5 top-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm z-10 shadow-md ${
-              result.metacritic >= 75 ? 'bg-green-600/90' : result.metacritic >= 50 ? 'bg-yellow-600/90' : 'bg-red-600/90'
+              result.metacritic >= 75 ? 'bg-success/90' : result.metacritic >= 50 ? 'bg-warning/90' : 'bg-destructive/90'
             }`}>
               {result.metacritic}
             </div>
@@ -147,19 +147,19 @@ export function GameSearchCard({
 
           {/* Status Badge - Bottom Left */}
           {alreadyInList && currentStatus === 'PLAYLIST' && (
-            <div className="absolute left-1.5 bottom-1.5 flex items-center gap-0.5 rounded-md bg-purple-500/95 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm shadow-md z-10">
+            <div className="absolute left-1.5 bottom-1.5 flex items-center gap-0.5 rounded-md bg-accent/95 px-1.5 py-0.5 text-[9px] font-bold text-accent-foreground backdrop-blur-sm shadow-md z-10">
               <Check className="h-2.5 w-2.5" />
               <span>Saved</span>
             </div>
           )}
           {currentStatus === 'PLAYING' && (
-            <div className="absolute left-1.5 bottom-1.5 flex items-center gap-0.5 rounded-md bg-blue-500/95 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm shadow-md z-10">
+            <div className="absolute left-1.5 bottom-1.5 flex items-center gap-0.5 rounded-md bg-in-progress/95 px-1.5 py-0.5 text-[9px] font-bold text-in-progress-foreground backdrop-blur-sm shadow-md z-10">
               <Gamepad2 className="h-2.5 w-2.5" />
               <span>Playing</span>
             </div>
           )}
           {currentStatus === 'PLAYED' && (
-            <div className="absolute left-1.5 bottom-1.5 flex items-center gap-0.5 rounded-md bg-emerald-500/95 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm shadow-md z-10">
+            <div className="absolute left-1.5 bottom-1.5 flex items-center gap-0.5 rounded-md bg-success/95 px-1.5 py-0.5 text-[9px] font-bold text-success-foreground backdrop-blur-sm shadow-md z-10">
               <Trophy className="h-2.5 w-2.5" />
               <span>Played</span>
             </div>
