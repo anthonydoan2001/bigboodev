@@ -124,7 +124,7 @@ function MarkdownBlockView({ node, updateAttributes, selected }: NodeViewProps) 
             >
               <Pencil className="h-3 w-3" />
             </Button>
-            <div className="markdown-block-content p-3 prose prose-sm max-w-none text-white [&_*]:text-white">
+            <div className="markdown-block-content p-3 prose prose-sm dark:prose-invert max-w-none">
               {node.attrs.content ? (
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {node.attrs.content}

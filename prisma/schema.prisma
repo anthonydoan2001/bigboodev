@@ -348,10 +348,12 @@ model Folder {
   parent    Folder?  @relation("FolderToFolder", fields: [parentId], references: [id], onDelete: SetNull)
   children  Folder[] @relation("FolderToFolder")
   notes     Note[]
+  isPinned  Boolean  @default(false) @map("is_pinned")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([parentId])
+  @@index([isPinned])
   @@index([createdAt])
   @@map("folders")
 }

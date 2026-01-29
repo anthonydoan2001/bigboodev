@@ -107,11 +107,11 @@ const NoteCard = memo(function NoteCard({
             {/* Title Row */}
             <div className="flex items-start gap-1.5">
               {note.isPinned && (
-                <Pin className="h-3.5 w-3.5 text-favorite fill-favorite/20 flex-shrink-0 mt-0.5" />
+                <Pin className="h-4 w-4 text-favorite fill-favorite/20 flex-shrink-0 mt-0.5" />
               )}
               <h3
                 className={cn(
-                  'font-semibold text-[13px] leading-tight line-clamp-2 flex-1',
+                  'font-semibold text-sm leading-tight line-clamp-2 flex-1',
                   !note.title && 'text-muted-foreground italic font-normal'
                 )}
               >
@@ -125,7 +125,7 @@ const NoteCard = memo(function NoteCard({
                 {note.tags.slice(0, 2).map((noteTag) => (
                   <span
                     key={noteTag.tag.id}
-                    className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium border"
+                    className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border"
                     style={{
                       backgroundColor: noteTag.tag.color + '12',
                       borderColor: noteTag.tag.color + '30',
@@ -136,13 +136,13 @@ const NoteCard = memo(function NoteCard({
                   </span>
                 ))}
                 {note.tags.length > 2 && (
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-muted/50 text-muted-foreground border border-border/50">
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted/50 text-muted-foreground border border-border/50">
                     +{note.tags.length - 2}
                   </span>
                 )}
                 {note.folder && (
-                  <div className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                    <Folder className="h-2.5 w-2.5" />
+                  <div className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <Folder className="h-3 w-3" />
                     <span className="truncate max-w-[80px]">{note.folder.name}</span>
                   </div>
                 )}
@@ -150,25 +150,25 @@ const NoteCard = memo(function NoteCard({
             )}
 
             {/* Footer - Compact stats */}
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
               <div className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
+                <Calendar className="h-3.5 w-3.5" />
                 <span>{format(new Date(note.updatedAt), 'MMM d')}</span>
               </div>
               {attachmentCount > 0 && (
                 <>
-                  <div className="w-px h-2.5 bg-border" />
+                  <div className="w-px h-3 bg-border" />
                   <div className="flex items-center gap-1">
-                    <FileText className="h-3 w-3" />
+                    <FileText className="h-3.5 w-3.5" />
                     <span>{attachmentCount}</span>
                   </div>
                 </>
               )}
               {taskNoteCount > 0 && (
                 <>
-                  <div className="w-px h-2.5 bg-border" />
+                  <div className="w-px h-3 bg-border" />
                   <div className="flex items-center gap-1">
-                    <Tag className="h-3 w-3" />
+                    <Tag className="h-3.5 w-3.5" />
                     <span>{taskNoteCount}</span>
                   </div>
                 </>
@@ -314,8 +314,8 @@ export function NotesList({
     <div className="h-full overflow-auto p-1.5 space-y-1.5">
       {pinnedNotes.length > 0 && (
         <div className="space-y-1.5">
-          <div className="px-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-            <Pin className="h-2.5 w-2.5" />
+          <div className="px-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+            <Pin className="h-3 w-3" />
             Pinned
           </div>
           {pinnedNotes.map((note) => (
@@ -337,7 +337,7 @@ export function NotesList({
       {unpinnedNotes.length > 0 && (
         <div className="space-y-1.5">
           {pinnedNotes.length > 0 && (
-            <div className="px-1 pt-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <div className="px-1 pt-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
               All Notes
             </div>
           )}

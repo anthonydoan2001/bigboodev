@@ -925,10 +925,31 @@ html {
   /* Markdown Block Styles */
   .markdown-block {
     user-select: none;
+    background-color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+  }
+
+  .markdown-block:hover {
+    border-color: var(--primary);
+    background-color: var(--secondary);
   }
 
   .markdown-block-content {
     /* Override prose defaults for better spacing */
+    color: var(--foreground);
+  }
+
+  .markdown-block-content * {
+    color: inherit;
+  }
+
+  .markdown-block-content a {
+    color: var(--primary);
+  }
+
+  .markdown-block-content strong {
+    font-weight: 600;
   }
 
   .markdown-block-content h1,

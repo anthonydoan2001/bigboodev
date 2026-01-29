@@ -20,6 +20,8 @@ import {
   Plus,
   Pencil,
   Tag,
+  Pin,
+  PinOff,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +33,7 @@ interface FolderItemProps {
   onRename: (folderId: string, currentName: string) => void;
   onDelete: (folderId: string) => void;
   onCreateSubfolder: (parentId: string) => void;
+  onPinFolder: (folderId: string, isPinned: boolean) => void;
 }
 
 const FolderItem = memo(function FolderItem({
@@ -41,6 +44,7 @@ const FolderItem = memo(function FolderItem({
   onRename,
   onDelete,
   onCreateSubfolder,
+  onPinFolder,
 }: FolderItemProps) {
   const [isExpanded, setIsExpanded] = useState(level === 0);
   const hasChildren = folder.children.length > 0;
@@ -68,25 +72,29 @@ const FolderItem = memo(function FolderItem({
             className="p-0.5 hover:bg-accent rounded"
           >
             {isExpanded ? (
-              <ChevronDown className="h-3 w-3 text-muted-foreground" />
+              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
             ) : (
-              <ChevronRight className="h-3 w-3 text-muted-foreground" />
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
             )}
           </button>
         ) : (
-          <span className="w-3.5" />
+          <span className="w-4" />
         )}
 
         {isExpanded ? (
-          <FolderOpen className="h-3.5 w-3.5 text-favorite flex-shrink-0" />
+          <FolderOpen className="h-4 w-4 text-favorite flex-shrink-0" />
         ) : (
-          <Folder className="h-3.5 w-3.5 text-favorite flex-shrink-0" />
+          <Folder className="h-4 w-4 text-favorite flex-shrink-0" />
         )}
 
-        <span className="flex-1 text-[13px] truncate">{folder.name}</span>
+        {folder.isPinned && (
+          <Pin className="h-3 w-3 text-favorite fill-favorite/20 flex-shrink-0" />
+        )}
+
+        <span className="flex-1 text-sm truncate">{folder.name}</span>
 
         {folder.noteCount > 0 && (
-          <span className="text-[10px] text-muted-foreground">{folder.noteCount}</span>
+          <span className="text-[11px] text-muted-foreground">{folder.noteCount}</span>
         )}
 
         <DropdownMenu>
@@ -100,6 +108,19 @@ const FolderItem = memo(function FolderItem({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onPinFolder(folder.id, !folder.isPinned)}>
+              {folder.isPinned ? (
+                <>
+                  <PinOff className="h-4 w-4 mr-2" />
+                  Unpin
+                </>
+              ) : (
+                <>
+                  <Pin className="h-4 w-4 mr-2" />
+                  Pin to top
+                </>
+              )}
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onRename(folder.id, folder.name)}>
               <Pencil className="h-4 w-4 mr-2" />
               Rename
@@ -133,6 +154,7 @@ const FolderItem = memo(function FolderItem({
               onRename={onRename}
               onDelete={onDelete}
               onCreateSubfolder={onCreateSubfolder}
+              onPinFolder={onPinFolder}
             />
           ))}
         </div>
@@ -153,6 +175,7 @@ interface FolderTreeProps {
   onCreateFolder: (parentId?: string) => void;
   onRenameFolder: (folderId: string, currentName: string) => void;
   onDeleteFolder: (folderId: string) => void;
+  onPinFolder: (folderId: string, isPinned: boolean) => void;
   totalNotes: number;
   trashedNotes: number;
 }
@@ -169,6 +192,7 @@ export function FolderTree({
   onCreateFolder,
   onRenameFolder,
   onDeleteFolder,
+  onPinFolder,
   totalNotes,
   trashedNotes,
 }: FolderTreeProps) {
@@ -176,7 +200,7 @@ export function FolderTree({
     <div className="h-full flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between p-2 border-b border-border">
-        <h2 className="font-semibold text-[13px]">Notes</h2>
+        <h2 className="font-semibold text-sm">Notes</h2>
         <Button
           variant="ghost"
           size="icon-sm"
@@ -200,15 +224,15 @@ export function FolderTree({
             onSelectTag(null);
           }}
         >
-          <FileText className="h-3.5 w-3.5 text-info" />
-          <span className="flex-1 text-[13px]">All Notes</span>
-          <span className="text-[10px] text-muted-foreground">{totalNotes}</span>
+          <FileText className="h-4 w-4 text-info" />
+          <span className="flex-1 text-sm">All Notes</span>
+          <span className="text-[11px] text-muted-foreground">{totalNotes}</span>
         </div>
 
         {/* Folders */}
         {folders.length > 0 && (
           <div className="mt-1.5">
-            <div className="px-2 py-0.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <div className="px-2 py-0.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
               Folders
             </div>
             {folders.map((folder) => (
@@ -224,6 +248,7 @@ export function FolderTree({
                 onRename={onRenameFolder}
                 onDelete={onDeleteFolder}
                 onCreateSubfolder={(parentId) => onCreateFolder(parentId)}
+                onPinFolder={onPinFolder}
               />
             ))}
           </div>
@@ -232,7 +257,7 @@ export function FolderTree({
         {/* Tags */}
         {tags.length > 0 && (
           <div className="mt-2">
-            <div className="px-2 py-0.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <div className="px-2 py-0.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
               Tags
             </div>
             {tags.map((tag) => (
@@ -247,9 +272,9 @@ export function FolderTree({
                   onSelectFolder(null);
                 }}
               >
-                <Tag className="h-3.5 w-3.5" style={{ color: tag.color }} />
-                <span className="flex-1 text-[13px] truncate">{tag.name}</span>
-                <span className="text-[10px] text-muted-foreground">{tag._count?.notes || 0}</span>
+                <Tag className="h-4 w-4" style={{ color: tag.color }} />
+                <span className="flex-1 text-sm truncate">{tag.name}</span>
+                <span className="text-[11px] text-muted-foreground">{tag._count?.notes || 0}</span>
               </div>
             ))}
           </div>
@@ -265,10 +290,10 @@ export function FolderTree({
           )}
           onClick={onToggleTrash}
         >
-          <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="flex-1 text-[13px]">Trash</span>
+          <Trash2 className="h-4 w-4 text-muted-foreground" />
+          <span className="flex-1 text-sm">Trash</span>
           {trashedNotes > 0 && (
-            <span className="text-[10px] text-muted-foreground">{trashedNotes}</span>
+            <span className="text-[11px] text-muted-foreground">{trashedNotes}</span>
           )}
         </div>
       </div>

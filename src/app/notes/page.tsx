@@ -329,6 +329,10 @@ function NotesContent() {
     }
   }, [deleteFolder, selectedFolderId]);
 
+  const handlePinFolder = useCallback((folderId: string, isPinned: boolean) => {
+    updateFolder.mutate({ id: folderId, input: { isPinned } });
+  }, [updateFolder]);
+
   // Tag handlers
   const handleAddTag = useCallback((tagId: string) => {
     if (selectedNoteId) {
@@ -415,6 +419,7 @@ function NotesContent() {
               onCreateFolder={handleCreateFolder}
               onRenameFolder={handleRenameFolder}
               onDeleteFolder={handleDeleteFolder}
+              onPinFolder={handlePinFolder}
               totalNotes={counts?.total || 0}
               trashedNotes={counts?.trashed || 0}
             />
