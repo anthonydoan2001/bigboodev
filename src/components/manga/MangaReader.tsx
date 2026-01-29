@@ -74,6 +74,22 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
     setSeriesZoom(book.seriesId, newZoom);
   };
 
+  // Helper to center scroll position in container (for zoomed page mode)
+  const centerScrollPosition = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    // Calculate center scroll position
+    const scrollLeft = (container.scrollWidth - container.clientWidth) / 2;
+    const scrollTop = (container.scrollHeight - container.clientHeight) / 2;
+
+    container.scrollTo({
+      left: Math.max(0, scrollLeft),
+      top: Math.max(0, scrollTop),
+      behavior: 'instant'
+    });
+  }, []);
+
   const { updateProgress } = useUpdateReadProgress();
 
   // Use reading list navigation when coming from a reading list
@@ -144,6 +160,10 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
 
     if (isPageMode || currentPage <= 1) {
       setIsInitializing(false);
+      // Center scroll position if in page mode with zoom > 1
+      if (isPageMode && zoom > 1) {
+        requestAnimationFrame(() => centerScrollPosition());
+      }
       return;
     }
 
@@ -186,7 +206,7 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
       cancelled = true;
       timeoutIds.forEach(id => clearTimeout(id));
     };
-  }, [isHydrated, isPageMode, currentPage, book.id]);
+  }, [isHydrated, isPageMode, currentPage, book.id, zoom, centerScrollPosition]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   // Track visible page in scroll modes using Intersection Observer
@@ -247,7 +267,7 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
     };
   }, [isPageMode, setCurrentPage, pages.length, book.id]);
 
-  // Preserve scroll position when zoom changes in scroll modes
+  // Preserve scroll position when zoom changes in scroll modes, or center in page mode
   useEffect(() => {
     // Skip on initial render (prevZoomRef is null)
     if (prevZoomRef.current === null) {
@@ -258,9 +278,12 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
     // Skip if zoom hasn't changed
     if (prevZoomRef.current === zoom) return;
 
-    // Skip in page mode (no scrolling needed)
+    // In page mode, center the scroll position when zoomed in
     if (isPageMode) {
       prevZoomRef.current = zoom;
+      if (zoom > 1) {
+        requestAnimationFrame(() => centerScrollPosition());
+      }
       return;
     }
 
@@ -273,7 +296,7 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
     }
 
     prevZoomRef.current = zoom;
-  }, [zoom, currentPage, isPageMode]);
+  }, [zoom, currentPage, isPageMode, centerScrollPosition]);
 
   // Debounced progress save - flush on unmount to ensure progress is saved when navigating away
   const saveProgress = useDebouncedCallback(
