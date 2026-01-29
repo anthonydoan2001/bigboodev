@@ -9,7 +9,8 @@ const REGION = 'na1';
 const AMERICAS_REGION = 'americas';
 
 // ARAM Authority challenge ID (capstone challenge for ARAM)
-const ARAM_AUTHORITY_CHALLENGE_ID = 402000;
+// Earns progress from ARAM Warrior (101100), ARAM Finesse (101200), and ARAM Champion (101300) groups
+const ARAM_AUTHORITY_CHALLENGE_ID = 101000;
 
 // ARAM God requires 1850 points
 const ARAM_GOD_THRESHOLD = 1850;
