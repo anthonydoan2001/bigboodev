@@ -4,6 +4,7 @@ import { CalendarWidget } from "@/components/dashboard/CalendarWidget";
 import { ContinueReadingWidget } from "@/components/dashboard/ContinueReadingWidget";
 import { CountdownWidget } from "@/components/dashboard/CountdownWidget";
 import { GmailWidget } from "@/components/dashboard/GmailWidget";
+import { LeagueOfLegendsWidget } from "@/components/dashboard/LeagueOfLegendsWidget";
 import { PinnedNotesWidget } from "@/components/dashboard/PinnedNotesWidget";
 import { RocketsGameWidget } from "@/components/dashboard/RocketsGameWidget";
 import { StocksCryptoWidget } from "@/components/dashboard/StocksCryptoWidget";
@@ -240,9 +241,10 @@ export default function Home() {
             <PinnedNotesWidget />
           </div>
 
-          {/* Rockets Game Widget with Stocks stacked below */}
+          {/* Rockets Game Widget with League and Stocks stacked below */}
           <div className="col-span-1 flex flex-col gap-4">
             <RocketsGameWidget />
+            <LeagueOfLegendsWidget />
             <StocksCryptoWidget />
           </div>
         </div>
