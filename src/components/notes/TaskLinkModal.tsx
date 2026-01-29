@@ -57,11 +57,11 @@ export function TaskLinkModal({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'DONE':
-        return 'bg-green-500';
+        return 'bg-success';
       case 'IN_PROGRESS':
-        return 'bg-yellow-500';
+        return 'bg-in-progress';
       default:
-        return 'bg-gray-400';
+        return 'bg-muted-foreground';
     }
   };
 

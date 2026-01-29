@@ -147,13 +147,13 @@ export function WatchlistCard({
             {/* Rating Badge - Top Left */}
             {item.rating && (
               <div className="absolute left-1.5 top-1.5 rounded-md bg-black/60 px-2 py-1 text-caption font-bold text-white backdrop-blur-md flex items-center gap-1 z-10">
-                <span className="text-yellow-400 text-body-sm">★</span> {item.rating.toFixed(1)}
+                <span className="text-favorite text-body-sm">★</span> {item.rating.toFixed(1)}
               </div>
             )}
 
             {/* Watched Badge - Below Category */}
             {!hideStatusBadge && isWatched && (
-              <div className="absolute right-1.5 top-7 flex items-center gap-0.5 rounded-md bg-emerald-500/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md shadow-sm z-10">
+              <div className="absolute right-1.5 top-7 flex items-center gap-0.5 rounded-md bg-success/90 px-1.5 py-0.5 text-[10px] font-bold text-success-foreground backdrop-blur-md shadow-sm z-10">
                 <CheckCircle2 className="h-2.5 w-2.5" />
                 Watched
               </div>
@@ -161,7 +161,7 @@ export function WatchlistCard({
 
             {/* Watching Badge - Below Category */}
             {!hideStatusBadge && isWatching && (
-              <div className="absolute right-1.5 top-7 flex items-center gap-0.5 rounded-md bg-blue-500/90 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-md shadow-sm z-10">
+              <div className="absolute right-1.5 top-7 flex items-center gap-0.5 rounded-md bg-in-progress/90 px-1.5 py-0.5 text-[10px] font-bold text-in-progress-foreground backdrop-blur-md shadow-sm z-10">
                 <Eye className="h-2.5 w-2.5" />
                 Watching
               </div>

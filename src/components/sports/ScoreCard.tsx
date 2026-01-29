@@ -50,7 +50,7 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
         }
 
         return (
-          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-500 text-caption font-semibold tabular-nums">
+          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-live/10 text-live text-caption font-semibold tabular-nums">
             {displayText}
           </div>
         );
@@ -104,9 +104,9 @@ export function ScoreCard({ game, isFavorite, onToggleFavorite, isHoustonGame }:
                   className={`w-4 h-4 transition-colors ${
                     isFavorite
                       ? isHoustonGame
-                        ? 'fill-orange-500 text-orange-500'
-                        : 'fill-yellow-500 text-yellow-500'
-                      : 'text-muted-foreground hover:text-yellow-500'
+                        ? 'fill-warning text-warning'
+                        : 'fill-favorite text-favorite'
+                      : 'text-muted-foreground hover:text-favorite'
                   }`}
                 />
               </button>

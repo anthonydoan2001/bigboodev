@@ -221,10 +221,10 @@ export function RocketsGameWidget() {
       }
 
       return (
-        <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-500 text-caption font-semibold tabular-nums">
+        <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-live/10 text-live text-caption font-semibold tabular-nums">
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-live/75 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-live"></span>
           </span>
           {displayText}
         </div>
@@ -233,7 +233,7 @@ export function RocketsGameWidget() {
 
     if (isFinal) {
       return (
-        <span className={`text-caption font-semibold ${rocketsWon ? 'text-green-500' : 'text-muted-foreground'}`}>
+        <span className={`text-caption font-semibold ${rocketsWon ? 'text-success' : 'text-muted-foreground'}`}>
           {rocketsWon ? 'WIN' : 'FINAL'}
         </span>
       );

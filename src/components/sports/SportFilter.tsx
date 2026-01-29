@@ -29,12 +29,12 @@ export function SportFilter({ selectedSport, onSportChange }: SportFilterProps) 
                 "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
                 isSelected
                   ? isFavorites
-                    ? "bg-yellow-500/10 shadow-sm text-yellow-600 dark:text-yellow-500 scale-105"
+                    ? "bg-favorite/10 shadow-sm text-favorite scale-105"
                     : "bg-background shadow-sm text-foreground scale-105"
                   : "text-muted-foreground hover:text-foreground hover:bg-background/50"
               )}
             >
-              <Icon className={cn("w-4 h-4", isFavorites && isSelected && "fill-yellow-500")} />
+              <Icon className={cn("w-4 h-4", isFavorites && isSelected && "fill-favorite")} />
               {sport.label}
             </button>
           );

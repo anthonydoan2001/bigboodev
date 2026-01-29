@@ -107,7 +107,7 @@ const NoteCard = memo(function NoteCard({
             {/* Title Row */}
             <div className="flex items-start gap-1.5">
               {note.isPinned && (
-                <Pin className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500/20 flex-shrink-0 mt-0.5" />
+                <Pin className="h-3.5 w-3.5 text-favorite fill-favorite/20 flex-shrink-0 mt-0.5" />
               )}
               <h3
                 className={cn(

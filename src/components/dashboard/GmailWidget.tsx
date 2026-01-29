@@ -57,7 +57,7 @@ const EmailItem = memo(function EmailItem({ email }: { email: GmailEmail }) {
       {/* Unread indicator */}
       <div className="flex-shrink-0 pt-0.5">
         {email.isUnread ? (
-          <Circle className="w-1.5 h-1.5 fill-blue-500 text-blue-500" />
+          <Circle className="w-1.5 h-1.5 fill-info text-info" />
         ) : (
           <Circle className="w-1.5 h-1.5 text-transparent" />
         )}

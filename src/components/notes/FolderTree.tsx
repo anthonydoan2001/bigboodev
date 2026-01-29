@@ -78,9 +78,9 @@ const FolderItem = memo(function FolderItem({
         )}
 
         {isExpanded ? (
-          <FolderOpen className="h-3.5 w-3.5 text-yellow-500 flex-shrink-0" />
+          <FolderOpen className="h-3.5 w-3.5 text-favorite flex-shrink-0" />
         ) : (
-          <Folder className="h-3.5 w-3.5 text-yellow-500 flex-shrink-0" />
+          <Folder className="h-3.5 w-3.5 text-favorite flex-shrink-0" />
         )}
 
         <span className="flex-1 text-[13px] truncate">{folder.name}</span>
@@ -200,7 +200,7 @@ export function FolderTree({
             onSelectTag(null);
           }}
         >
-          <FileText className="h-3.5 w-3.5 text-blue-500" />
+          <FileText className="h-3.5 w-3.5 text-info" />
           <span className="flex-1 text-[13px]">All Notes</span>
           <span className="text-[10px] text-muted-foreground">{totalNotes}</span>
         </div>

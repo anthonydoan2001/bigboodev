@@ -32,7 +32,7 @@ const PinnedNoteCard = memo(function PinnedNoteCard({
   return (
     <Link href={`/notes?note=${note.id}`}>
       <div className="group flex items-start gap-2 py-2 px-2.5 border-b border-border/40 last:border-0 hover:bg-accent/30 transition-colors cursor-pointer">
-        <Pin className="h-3.5 w-3.5 text-yellow-500 flex-shrink-0 mt-0.5" />
+        <Pin className="h-3.5 w-3.5 text-favorite flex-shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0 space-y-0.5">
           <h4 className="font-semibold text-xs line-clamp-1 group-hover:text-primary transition-colors">
             {note.title || 'Untitled'}
@@ -71,7 +71,7 @@ export const PinnedNotesWidget = memo(function PinnedNotesWidget() {
         <CardContent className="p-0">
           <div className="px-2.5 py-2 border-b border-border/40">
             <h3 className="font-semibold text-xs flex items-center gap-1.5">
-              <Pin className="h-3.5 w-3.5 text-yellow-500" />
+              <Pin className="h-3.5 w-3.5 text-favorite" />
               Pinned Notes
             </h3>
           </div>
@@ -101,7 +101,7 @@ export const PinnedNotesWidget = memo(function PinnedNotesWidget() {
         <CardContent className="p-0">
           <div className="px-2.5 py-2 border-b border-border/40">
             <h3 className="font-semibold text-xs flex items-center gap-1.5">
-              <Pin className="h-3.5 w-3.5 text-yellow-500" />
+              <Pin className="h-3.5 w-3.5 text-favorite" />
               Pinned Notes
             </h3>
           </div>
@@ -129,7 +129,7 @@ export const PinnedNotesWidget = memo(function PinnedNotesWidget() {
       <CardContent className="p-0">
         <div className="px-2.5 py-2 border-b border-border/40">
           <h3 className="font-semibold text-xs flex items-center gap-1.5">
-            <Pin className="h-3.5 w-3.5 text-yellow-500" />
+            <Pin className="h-3.5 w-3.5 text-favorite" />
             Pinned Notes
           </h3>
         </div>

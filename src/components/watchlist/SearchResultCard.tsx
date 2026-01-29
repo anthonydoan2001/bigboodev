@@ -160,26 +160,26 @@ export function SearchResultCard({
           {/* Rating Badge - Top Left */}
           {result.rating && (
             <div className="absolute left-1 top-1 rounded-md bg-black/75 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm flex items-center gap-0.5 z-10 shadow-md">
-              <span className="text-yellow-400 text-xs">★</span>
+              <span className="text-favorite text-xs">★</span>
               <span>{result.rating.toFixed(1)}</span>
             </div>
           )}
 
           {/* Status Badge - Below Category */}
           {alreadyInList && !isWatched && !isWatching && (
-            <div className="absolute right-1 top-6 flex items-center gap-0.5 rounded-md bg-emerald-500/95 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm shadow-md z-10">
+            <div className="absolute right-1 top-6 flex items-center gap-0.5 rounded-md bg-success/95 px-1.5 py-0.5 text-[9px] font-bold text-success-foreground backdrop-blur-sm shadow-md z-10">
               <Check className="h-2.5 w-2.5" />
               <span>Saved</span>
             </div>
           )}
           {isWatched && (
-            <div className="absolute right-1 top-6 flex items-center gap-0.5 rounded-md bg-emerald-500/95 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm shadow-md z-10">
+            <div className="absolute right-1 top-6 flex items-center gap-0.5 rounded-md bg-success/95 px-1.5 py-0.5 text-[9px] font-bold text-success-foreground backdrop-blur-sm shadow-md z-10">
               <CheckCircle2 className="h-2.5 w-2.5" />
               <span>Watched</span>
             </div>
           )}
           {isWatching && (
-            <div className="absolute right-1 top-6 flex items-center gap-0.5 rounded-md bg-blue-500/95 px-1.5 py-0.5 text-[9px] font-bold text-white backdrop-blur-sm shadow-md z-10">
+            <div className="absolute right-1 top-6 flex items-center gap-0.5 rounded-md bg-in-progress/95 px-1.5 py-0.5 text-[9px] font-bold text-in-progress-foreground backdrop-blur-sm shadow-md z-10">
               <Eye className="h-2.5 w-2.5" />
               <span>Watching</span>
             </div>

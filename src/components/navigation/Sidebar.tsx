@@ -6,7 +6,7 @@ import { useSidebar } from '@/lib/providers/SidebarProvider';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, Film, Gamepad2, Home, Settings, Trophy, CheckSquare, StickyNote, Video, BookOpen } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { ThemeToggle } from './ThemeToggle';
+import { ThemePicker } from './ThemePicker';
 
 const navItems = [
   {
@@ -90,7 +90,7 @@ export function Sidebar() {
               "transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
               isCollapsed ? "scale-100" : "scale-100"
             )}>
-              <ThemeToggle />
+              <ThemePicker />
             </div>
           </div>
 
