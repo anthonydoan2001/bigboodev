@@ -61,6 +61,7 @@ export interface FolderTreeNode {
   parentId: string | null;
   children: FolderTreeNode[];
   noteCount: number;
+  isPinned: boolean;
 }
 
 // Tag with note count
@@ -91,6 +92,7 @@ export interface CreateFolderInput {
 export interface UpdateFolderInput {
   name?: string;
   parentId?: string | null;
+  isPinned?: boolean;
 }
 
 export interface CreateTagInput {

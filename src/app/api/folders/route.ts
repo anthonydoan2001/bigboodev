@@ -17,6 +17,7 @@ function buildFolderTree(folders: FolderWithChildren[]): FolderTreeNode[] {
       parentId: folder.parentId,
       children: [],
       noteCount: folder._count?.notes || 0,
+      isPinned: folder.isPinned ?? false,
     });
   });
 
@@ -28,6 +29,13 @@ function buildFolderTree(folders: FolderWithChildren[]): FolderTreeNode[] {
     } else {
       roots.push(node);
     }
+  });
+
+  // Sort roots: pinned first, then alphabetical
+  roots.sort((a, b) => {
+    if (a.isPinned && !b.isPinned) return -1;
+    if (!a.isPinned && b.isPinned) return 1;
+    return a.name.localeCompare(b.name);
   });
 
   return roots;
@@ -67,6 +75,7 @@ export const GET = withAuth(async (_request: Request, _sessionToken: string) => 
         id: true,
         name: true,
         parentId: true,
+        isPinned: true,
         createdAt: true,
         updatedAt: true,
         _count: {
@@ -77,7 +86,7 @@ export const GET = withAuth(async (_request: Request, _sessionToken: string) => 
           },
         },
       },
-      orderBy: { name: 'asc' },
+      orderBy: [{ isPinned: 'desc' }, { name: 'asc' }],
     });
 
     const tree = buildFolderTree(folders as FolderWithChildren[]);
@@ -122,6 +131,7 @@ export const POST = withAuth(async (request: Request, _sessionToken: string) => 
         id: true,
         name: true,
         parentId: true,
+        isPinned: true,
         createdAt: true,
         updatedAt: true,
         _count: {
