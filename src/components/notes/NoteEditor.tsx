@@ -515,7 +515,10 @@ export function NoteEditor({
     if (editor && note?.content !== undefined) {
       const currentContent = editor.getHTML();
       if (currentContent !== note.content) {
-        editor.commands.setContent(note.content || '');
+        // Defer to next microtask to avoid flushSync warning during React render
+        queueMicrotask(() => {
+          editor.commands.setContent(note.content || '');
+        });
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- Only update editor content when switching notes, not on every content change
