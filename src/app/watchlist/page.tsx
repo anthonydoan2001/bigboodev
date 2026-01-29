@@ -13,13 +13,15 @@ import { Carousel } from '@/components/watchlist/Carousel';
 import { WatchlistCard } from '@/components/watchlist/WatchlistCard';
 import { SearchResultCard } from '@/components/watchlist/SearchResultCard';
 import { UniversalSearchResult } from '@/app/api/watchlist/search/universal/route';
-import { ListVideo, Loader2 } from 'lucide-react';
+import { Clock, ListVideo, Loader2 } from 'lucide-react';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { useWatchlistMutations } from '@/lib/hooks/useWatchlistMutations';
 import { useViewportGrid } from '@/lib/hooks/useViewportGrid';
 import { getAuthHeaders } from '@/lib/api-client';
 
 // Stable randomization class - maintains order across renders
+const RECENTLY_ADDED_DAYS = 30;
+
 class StableRandomOrder {
   private orderMap = new Map<string, number>();
   private isInitialized = false;
@@ -96,6 +98,17 @@ function WatchlistContent() {
     allMovies: watchlistItems.filter(item => item.type === 'MOVIE'),
     allShows: watchlistItems.filter(item => item.type === 'SHOW'),
   }), [watchlistItems]);
+
+  // Recently added items (last 30 days, sorted newest first)
+  const recentlyAddedItems = useMemo(() => {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - RECENTLY_ADDED_DAYS);
+
+    return watchlistItems
+      .filter(item => new Date(item.createdAt) >= cutoffDate)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 21);
+  }, [watchlistItems]);
 
   // Randomized lists using stable order instances
   // Note: Accessing ref.current here is safe because StableRandomOrder instances are stable
@@ -391,6 +404,26 @@ function WatchlistContent() {
               </div>
             ) : watchlistItems.length > 0 ? (
               <>
+                {/* Recently Added Section */}
+                {recentlyAddedItems.length > 0 && (
+                  <Carousel
+                    title="Recently Added"
+                    icon={<Clock className="h-4 w-4" />}
+                    showCount={false}
+                  >
+                    {recentlyAddedItems.map((item) => (
+                      <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 160px)' }}>
+                        <WatchlistCard
+                          item={item}
+                          onDelete={() => deleteMutation.mutate(item.id)}
+                          onMarkWatched={() => markWatchedMutation.mutate({ id: item.id })}
+                          onMarkWatching={() => markWatchingMutation.mutate({ id: item.id })}
+                        />
+                      </div>
+                    ))}
+                  </Carousel>
+                )}
+
                 {/* Main Watchlist Section */}
                 {randomizedWatchlist.length > 0 && (
                   <Carousel title="Watchlist" icon={<ListVideo className="h-4 w-4" />}>
