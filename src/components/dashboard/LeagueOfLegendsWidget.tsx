@@ -39,6 +39,12 @@ function formatTier(tier: string): string {
   return tier.charAt(0) + tier.slice(1).toLowerCase();
 }
 
+// Get ranked emblem URL from Community Dragon
+function getRankEmblemUrl(tier: string): string {
+  const tierLower = tier.toLowerCase();
+  return `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-emblem/emblem-${tierLower}.png`;
+}
+
 function RankCard({ entry, queueLabel }: { entry: RankedEntry | null; queueLabel: string }) {
   if (!entry) {
     return (
@@ -54,8 +60,20 @@ function RankCard({ entry, queueLabel }: { entry: RankedEntry | null; queueLabel
   const tierBg = tierBgColors[entry.tier] || 'bg-muted/30';
 
   return (
-    <div className={cn('flex items-center justify-between py-2.5 px-3 rounded-md', tierBg)}>
-      <div className="flex flex-col gap-0.5">
+    <div className={cn('flex items-center gap-3 py-2.5 px-3 rounded-md', tierBg)}>
+      {/* Rank Emblem */}
+      <div className="relative w-12 h-12 flex-shrink-0">
+        <Image
+          src={getRankEmblemUrl(entry.tier)}
+          alt={`${entry.tier} emblem`}
+          fill
+          className="object-contain"
+          unoptimized
+        />
+      </div>
+
+      {/* Rank Info */}
+      <div className="flex-1 min-w-0">
         <span className="text-xs text-muted-foreground">{queueLabel}</span>
         <div className="flex items-baseline gap-1.5">
           <span className={cn('font-bold text-lg', tierColor)}>
@@ -66,6 +84,8 @@ function RankCard({ entry, queueLabel }: { entry: RankedEntry | null; queueLabel
           </span>
         </div>
       </div>
+
+      {/* Win Rate */}
       <div className="flex flex-col items-end gap-0.5">
         <span className="text-xs text-muted-foreground">
           {entry.wins}W {entry.losses}L
@@ -135,7 +155,7 @@ export function LeagueOfLegendsWidget() {
           <div className="flex items-center gap-2.5 pb-1">
             <div className="relative w-10 h-10 flex-shrink-0 rounded-full bg-background/50 overflow-hidden ring-1 ring-border/20">
               <Image
-                src={`https://ddragon.leagueoflegends.com/cdn/14.1.1/img/profileicon/${data.profileIconId}.png`}
+                src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/${data.profileIconId}.png`}
                 alt="Profile Icon"
                 fill
                 className="object-cover"
