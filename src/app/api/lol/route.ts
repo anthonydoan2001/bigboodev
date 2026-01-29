@@ -62,8 +62,8 @@ async function getLeagueStats(): Promise<LeagueStatsResponse> {
   const summonerUrl = `https://${REGION}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${account.puuid}`;
   const summoner = await fetchRiotApi<RiotSummonerResponse>(summonerUrl);
 
-  // Step 3: Get ranked entries (League-V4)
-  const leagueUrl = `https://${REGION}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summoner.id}`;
+  // Step 3: Get ranked entries (League-V4) - use by-puuid endpoint
+  const leagueUrl = `https://${REGION}.api.riotgames.com/lol/league/v4/entries/by-puuid/${account.puuid}`;
   const leagueEntries = await fetchRiotApi<RiotLeagueEntry[]>(leagueUrl);
 
   // Parse ranked entries
