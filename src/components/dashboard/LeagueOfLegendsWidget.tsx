@@ -60,20 +60,22 @@ function RankCard({ entry, queueLabel }: { entry: RankedEntry | null; queueLabel
   const tierBg = tierBgColors[entry.tier] || 'bg-muted/30';
 
   return (
-    <div className={cn('flex items-center gap-3 py-2.5 px-3 rounded-md', tierBg)}>
-      {/* Rank Emblem */}
+    <div className={cn('flex items-center gap-3 py-2.5 px-3 rounded-md overflow-visible', tierBg)}>
+      {/* Rank Emblem - large but overflows container */}
       <div className="relative w-12 h-12 flex-shrink-0">
-        <Image
-          src={getRankEmblemUrl(entry.tier)}
-          alt={`${entry.tier} emblem`}
-          fill
-          className="object-contain"
-          unoptimized
-        />
+        <div className="absolute -inset-[96px] z-10">
+          <Image
+            src={getRankEmblemUrl(entry.tier)}
+            alt={`${entry.tier} emblem`}
+            fill
+            className="object-contain"
+            unoptimized
+          />
+        </div>
       </div>
 
       {/* Rank Info */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 z-20">
         <span className="text-xs text-muted-foreground">{queueLabel}</span>
         <div className="flex items-baseline gap-1.5">
           <span className={cn('font-bold text-lg', tierColor)}>

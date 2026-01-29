@@ -63,37 +63,34 @@ export function ContinueReadingWidget() {
     : getBookThumbnailUrl(book.id);
 
   return (
-    <Link href={readLink} className="block group">
-      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm transition-all hover:bg-background/60 hover:shadow-md hover:scale-[1.01] h-full">
-        <CardContent className="p-3 h-full flex flex-col justify-center">
-          {/* Content */}
-          <div className="flex flex-col items-center gap-2 text-center">
-            {/* Thumbnail */}
-            <div className="relative w-14 h-20 flex-shrink-0 rounded overflow-hidden bg-muted">
-              <Image
-                src={thumbnailUrl}
-                alt={displayTitle}
-                fill
-                className="object-cover"
-                sizes="56px"
-                unoptimized
-              />
-            </div>
+    <Link href={readLink} className="block group h-full">
+      <Card className="w-full h-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm transition-all hover:bg-background/60 hover:shadow-md hover:scale-[1.01]">
+        <CardContent className="p-2 h-full flex items-center justify-center gap-2">
+          {/* Thumbnail */}
+          <div className="relative w-10 h-14 flex-shrink-0 rounded overflow-hidden bg-muted">
+            <Image
+              src={thumbnailUrl}
+              alt={displayTitle}
+              fill
+              className="object-cover"
+              sizes="40px"
+              unoptimized
+            />
+          </div>
 
-            {/* Info */}
-            <div className="w-full">
-              <div className="flex items-center justify-center gap-1 mb-0.5">
-                {containingReadList && (
-                  <List className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                )}
-                <h3 className="font-semibold text-xs leading-tight line-clamp-1 group-hover:text-primary transition-colors">
-                  {displayTitle}
-                </h3>
-              </div>
-              <p className="text-[0.65rem] text-muted-foreground truncate">
-                {book.metadata.title || book.name}
-              </p>
+          {/* Info */}
+          <div className="min-w-0">
+            <div className="flex items-center gap-1 mb-0.5">
+              {containingReadList && (
+                <List className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              )}
+              <h3 className="font-semibold text-xs leading-tight line-clamp-1 group-hover:text-primary transition-colors">
+                {displayTitle}
+              </h3>
             </div>
+            <p className="text-[0.65rem] text-muted-foreground truncate">
+              {book.metadata.title || book.name}
+            </p>
           </div>
         </CardContent>
       </Card>
