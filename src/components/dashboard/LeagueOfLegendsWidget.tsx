@@ -66,7 +66,7 @@ function getRankEmblemUrl(tier: string): string {
 function RankCard({ entry, queueLabel }: { entry: RankedEntry | null; queueLabel: string }) {
   if (!entry) {
     return (
-      <div className="flex items-center justify-between py-2 px-2.5 rounded-md bg-muted/30">
+      <div className="flex items-center justify-between py-1.5 px-2.5 rounded-md bg-muted/30">
         <span className="text-sm text-muted-foreground">{queueLabel}</span>
         <span className="text-sm text-muted-foreground">Unranked</span>
       </div>
@@ -78,7 +78,7 @@ function RankCard({ entry, queueLabel }: { entry: RankedEntry | null; queueLabel
   const tierBg = tierBgColors[entry.tier] || 'bg-muted/30';
 
   return (
-    <div className={cn('flex items-center gap-3 py-2.5 px-3 rounded-md overflow-visible', tierBg)}>
+    <div className={cn('flex items-center gap-3 py-1.5 px-3 rounded-md overflow-visible', tierBg)}>
       {/* Rank Emblem - large but overflows container */}
       <div className="relative w-12 h-12 flex-shrink-0">
         <div className="absolute -inset-[96px] z-10">
@@ -124,7 +124,7 @@ function AramProgressBar({ data }: { data: AramChallengeResponse }) {
   const isAramGod = data.currentPoints >= data.targetPoints;
 
   return (
-    <div className="py-2.5 px-3 rounded-md bg-muted/30">
+    <div className="py-1.5 px-3 rounded-md bg-muted/30">
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5">
@@ -137,7 +137,7 @@ function AramProgressBar({ data }: { data: AramChallengeResponse }) {
       </div>
 
       {/* Progress Bar */}
-      <div className="relative h-3 bg-muted/50 rounded-full overflow-hidden mb-1.5">
+      <div className="relative h-2 bg-muted/50 rounded-full overflow-hidden mb-1">
         <div
           className={cn(
             'absolute inset-y-0 left-0 rounded-full transition-all duration-500',
@@ -185,11 +185,11 @@ export function LeagueOfLegendsWidget() {
   if (isLoading) {
     return (
       <Card className="col-span-1 !py-0 bg-background/40 backdrop-blur-md border-white/10 shadow-none">
-        <CardContent className="!px-3 !py-3">
+        <CardContent className="!px-3 !py-2">
           <div className="space-y-2">
             <div className="h-6 w-1/2 bg-muted/50 animate-pulse rounded" />
-            <div className="h-16 bg-muted/50 animate-pulse rounded-md" />
-            <div className="h-16 bg-muted/50 animate-pulse rounded-md" />
+            <div className="h-14 bg-muted/50 animate-pulse rounded-md" />
+            <div className="h-14 bg-muted/50 animate-pulse rounded-md" />
           </div>
         </CardContent>
       </Card>
@@ -202,8 +202,8 @@ export function LeagueOfLegendsWidget() {
 
     return (
       <Card className="col-span-1 !py-0 bg-background/40 backdrop-blur-md border-white/10 shadow-none">
-        <CardContent className="!px-3 !py-3">
-          <div className="text-center py-4">
+        <CardContent className="!px-3 !py-2">
+          <div className="text-center py-3">
             <p className="text-sm text-muted-foreground">
               {isApiKeyError ? 'Riot API key invalid or expired' : 'Failed to load League stats'}
             </p>
@@ -220,8 +220,8 @@ export function LeagueOfLegendsWidget() {
 
   return (
     <Card className="col-span-1 !py-0 bg-background/40 backdrop-blur-md border-white/10 shadow-none">
-      <CardContent className="!px-3 !py-3">
-        <div className="space-y-3">
+      <CardContent className="!px-3 !py-2">
+        <div className="space-y-2">
           {/* Header with summoner name and icon */}
           <div className="flex items-center gap-2.5 pb-1">
             <div className="relative w-10 h-10 flex-shrink-0 rounded-full bg-background/50 overflow-hidden ring-1 ring-border/20">
@@ -240,7 +240,7 @@ export function LeagueOfLegendsWidget() {
           </div>
 
           {/* Ranked entries */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <RankCard entry={data.soloQueue} queueLabel="Solo/Duo" />
             <RankCard entry={data.flexQueue} queueLabel="Flex" />
           </div>
