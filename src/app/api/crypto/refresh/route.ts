@@ -1,49 +1,88 @@
 import { db } from '@/lib/db';
-import { fetchCryptoMap, fetchCryptoInfo, fetchCryptoQuotes, retryWithBackoff } from '@/lib/api/crypto';
+import { fetchCryptoMap, fetchCryptoInfo, fetchCryptoQuotes, retryWithBackoff, CRYPTO_SYMBOLS_TO_TRACK } from '@/lib/api/crypto';
 import { NextResponse } from 'next/server';
 import { withAuthOrCron } from '@/lib/api-auth';
+import { checkMonthlyRateLimit } from '@/lib/api/crypto-rate-limit';
+
+// How often to refresh metadata (logos, names) - 7 days
+const METADATA_REFRESH_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
- * Single refresh endpoint that updates everything:
- * 1. Fetches CoinMarketCap IDs (if needed)
- * 2. Fetches metadata (logos, names)
- * 3. Fetches quotes (prices, changes)
+ * Smart refresh endpoint that minimizes API calls:
+ * 1. Only fetches CoinMarketCap IDs if not cached in DB
+ * 2. Only fetches metadata (logos, names) if missing or stale (7+ days)
+ * 3. Always fetches quotes (prices) - this is the only required call
  *
- * Should be run every 5 minutes
+ * This reduces API calls from 3 per refresh to typically 1 per refresh.
+ * Monthly usage: ~2,880 calls (down from ~25,920)
  */
 async function handleRefresh(_request: Request, _auth: { type: 'session' | 'cron'; token: string }) {
   try {
-    void 0; //(`[Crypto Refresh] Called by ${auth.type} at ${new Date().toISOString()}`);
-    
-    // Step 1: Get or create ID mappings
-    const existingIds = await db.cryptoQuote.findMany({
-      select: { symbol: true },
+    // Proactive rate limit check - skip refresh if approaching monthly limit
+    const rateLimitStatus = await checkMonthlyRateLimit();
+    if (rateLimitStatus.shouldSkip) {
+      return NextResponse.json({
+        success: false,
+        skipped: true,
+        reason: rateLimitStatus.reason,
+        usage: rateLimitStatus.usage,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Step 1: Check if we have cached CMC IDs
+    const existingQuotes = await db.cryptoQuote.findMany({
+      select: {
+        symbol: true,
+        cmcId: true,
+        logoUrl: true,
+        metadataUpdatedAt: true,
+      },
     });
-    
-    const existingSymbols = new Set(existingIds.map(c => c.symbol));
-    const needsSetup = existingSymbols.size === 0;
 
     const idMap = new Map<string, number>();
+    const quotesNeedingMetadata: string[] = [];
+    const now = new Date();
 
-    if (needsSetup) {
-      void 0; //('Setting up crypto IDs...');
+    // Check each symbol for cached IDs and metadata freshness
+    for (const quote of existingQuotes) {
+      if (quote.cmcId) {
+        idMap.set(quote.symbol, quote.cmcId);
+
+        // Check if metadata needs refresh (missing logo or stale)
+        const metadataAge = quote.metadataUpdatedAt
+          ? now.getTime() - quote.metadataUpdatedAt.getTime()
+          : Infinity;
+
+        if (!quote.logoUrl || metadataAge > METADATA_REFRESH_INTERVAL_MS) {
+          quotesNeedingMetadata.push(quote.symbol);
+        }
+      }
+    }
+
+    // Determine which symbols need ID lookup
+    const symbolsNeedingIds = CRYPTO_SYMBOLS_TO_TRACK.filter(s => !idMap.has(s));
+
+    // Only call fetchCryptoMap if we're missing IDs
+    if (symbolsNeedingIds.length > 0) {
       const mapResponse = await retryWithBackoff(() => fetchCryptoMap());
-      
+
       if (!mapResponse.data || !Array.isArray(mapResponse.data)) {
         throw new Error('Invalid response format from CoinMarketCap map');
       }
 
       for (const coin of mapResponse.data) {
-        idMap.set(coin.symbol, coin.id);
-      }
-    } else {
-      // Get IDs from existing quotes or fetch map for new symbols
-      const mapResponse = await retryWithBackoff(() => fetchCryptoMap());
-      if (mapResponse.data && Array.isArray(mapResponse.data)) {
-        for (const coin of mapResponse.data) {
+        if (CRYPTO_SYMBOLS_TO_TRACK.includes(coin.symbol)) {
           idMap.set(coin.symbol, coin.id);
+          // New symbols always need metadata
+          if (!quotesNeedingMetadata.includes(coin.symbol)) {
+            quotesNeedingMetadata.push(coin.symbol);
+          }
         }
       }
+
+      // Small delay after map call
+      await new Promise(resolve => setTimeout(resolve, 200));
     }
 
     if (idMap.size === 0) {
@@ -51,16 +90,25 @@ async function handleRefresh(_request: Request, _auth: { type: 'session' | 'cron
     }
 
     const cmcIds = Array.from(idMap.values());
-    void 0; //(`Processing ${cmcIds.length} cryptos...`);
 
-    // Step 2: Fetch metadata (logos, names) - with delay to avoid rate limits
-    await new Promise(resolve => setTimeout(resolve, 200));
-    void 0; //('Fetching metadata...');
-    const infoResponse = await retryWithBackoff(() => fetchCryptoInfo(cmcIds));
+    // Step 2: Only fetch metadata if needed (missing logos or stale)
+    let infoData: Record<string, { name?: string; logo?: string }> = {};
 
-    // Step 3: Fetch quotes (prices, changes) - with delay
-    await new Promise(resolve => setTimeout(resolve, 200));
-    void 0; //('Fetching quotes...');
+    if (quotesNeedingMetadata.length > 0) {
+      const idsNeedingMetadata = quotesNeedingMetadata
+        .map(symbol => idMap.get(symbol))
+        .filter((id): id is number => id !== undefined);
+
+      if (idsNeedingMetadata.length > 0) {
+        const infoResponse = await retryWithBackoff(() => fetchCryptoInfo(idsNeedingMetadata));
+        infoData = infoResponse.data || {};
+
+        // Small delay after info call
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+    }
+
+    // Step 3: Always fetch quotes (this is the main data we need)
     const quotesResponse = await retryWithBackoff(() => fetchCryptoQuotes(cmcIds));
 
     if (!quotesResponse.data || typeof quotesResponse.data !== 'object') {
@@ -69,44 +117,57 @@ async function handleRefresh(_request: Request, _auth: { type: 'session' | 'cron
 
     const results = [];
     const errors = [];
+    const allowedSymbols = new Set(CRYPTO_SYMBOLS_TO_TRACK);
 
-    // Step 4: Combine and save everything to single table
-    // Only process BTC, ETH, SOL
-    const allowedSymbols = new Set(['BTC', 'ETH', 'SOL']);
-    
+    // Step 4: Process and save results
     for (const [id, coinData] of Object.entries(quotesResponse.data)) {
       try {
         const symbol = coinData.symbol;
-        
-        // Skip if not in allowed symbols
+
         if (!allowedSymbols.has(symbol)) {
-          void 0; //(`Skipping ${symbol} - not in allowed list (BTC, ETH, SOL)`);
           continue;
         }
-        
-        // Get metadata for this coin
-        const metadata = infoResponse.data?.[id];
+
         const quote = coinData.quote?.USD;
-        
+
         if (!quote) {
           throw new Error('Missing USD quote data');
         }
 
-        // Validate price exists and is a valid number
         if (quote.price === null || quote.price === undefined || isNaN(quote.price)) {
           throw new Error(`Invalid price data for ${symbol}: ${quote.price}`);
         }
 
-        // Upsert everything in one table
+        // Get metadata if we fetched it
+        const metadata = infoData[id];
+        const needsMetadataUpdate = quotesNeedingMetadata.includes(symbol);
+
+        // Build update data
+        const updateData: {
+          name: string;
+          price: number;
+          percentChange24h: number | null;
+          lastUpdated: Date;
+          cmcId: number;
+          logoUrl?: string | null;
+          metadataUpdatedAt?: Date;
+        } = {
+          name: metadata?.name || coinData.name || symbol,
+          price: quote.price,
+          percentChange24h: quote.percent_change_24h || null,
+          lastUpdated: new Date(),
+          cmcId: parseInt(id),
+        };
+
+        // Only update metadata fields if we fetched new metadata
+        if (needsMetadataUpdate && metadata) {
+          updateData.logoUrl = metadata.logo || null;
+          updateData.metadataUpdatedAt = new Date();
+        }
+
         await db.cryptoQuote.upsert({
           where: { symbol },
-          update: {
-            name: metadata?.name || coinData.name || symbol,
-            logoUrl: metadata?.logo || null,
-            price: quote.price,
-            percentChange24h: quote.percent_change_24h || null,
-            lastUpdated: new Date(),
-          },
+          update: updateData,
           create: {
             symbol,
             name: metadata?.name || coinData.name || symbol,
@@ -114,17 +175,18 @@ async function handleRefresh(_request: Request, _auth: { type: 'session' | 'cron
             price: quote.price,
             percentChange24h: quote.percent_change_24h || null,
             lastUpdated: new Date(),
+            cmcId: parseInt(id),
+            metadataUpdatedAt: new Date(),
           },
         });
 
-        results.push({ symbol, name: metadata?.name || coinData.name || symbol, price: quote.price });
-        
-        // Small delay to avoid rate limits
-        await new Promise(resolve => setTimeout(resolve, 100));
+        results.push({ symbol, name: updateData.name, price: quote.price });
+
+        // Small delay between DB writes
+        await new Promise(resolve => setTimeout(resolve, 50));
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         errors.push({ id, symbol: coinData.symbol, error: errorMessage });
-        void 0; //(`Failed to save quote for ${coinData.symbol}:`, errorMessage);
       }
     }
 
@@ -132,6 +194,12 @@ async function handleRefresh(_request: Request, _auth: { type: 'session' | 'cron
       success: true,
       updated: results.length,
       failed: errors.length,
+      apiCalls: {
+        map: symbolsNeedingIds.length > 0,
+        info: quotesNeedingMetadata.length > 0,
+        quotes: true,
+        total: (symbolsNeedingIds.length > 0 ? 1 : 0) + (quotesNeedingMetadata.length > 0 ? 1 : 0) + 1,
+      },
       results,
       errors: errors.length > 0 ? errors : undefined,
       timestamp: new Date().toISOString(),
