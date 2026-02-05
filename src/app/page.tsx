@@ -237,7 +237,9 @@ export default function Home() {
 
           {/* Column 2: Gmail, Pinned Notes, Rockets */}
           <div className="col-span-1 md:col-span-2 lg:col-span-1 flex flex-col gap-3 lg:gap-3 min-h-0">
-            <GmailWidget />
+            <div className="flex-1 min-h-0">
+              <GmailWidget />
+            </div>
             <PinnedNotesWidget />
             <RocketsGameWidget />
           </div>
