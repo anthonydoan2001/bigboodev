@@ -79,10 +79,10 @@ function RankCard({ entry, queueLabel }: { entry: RankedEntry | null; queueLabel
   const tierBg = tierBgColors[entry.tier] || 'bg-muted/30';
 
   return (
-    <div className={cn('flex items-center gap-3 py-1.5 px-3 rounded-md overflow-visible', tierBg)}>
-      {/* Rank Emblem - large but overflows container */}
-      <div className="relative w-12 h-12 flex-shrink-0">
-        <div className="absolute -inset-[96px] z-10">
+    <div className={cn('flex items-center gap-2 py-1 px-2.5 rounded-md overflow-visible', tierBg)}>
+      {/* Rank Emblem */}
+      <div className="relative w-8 h-8 flex-shrink-0">
+        <div className="absolute -inset-[64px] z-10">
           <Image
             src={getRankEmblemUrl(entry.tier)}
             alt={`${entry.tier} emblem`}
@@ -95,24 +95,24 @@ function RankCard({ entry, queueLabel }: { entry: RankedEntry | null; queueLabel
 
       {/* Rank Info */}
       <div className="flex-1 min-w-0 z-20">
-        <span className="text-xs text-muted-foreground">{queueLabel}</span>
-        <div className="flex items-baseline gap-1.5">
-          <span className={cn('font-bold text-lg', tierColor)}>
+        <span className="text-[10px] text-muted-foreground">{queueLabel}</span>
+        <div className="flex items-baseline gap-1">
+          <span className={cn('font-bold text-sm', tierColor)}>
             {formatTier(entry.tier)} {entry.rank}
           </span>
-          <span className="text-sm text-muted-foreground">
+          <span className="text-xs text-muted-foreground">
             {entry.leaguePoints} LP
           </span>
         </div>
       </div>
 
       {/* Win Rate */}
-      <div className="flex flex-col items-end gap-0.5">
-        <span className="text-xs text-muted-foreground">
+      <div className="flex items-center gap-1.5 z-20">
+        <span className="text-[10px] text-muted-foreground">
           {entry.wins}W {entry.losses}L
         </span>
-        <span className={cn('text-sm font-medium', winRate >= 50 ? 'text-success' : 'text-destructive')}>
-          {winRate}% WR
+        <span className={cn('text-xs font-medium', winRate >= 50 ? 'text-success' : 'text-destructive')}>
+          {winRate}%
         </span>
       </div>
     </div>
@@ -125,20 +125,20 @@ function AramProgressBar({ data }: { data: AramChallengeResponse }) {
   const isAramGod = data.currentPoints >= data.targetPoints;
 
   return (
-    <div className="py-1.5 px-3 rounded-md bg-muted/30">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-1.5">
-          <Swords className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">ARAM God Progress</span>
+    <div className="py-1 px-2.5 rounded-md bg-muted/30">
+      {/* Header + Progress inline */}
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-1">
+          <Swords className="h-3 w-3 text-muted-foreground" />
+          <span className="text-[10px] text-muted-foreground">ARAM God</span>
         </div>
-        <span className={cn('text-xs font-medium', tierColor)}>
-          {formatTier(data.tier)}
+        <span className={cn('text-[10px] font-medium', tierColor)}>
+          {formatTier(data.tier)} · {isAramGod ? 'ARAM GOD!' : `${data.percentage}%`}
         </span>
       </div>
 
       {/* Progress Bar */}
-      <div className="relative h-2 bg-muted/50 rounded-full overflow-hidden mb-1">
+      <div className="relative h-1.5 bg-muted/50 rounded-full overflow-hidden">
         <div
           className={cn(
             'absolute inset-y-0 left-0 rounded-full transition-all duration-500',
@@ -147,16 +147,6 @@ function AramProgressBar({ data }: { data: AramChallengeResponse }) {
           )}
           style={{ width: `${Math.min(100, data.percentage)}%` }}
         />
-      </div>
-
-      {/* Stats */}
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-muted-foreground">
-          {data.currentPoints.toLocaleString()} / {data.targetPoints.toLocaleString()}
-        </span>
-        <span className={cn('font-medium', isAramGod ? 'text-yellow-400' : 'text-muted-foreground')}>
-          {isAramGod ? 'ARAM GOD!' : `${data.percentage}%`}
-        </span>
       </div>
     </div>
   );
@@ -186,23 +176,20 @@ export function LeagueOfLegendsWidget() {
   if (isLoading) {
     return (
       <Card className="col-span-1 !py-0 bg-background/40 backdrop-blur-md border-white/10 shadow-none">
-        <CardContent className="!px-3 !py-2">
-          <div className="space-y-2">
+        <CardContent className="!px-2.5 !py-1.5">
+          <div className="space-y-1.5">
             {/* Summoner header */}
-            <div className="flex items-center gap-2.5 pb-1">
-              <Skeleton className="w-10 h-10" rounded="full" />
-              <div className="space-y-1.5">
-                <Skeleton className="h-5 w-24" />
-                <Skeleton className="h-3 w-16" />
-              </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="w-7 h-7" rounded="full" />
+              <Skeleton className="h-4 w-28" />
             </div>
             {/* Rank cards */}
-            <div className="space-y-1.5">
-              <Skeleton className="h-14 w-full" rounded="md" />
-              <Skeleton className="h-14 w-full" style={{ animationDelay: '100ms' }} rounded="md" />
+            <div className="space-y-1">
+              <Skeleton className="h-10 w-full" rounded="md" />
+              <Skeleton className="h-10 w-full" style={{ animationDelay: '100ms' }} rounded="md" />
             </div>
             {/* ARAM bar */}
-            <Skeleton className="h-16 w-full" style={{ animationDelay: '200ms' }} rounded="md" />
+            <Skeleton className="h-7 w-full" style={{ animationDelay: '200ms' }} rounded="md" />
           </div>
         </CardContent>
       </Card>
@@ -233,11 +220,11 @@ export function LeagueOfLegendsWidget() {
 
   return (
     <Card className="col-span-1 !py-0 bg-background/40 backdrop-blur-md border-white/10 shadow-none">
-      <CardContent className="!px-3 !py-2">
-        <div className="space-y-2">
+      <CardContent className="!px-2.5 !py-1.5">
+        <div className="space-y-1.5">
           {/* Header with summoner name and icon */}
-          <div className="flex items-center gap-2.5 pb-1">
-            <div className="relative w-10 h-10 flex-shrink-0 rounded-full bg-background/50 overflow-hidden ring-1 ring-border/20">
+          <div className="flex items-center gap-2">
+            <div className="relative w-7 h-7 flex-shrink-0 rounded-full bg-background/50 overflow-hidden ring-1 ring-border/20">
               <Image
                 src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/${data.profileIconId}.png`}
                 alt="Profile Icon"
@@ -246,14 +233,14 @@ export function LeagueOfLegendsWidget() {
                 unoptimized
               />
             </div>
-            <div className="flex flex-col min-w-0">
-              <span className="font-bold text-lg leading-tight truncate">{data.summonerName}</span>
-              <span className="text-xs text-muted-foreground">Level {data.summonerLevel}</span>
+            <div className="flex items-baseline gap-1.5 min-w-0">
+              <span className="font-bold text-sm leading-tight truncate">{data.summonerName}</span>
+              <span className="text-[10px] text-muted-foreground">Lv.{data.summonerLevel}</span>
             </div>
           </div>
 
           {/* Ranked entries */}
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <RankCard entry={data.soloQueue} queueLabel="Solo/Duo" />
             <RankCard entry={data.flexQueue} queueLabel="Flex" />
           </div>
