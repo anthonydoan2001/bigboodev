@@ -113,16 +113,16 @@ export const GmailWidget = memo(function GmailWidget() {
   // Loading state
   if (isLoading) {
     return (
-      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0">
-        <CardContent className="p-2.5">
-          <div className="flex items-center justify-between mb-1.5">
+      <Card className="w-full h-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0 flex flex-col">
+        <CardContent className="p-2.5 flex flex-col flex-1 min-h-0">
+          <div className="flex items-center justify-between mb-1.5 flex-shrink-0">
             <div className="flex items-center gap-1.5">
               <Skeleton className="w-3.5 h-3.5" rounded="sm" />
               <Skeleton className="h-3 w-12" />
             </div>
             <Skeleton className="h-3 w-3" rounded="sm" />
           </div>
-          <div className="space-y-0.5">
+          <div className="flex-1 space-y-0.5">
             {[0, 1, 2].map((i) => (
               <div key={i} className="flex items-center gap-1.5 py-1 px-2" style={{ animationDelay: `${i * 100}ms` }}>
                 <Skeleton className="w-1.5 h-1.5 flex-shrink-0" rounded="full" />
@@ -183,13 +183,13 @@ export const GmailWidget = memo(function GmailWidget() {
   }
 
   // Connected state - show emails
-  const displayEmails = data.emails.slice(0, 3);
+  const displayEmails = data.emails.slice(0, 10);
 
   return (
-    <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0 transition-all hover:shadow-md">
-      <CardContent className="p-2.5">
+    <Card className="w-full h-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0 transition-all hover:shadow-md flex flex-col">
+      <CardContent className="p-2.5 flex flex-col flex-1 min-h-0">
         {/* Header */}
-        <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center justify-between mb-1.5 flex-shrink-0">
           <div className="flex items-center gap-1.5">
             <Mail className="w-3.5 h-3.5 text-muted-foreground" />
             <span className="text-xs font-semibold">Gmail</span>
@@ -205,7 +205,7 @@ export const GmailWidget = memo(function GmailWidget() {
 
         {/* Email list */}
         {displayEmails.length > 0 ? (
-          <div className="space-y-0.5 -mx-0.5">
+          <div className="flex-1 overflow-y-auto scrollbar-hide space-y-0.5 -mx-0.5 min-h-0">
             {displayEmails.map((email) => (
               <EmailItem key={email.id} email={email} />
             ))}
@@ -217,7 +217,7 @@ export const GmailWidget = memo(function GmailWidget() {
         )}
 
         {/* Footer */}
-        <div className="mt-1.5 pt-1.5 border-t border-border/40">
+        <div className="mt-1.5 pt-1.5 border-t border-border/40 flex-shrink-0">
           <a
             href="https://mail.google.com"
             target="_blank"
