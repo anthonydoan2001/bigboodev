@@ -235,20 +235,16 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Column 2: Gmail, Pinned Notes */}
+          {/* Column 2: Gmail, Pinned Notes, Rockets */}
           <div className="col-span-1 md:col-span-2 lg:col-span-1 flex flex-col gap-3 lg:gap-3 min-h-0">
-            <div className="flex-1 min-h-0">
-              <GmailWidget />
-            </div>
+            <GmailWidget />
             <PinnedNotesWidget />
+            <RocketsGameWidget />
           </div>
 
-          {/* Column 3: Rockets Game, Stocks/Crypto */}
-          <div className="col-span-1 flex flex-col gap-3 lg:gap-3 min-h-0">
-            <RocketsGameWidget />
-            <div className="flex-1 min-h-0">
-              <StocksCryptoWidget />
-            </div>
+          {/* Column 3: Stocks/Crypto (full column) */}
+          <div className="col-span-1 flex flex-col min-h-0">
+            <StocksCryptoWidget />
           </div>
         </div>
       </div>

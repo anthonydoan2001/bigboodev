@@ -53,44 +53,39 @@ const EmailItem = memo(function EmailItem({ email }: { email: GmailEmail }) {
   return (
     <button
       onClick={handleClick}
-      className="w-full flex items-start gap-1.5 py-1.5 px-2 text-left hover:bg-muted/30 transition-colors rounded group"
+      className="w-full flex items-center gap-1.5 py-1 px-2 text-left hover:bg-muted/30 transition-colors rounded group"
     >
       {/* Unread indicator */}
-      <div className="flex-shrink-0 pt-0.5">
-        {email.isUnread ? (
-          <Circle className="w-1.5 h-1.5 fill-info text-info" />
-        ) : (
-          <Circle className="w-1.5 h-1.5 text-transparent" />
+      {email.isUnread ? (
+        <Circle className="w-1.5 h-1.5 fill-info text-info flex-shrink-0" />
+      ) : (
+        <Circle className="w-1.5 h-1.5 text-transparent flex-shrink-0" />
+      )}
+
+      {/* Sender */}
+      <span
+        className={cn(
+          'text-[11px] truncate flex-shrink-0 w-16',
+          email.isUnread ? 'font-semibold text-foreground' : 'text-muted-foreground'
         )}
-      </div>
+      >
+        {truncate(email.from, 14)}
+      </span>
 
-      {/* Email content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-1.5">
-          <span
-            className={cn(
-              'text-[11px] truncate',
-              email.isUnread ? 'font-semibold text-foreground' : 'text-muted-foreground'
-            )}
-          >
-            {truncate(email.from, 20)}
-          </span>
-          <span className="text-[9px] text-muted-foreground flex-shrink-0">
-            {formatRelativeTime(email.date)}
-          </span>
-        </div>
-        <p
-          className={cn(
-            'text-[10px] truncate',
-            email.isUnread ? 'font-medium text-foreground' : 'text-muted-foreground'
-          )}
-        >
-          {email.subject}
-        </p>
-      </div>
+      {/* Subject */}
+      <span
+        className={cn(
+          'text-[10px] truncate flex-1 min-w-0',
+          email.isUnread ? 'font-medium text-foreground' : 'text-muted-foreground'
+        )}
+      >
+        {email.subject}
+      </span>
 
-      {/* External link icon on hover */}
-      <ExternalLink className="w-2.5 h-2.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5" />
+      {/* Time */}
+      <span className="text-[9px] text-muted-foreground flex-shrink-0">
+        {formatRelativeTime(email.date)}
+      </span>
     </button>
   );
 });
@@ -118,7 +113,7 @@ export const GmailWidget = memo(function GmailWidget() {
   // Loading state
   if (isLoading) {
     return (
-      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm h-full py-0 gap-0">
+      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0">
         <CardContent className="p-2.5">
           <div className="flex items-center justify-between mb-1.5">
             <div className="flex items-center gap-1.5">
@@ -128,16 +123,12 @@ export const GmailWidget = memo(function GmailWidget() {
             <Skeleton className="h-3 w-3" rounded="sm" />
           </div>
           <div className="space-y-0.5">
-            {[0, 1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex items-start gap-1.5 py-1.5 px-2" style={{ animationDelay: `${i * 100}ms` }}>
-                <Skeleton className="w-1.5 h-1.5 mt-1 flex-shrink-0" rounded="full" />
-                <div className="flex-1 space-y-1">
-                  <div className="flex justify-between">
-                    <Skeleton className="h-2.5 w-20" />
-                    <Skeleton className="h-2 w-10" />
-                  </div>
-                  <Skeleton className="h-2.5 w-3/4" />
-                </div>
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex items-center gap-1.5 py-1 px-2" style={{ animationDelay: `${i * 100}ms` }}>
+                <Skeleton className="w-1.5 h-1.5 flex-shrink-0" rounded="full" />
+                <Skeleton className="h-2.5 w-16 flex-shrink-0" />
+                <Skeleton className="h-2.5 flex-1" />
+                <Skeleton className="h-2 w-8 flex-shrink-0" />
               </div>
             ))}
           </div>
@@ -192,13 +183,13 @@ export const GmailWidget = memo(function GmailWidget() {
   }
 
   // Connected state - show emails
-  const displayEmails = data.emails.slice(0, 5);
+  const displayEmails = data.emails.slice(0, 3);
 
   return (
-    <Card className="w-full h-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0 transition-all hover:shadow-md flex flex-col">
-      <CardContent className="p-2.5 flex flex-col flex-1 min-h-0">
+    <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0 transition-all hover:shadow-md">
+      <CardContent className="p-2.5">
         {/* Header */}
-        <div className="flex items-center justify-between mb-1.5 flex-shrink-0">
+        <div className="flex items-center justify-between mb-1.5">
           <div className="flex items-center gap-1.5">
             <Mail className="w-3.5 h-3.5 text-muted-foreground" />
             <span className="text-xs font-semibold">Gmail</span>
@@ -214,7 +205,7 @@ export const GmailWidget = memo(function GmailWidget() {
 
         {/* Email list */}
         {displayEmails.length > 0 ? (
-          <div className="flex-1 overflow-y-auto scrollbar-hide space-y-0.5 -mx-0.5 min-h-0">
+          <div className="space-y-0.5 -mx-0.5">
             {displayEmails.map((email) => (
               <EmailItem key={email.id} email={email} />
             ))}
@@ -226,7 +217,7 @@ export const GmailWidget = memo(function GmailWidget() {
         )}
 
         {/* Footer */}
-        <div className="mt-1.5 pt-1.5 border-t border-border/40 flex-shrink-0">
+        <div className="mt-1.5 pt-1.5 border-t border-border/40">
           <a
             href="https://mail.google.com"
             target="_blank"
