@@ -3,6 +3,7 @@ export { ContinueReadingWidget } from './ContinueReadingWidget';
 export { CountdownWidget } from './CountdownWidget';
 export { CryptoWidget } from './CryptoWidget';
 export { GmailWidget } from './GmailWidget';
+export { ImagePlaceholderWidget } from './ImagePlaceholderWidget';
 export { PinnedNotesWidget } from './PinnedNotesWidget';
 export { RocketsGameWidget } from './RocketsGameWidget';
 export { StocksCryptoWidget } from './StocksCryptoWidget';

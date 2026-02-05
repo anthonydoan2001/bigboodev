@@ -4,6 +4,7 @@ import { CalendarWidget } from "@/components/dashboard/CalendarWidget";
 import { ContinueReadingWidget } from "@/components/dashboard/ContinueReadingWidget";
 import { CountdownWidget } from "@/components/dashboard/CountdownWidget";
 import { GmailWidget } from "@/components/dashboard/GmailWidget";
+import { ImagePlaceholderWidget } from "@/components/dashboard/ImagePlaceholderWidget";
 import { LeagueOfLegendsWidget } from "@/components/dashboard/LeagueOfLegendsWidget";
 import { PinnedNotesWidget } from "@/components/dashboard/PinnedNotesWidget";
 import { RocketsGameWidget } from "@/components/dashboard/RocketsGameWidget";
@@ -235,12 +236,15 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Column 2: Gmail, Pinned Notes, Rockets */}
+          {/* Column 2: Image, Gmail, Pinned Notes, Rockets */}
           <div className="col-span-1 md:col-span-2 lg:col-span-1 flex flex-col gap-3 lg:gap-3 min-h-0">
+            <ImagePlaceholderWidget />
             <div className="flex-1 min-h-0">
               <GmailWidget />
             </div>
-            <PinnedNotesWidget />
+            <div className="pt-1">
+              <PinnedNotesWidget />
+            </div>
             <RocketsGameWidget />
           </div>
 
