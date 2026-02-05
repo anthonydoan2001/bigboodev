@@ -236,14 +236,14 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Column 2: Image, League, Pinned Notes, Rockets */}
+          {/* Column 2: Image, Pinned Notes, League, Rockets */}
           <div className="col-span-1 md:col-span-2 lg:col-span-1 flex flex-col gap-3 lg:gap-3 min-h-0">
             <ImagePlaceholderWidget />
-            <div className="flex-1 min-h-0">
-              <LeagueOfLegendsWidget />
-            </div>
             <div className="pt-1">
               <PinnedNotesWidget />
+            </div>
+            <div className="flex-1 min-h-0">
+              <LeagueOfLegendsWidget />
             </div>
             <RocketsGameWidget />
           </div>
