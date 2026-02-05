@@ -37,25 +37,32 @@ async function scrapeGasPrice(): Promise<number> {
     throw new Error('CLOUDFLARE_BLOCKED');
   }
 
-  // Strategy 1: Parse from Apollo state JSON — regular_gas price
-  const apolloRegularMatch = html.match(/"fuelProduct"\s*:\s*"regular_gas"[\s\S]{0,300}?"price"\s*:\s*(\d+\.?\d*)/);
-  if (apolloRegularMatch) {
-    return parseFloat(apolloRegularMatch[1]);
+  // Strategy 1: Find the full Station:199615 block, then extract regular_gas price from its prices array
+  const stationBlockStart = html.indexOf(`"Station:${GASBUDDY_STATION_ID}":{"__typename":"Station"`);
+  if (stationBlockStart !== -1) {
+    const pricesStart = html.indexOf('"prices":[', stationBlockStart);
+    if (pricesStart !== -1 && pricesStart - stationBlockStart < 5000) {
+      // Price comes BEFORE fuelProduct in the JSON structure
+      const pricesChunk = html.substring(pricesStart, pricesStart + 1000);
+      const regularMatch = pricesChunk.match(/"price":(\d+\.?\d*),"formattedPrice":"\$[^"]*"}\s*,\s*"fuelProduct"\s*:\s*"regular_gas"/);
+      if (regularMatch) {
+        return parseFloat(regularMatch[1]);
+      }
+    }
   }
 
-  // Strategy 2: Apollo state formattedPrice for regular_gas
-  const apolloFormattedMatch = html.match(/"fuelProduct"\s*:\s*"regular_gas"[\s\S]{0,300}?"formattedPrice"\s*:\s*"\$(\d+\.\d{2})"/);
-  if (apolloFormattedMatch) {
-    return parseFloat(apolloFormattedMatch[1]);
+  // Strategy 2: Search globally for price before regular_gas, scoped near "id":"199615"
+  const idRef = html.indexOf(`"id":"${GASBUDDY_STATION_ID}"`);
+  if (idRef !== -1) {
+    // Prices array is within ~2000 chars after the id field
+    const nearbyHtml = html.substring(Math.max(0, idRef - 2000), idRef + 2000);
+    const nearbyMatch = nearbyHtml.match(/"price":(\d+\.?\d*),"formattedPrice":"\$[^"]*"}\s*,\s*"fuelProduct"\s*:\s*"regular_gas"/);
+    if (nearbyMatch) {
+      return parseFloat(nearbyMatch[1]);
+    }
   }
 
-  // Strategy 3: Look for "Regular" label followed by a dollar amount (skip Premium)
-  const regularMatch = html.match(/"longName"\s*:\s*"Regular"[\s\S]{0,300}?"price"\s*:\s*(\d+\.?\d*)/);
-  if (regularMatch) {
-    return parseFloat(regularMatch[1]);
-  }
-
-  // Strategy 4: First dollar amount on the page as last resort
+  // Strategy 3: First dollar amount on the page as last resort
   const anyPriceMatch = html.match(/\$(\d+\.\d{2})/);
   if (anyPriceMatch) {
     return parseFloat(anyPriceMatch[1]);
