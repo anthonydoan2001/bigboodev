@@ -199,9 +199,9 @@ export default function Home() {
 
   // Render immediately - don't block on widget loading for better LCP
   return (
-    <div className="w-full h-screen overflow-hidden flex flex-col py-4 px-4 sm:px-6 lg:px-8 lg:py-5">
+    <div className="w-full h-screen overflow-hidden flex flex-col py-3 px-4 sm:px-6 lg:px-8 lg:py-4">
       {/* Compact Header Section */}
-      <div className="mb-4 lg:mb-5 flex-shrink-0">
+      <div className="mb-3 lg:mb-3 flex-shrink-0">
         <div className="flex flex-col md:flex-row gap-4 md:gap-6">
           {/* Left: Weather Widget - hidden on mobile, visible md+ */}
           <div className="hidden md:flex flex-shrink-0">
@@ -223,7 +223,7 @@ export default function Home() {
 
       {/* Dashboard Grid - One page on lg+, scrollable below */}
       <div className="flex-1 overflow-y-auto lg:overflow-hidden min-h-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-min gap-3 lg:gap-4 h-full content-start pb-4 lg:pb-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-3 h-full content-start pb-4 lg:pb-0 lg:grid-rows-[auto_auto_1fr]">
           {/* Row 1: Calendar + Image side by side (cols 1-2), Stocks starts (col 3) */}
           <CalendarWidget />
           <ImagePlaceholderWidget />
@@ -243,11 +243,11 @@ export default function Home() {
           </div>
 
           {/* Row 3 col 1: Gmail (fills remaining) */}
-          <div className="flex-1 min-h-0">
+          <div className="min-h-0">
             <GmailWidget />
           </div>
           {/* Row 3 col 2: Rockets, League */}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2 min-h-0">
             <RocketsGameWidget />
             <LeagueOfLegendsWidget />
           </div>
