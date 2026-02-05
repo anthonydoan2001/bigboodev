@@ -6,7 +6,7 @@ export { GmailWidget } from './GmailWidget';
 export { ImagePlaceholderWidget } from './ImagePlaceholderWidget';
 export { PinnedNotesWidget } from './PinnedNotesWidget';
 export { RocketsGameWidget } from './RocketsGameWidget';
-export { StocksCryptoWidget } from './StocksCryptoWidget';
+export { PricesWidget } from './PricesWidget';
 export { StocksWidget } from './StocksWidget';
 export { WeatherIcon } from './WeatherIcon';
 export { WeatherInline } from './WeatherInline';
