@@ -14,6 +14,7 @@ import { fetchWeather } from "@/lib/api/weather";
 import { fetchStockQuotes } from "@/lib/api/stocks";
 import { fetchCryptoQuotesFromDB } from "@/lib/api/crypto";
 import { useQuery } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/skeleton";
 import { memo, useEffect, useState, useMemo, useRef } from "react";
 
 // Memoized greeting calculation - only recalculates when hour changes
@@ -70,7 +71,7 @@ const QuoteDisplay = memo(function QuoteDisplay({
   isLoading: boolean;
 }) {
   if (isLoading) {
-    return <div className="h-6 w-1/2 max-w-lg bg-muted/20 animate-pulse rounded-md" />;
+    return <Skeleton className="h-6 w-1/2 max-w-lg" />;
   }
 
   if (quote) {
@@ -197,20 +198,20 @@ export default function Home() {
 
   // Render immediately - don't block on widget loading for better LCP
   return (
-    <div className="w-full h-screen overflow-hidden flex flex-col py-6 px-4 sm:px-6 lg:px-8">
+    <div className="w-full h-screen overflow-hidden flex flex-col py-4 px-4 sm:px-6 lg:px-8 lg:py-5">
       {/* Compact Header Section */}
-      <div className="mb-6 flex-shrink-0">
-        <div className="flex gap-6">
-          {/* Left: Weather Widget - stretches to match height */}
-          <div className="flex-shrink-0 flex">
+      <div className="mb-4 lg:mb-5 flex-shrink-0">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+          {/* Left: Weather Widget - hidden on mobile, visible md+ */}
+          <div className="hidden md:flex flex-shrink-0">
             <WeatherInline />
           </div>
 
           {/* Right: Greeting, Quote, and Clock */}
-          <div className="flex-1 flex flex-col justify-center gap-4">
+          <div className="flex-1 flex flex-col justify-center gap-2 md:gap-4">
             {/* Top: Greeting and Clock */}
             <div className="flex items-center justify-between gap-4">
-              <h1 className="text-3xl md:text-4xl font-bold">{greeting}, Big Boo</h1>
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold">{greeting}, Big Boo</h1>
               <Clock />
             </div>
             {/* Bottom: Quote */}
@@ -219,33 +220,35 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Optimized Dashboard Grid - Viewport Aware */}
-      <div className="flex-1 overflow-hidden min-h-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-min gap-4 h-full content-start overflow-y-auto scrollbar-hide pb-4">
-          {/* Mobile: Stacked (scroll allowed) */}
-          {/* Tablet (768px): 2 columns */}
-          {/* Laptop (1024px): 3 columns */}
-
-          {/* Calendar Widget with Countdown, Continue Reading, and League below */}
-          <div className="col-span-1 flex flex-col gap-4">
+      {/* Dashboard Grid - One page on lg+, scrollable below */}
+      <div className="flex-1 overflow-y-auto lg:overflow-hidden min-h-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-min lg:auto-rows-fr gap-3 lg:gap-4 h-full content-start lg:content-stretch pb-4 lg:pb-0">
+          {/* Column 1: Calendar, Continue Reading + Countdown, League */}
+          <div className="col-span-1 flex flex-col gap-3 lg:gap-3 min-h-0">
             <CalendarWidget />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <ContinueReadingWidget />
               <CountdownWidget />
             </div>
-            <LeagueOfLegendsWidget />
+            <div className="flex-1 min-h-0">
+              <LeagueOfLegendsWidget />
+            </div>
           </div>
 
-          {/* Gmail Widget with Pinned Notes stacked below */}
-          <div className="col-span-1 md:col-span-2 lg:col-span-1 flex flex-col gap-4">
-            <GmailWidget />
+          {/* Column 2: Gmail, Pinned Notes */}
+          <div className="col-span-1 md:col-span-2 lg:col-span-1 flex flex-col gap-3 lg:gap-3 min-h-0">
+            <div className="flex-1 min-h-0">
+              <GmailWidget />
+            </div>
             <PinnedNotesWidget />
           </div>
 
-          {/* Rockets Game Widget with Stocks stacked below */}
-          <div className="col-span-1 flex flex-col gap-4">
+          {/* Column 3: Rockets Game, Stocks/Crypto */}
+          <div className="col-span-1 flex flex-col gap-3 lg:gap-3 min-h-0">
             <RocketsGameWidget />
-            <StocksCryptoWidget />
+            <div className="flex-1 min-h-0">
+              <StocksCryptoWidget />
+            </div>
           </div>
         </div>
       </div>

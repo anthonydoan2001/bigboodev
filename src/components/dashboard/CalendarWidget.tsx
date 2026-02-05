@@ -80,7 +80,7 @@ export function CalendarWidget() {
         <div className="grid grid-cols-7 gap-1">
           {days.map((day, index) => {
             if (day === null) {
-              return <div key={`empty-${index}`} className="h-9" />;
+              return <div key={`empty-${index}`} className="h-7 lg:h-8" />;
             }
 
             const isTodayDate = isToday(day);
@@ -89,7 +89,7 @@ export function CalendarWidget() {
               <div
                 key={day}
                 className={cn(
-                  "h-9 flex items-center justify-center text-sm rounded-full transition-all",
+                  "h-7 lg:h-8 flex items-center justify-center text-xs lg:text-sm rounded-full transition-all",
                   isTodayDate
                     ? "bg-primary text-primary-foreground font-bold shadow-md scale-105"
                     : "text-muted-foreground font-medium hover:bg-muted/30"

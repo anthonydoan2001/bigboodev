@@ -1,6 +1,7 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { fetchLeagueStats, fetchAramChallenge } from '@/lib/api/league-of-legends';
 import { cn } from '@/lib/utils';
 import { RankedEntry, AramChallengeResponse } from '@/types/league-of-legends';
@@ -184,12 +185,24 @@ export function LeagueOfLegendsWidget() {
 
   if (isLoading) {
     return (
-      <Card className="col-span-1 !py-0 bg-background/40 backdrop-blur-md border-white/10 shadow-none">
+      <Card className="col-span-1 !py-0 bg-background/40 backdrop-blur-md border-white/10 shadow-none h-full">
         <CardContent className="!px-3 !py-2">
           <div className="space-y-2">
-            <div className="h-6 w-1/2 bg-muted/50 animate-pulse rounded" />
-            <div className="h-14 bg-muted/50 animate-pulse rounded-md" />
-            <div className="h-14 bg-muted/50 animate-pulse rounded-md" />
+            {/* Summoner header */}
+            <div className="flex items-center gap-2.5 pb-1">
+              <Skeleton className="w-10 h-10" rounded="full" />
+              <div className="space-y-1.5">
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+            </div>
+            {/* Rank cards */}
+            <div className="space-y-1.5">
+              <Skeleton className="h-14 w-full" rounded="md" />
+              <Skeleton className="h-14 w-full" style={{ animationDelay: '100ms' }} rounded="md" />
+            </div>
+            {/* ARAM bar */}
+            <Skeleton className="h-16 w-full" style={{ animationDelay: '200ms' }} rounded="md" />
           </div>
         </CardContent>
       </Card>
@@ -201,7 +214,7 @@ export function LeagueOfLegendsWidget() {
     const isApiKeyError = errorMessage.includes('API_KEY') || errorMessage.includes('403') || errorMessage.includes('expired');
 
     return (
-      <Card className="col-span-1 !py-0 bg-background/40 backdrop-blur-md border-white/10 shadow-none">
+      <Card className="col-span-1 !py-0 bg-background/40 backdrop-blur-md border-white/10 shadow-none h-full">
         <CardContent className="!px-3 !py-2">
           <div className="text-center py-3">
             <p className="text-sm text-muted-foreground">
@@ -219,7 +232,7 @@ export function LeagueOfLegendsWidget() {
   }
 
   return (
-    <Card className="col-span-1 !py-0 bg-background/40 backdrop-blur-md border-white/10 shadow-none">
+    <Card className="col-span-1 !py-0 bg-background/40 backdrop-blur-md border-white/10 shadow-none h-full">
       <CardContent className="!px-3 !py-2">
         <div className="space-y-2">
           {/* Header with summoner name and icon */}
