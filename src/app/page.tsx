@@ -224,7 +224,7 @@ export default function Home() {
       {/* Dashboard Grid - One page on lg+, scrollable below */}
       <div className="flex-1 overflow-y-auto lg:overflow-hidden min-h-0">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 auto-rows-min lg:auto-rows-fr gap-3 lg:gap-4 h-full content-start lg:content-stretch pb-4 lg:pb-0">
-          {/* Column 1: Calendar, Continue Reading + Countdown, League */}
+          {/* Column 1: Calendar, Continue Reading + Countdown, Gmail */}
           <div className="col-span-1 flex flex-col gap-3 lg:gap-3 min-h-0">
             <CalendarWidget />
             <div className="grid grid-cols-2 gap-3">
@@ -232,15 +232,15 @@ export default function Home() {
               <CountdownWidget />
             </div>
             <div className="flex-1 min-h-0">
-              <LeagueOfLegendsWidget />
+              <GmailWidget />
             </div>
           </div>
 
-          {/* Column 2: Image, Gmail, Pinned Notes, Rockets */}
+          {/* Column 2: Image, League, Pinned Notes, Rockets */}
           <div className="col-span-1 md:col-span-2 lg:col-span-1 flex flex-col gap-3 lg:gap-3 min-h-0">
             <ImagePlaceholderWidget />
             <div className="flex-1 min-h-0">
-              <GmailWidget />
+              <LeagueOfLegendsWidget />
             </div>
             <div className="pt-1">
               <PinnedNotesWidget />
