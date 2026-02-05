@@ -1,9 +1,10 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useBooksInProgress, useReadLists } from '@/lib/hooks/useManga';
 import { getBookThumbnailUrl, getReadListThumbnailUrl } from '@/lib/api/manga';
-import { BookOpen, Loader2, List } from 'lucide-react';
+import { BookOpen, List } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo } from 'react';
@@ -34,8 +35,12 @@ export function ContinueReadingWidget() {
   if (isLoading) {
     return (
       <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm h-full">
-        <CardContent className="p-3 flex items-center justify-center h-full">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <CardContent className="p-2 h-full flex items-center justify-center gap-2">
+          <Skeleton className="w-10 h-14 flex-shrink-0" rounded="sm" />
+          <div className="min-w-0 space-y-1.5">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-2.5 w-16" />
+          </div>
         </CardContent>
       </Card>
     );

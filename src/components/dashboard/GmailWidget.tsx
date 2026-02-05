@@ -2,6 +2,7 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { fetchGmailEmails, connectGmail, disconnectGmail } from '@/lib/api/gmail';
 import { GmailEmail } from '@/types/gmail';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -118,25 +119,24 @@ export const GmailWidget = memo(function GmailWidget() {
   if (isLoading) {
     return (
       <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm h-full py-0 gap-0">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 bg-muted/30 animate-pulse rounded" />
-              <div className="h-4 w-16 bg-muted/30 animate-pulse rounded" />
+        <CardContent className="p-2.5">
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-1.5">
+              <Skeleton className="w-3.5 h-3.5" rounded="sm" />
+              <Skeleton className="h-3 w-12" />
             </div>
-            <div className="h-5 w-8 bg-muted/30 animate-pulse rounded-full" />
+            <Skeleton className="h-3 w-3" rounded="sm" />
           </div>
-          <div className="space-y-3">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-start gap-3 py-2">
-                <div className="w-2 h-2 bg-muted/30 animate-pulse rounded-full mt-1.5" />
-                <div className="flex-1 space-y-1.5">
+          <div className="space-y-0.5">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex items-start gap-1.5 py-1.5 px-2" style={{ animationDelay: `${i * 100}ms` }}>
+                <Skeleton className="w-1.5 h-1.5 mt-1 flex-shrink-0" rounded="full" />
+                <div className="flex-1 space-y-1">
                   <div className="flex justify-between">
-                    <div className="h-3.5 w-24 bg-muted/30 animate-pulse rounded" />
-                    <div className="h-3 w-12 bg-muted/20 animate-pulse rounded" />
+                    <Skeleton className="h-2.5 w-20" />
+                    <Skeleton className="h-2 w-10" />
                   </div>
-                  <div className="h-3.5 w-3/4 bg-muted/30 animate-pulse rounded" />
-                  <div className="h-3 w-full bg-muted/20 animate-pulse rounded" />
+                  <Skeleton className="h-2.5 w-3/4" />
                 </div>
               </div>
             ))}
@@ -195,10 +195,10 @@ export const GmailWidget = memo(function GmailWidget() {
   const displayEmails = data.emails.slice(0, 5);
 
   return (
-    <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0 transition-all hover:shadow-md">
-      <CardContent className="p-2.5">
+    <Card className="w-full h-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0 transition-all hover:shadow-md flex flex-col">
+      <CardContent className="p-2.5 flex flex-col flex-1 min-h-0">
         {/* Header */}
-        <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center justify-between mb-1.5 flex-shrink-0">
           <div className="flex items-center gap-1.5">
             <Mail className="w-3.5 h-3.5 text-muted-foreground" />
             <span className="text-xs font-semibold">Gmail</span>
@@ -214,7 +214,7 @@ export const GmailWidget = memo(function GmailWidget() {
 
         {/* Email list */}
         {displayEmails.length > 0 ? (
-          <div className="max-h-[320px] overflow-y-auto scrollbar-hide space-y-0.5 -mx-0.5">
+          <div className="flex-1 overflow-y-auto scrollbar-hide space-y-0.5 -mx-0.5 min-h-0">
             {displayEmails.map((email) => (
               <EmailItem key={email.id} email={email} />
             ))}
@@ -226,7 +226,7 @@ export const GmailWidget = memo(function GmailWidget() {
         )}
 
         {/* Footer */}
-        <div className="mt-1.5 pt-1.5 border-t border-border/40">
+        <div className="mt-1.5 pt-1.5 border-t border-border/40 flex-shrink-0">
           <a
             href="https://mail.google.com"
             target="_blank"

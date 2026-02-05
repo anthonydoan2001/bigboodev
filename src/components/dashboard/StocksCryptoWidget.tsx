@@ -1,6 +1,7 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { fetchCryptoQuotesFromDB } from '@/lib/api/crypto';
 import { fetchStockQuotes } from '@/lib/api/stocks';
 import { cn } from '@/lib/utils';
@@ -166,17 +167,14 @@ export function StocksCryptoWidget() {
       <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm h-full py-0 gap-0">
         <CardContent className="p-0">
           <div className="divide-y divide-border/40 py-1">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="flex items-center justify-between py-2 px-2.5">
-                {/* Left side skeleton */}
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center justify-between py-2 px-2.5" style={{ animationDelay: `${i * 80}ms` }}>
                 <div className="flex items-center gap-2 flex-1">
-                  <div className="w-6 h-6 rounded-full bg-muted/30 animate-pulse" />
-                  <div className="h-4 w-12 bg-muted/30 animate-pulse rounded-md" />
+                  <Skeleton className="w-6 h-6" rounded="full" />
+                  <Skeleton className="h-3 w-10" />
                 </div>
-                {/* Middle skeleton */}
-                <div className="h-4 w-16 bg-muted/30 animate-pulse rounded-md mx-3" />
-                {/* Right side skeleton */}
-                <div className="h-4 w-16 bg-muted/20 animate-pulse rounded-md" />
+                <Skeleton className="h-3 w-14 mx-3" />
+                <Skeleton className="h-3 w-14" />
               </div>
             ))}
           </div>
@@ -200,8 +198,8 @@ export function StocksCryptoWidget() {
   }
 
   return (
-    <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0 transition-all hover:shadow-md">
-      <CardContent className="p-0">
+    <Card className="w-full h-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0 transition-all hover:shadow-md flex flex-col">
+      <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto scrollbar-hide">
         <div className="py-1">
           <div className="divide-y divide-border/40">
             {/* Stocks */}

@@ -3,6 +3,7 @@
 import { memo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { usePinnedNotes } from '@/lib/hooks/useNotes';
 import { Pin, FileText, ChevronRight } from 'lucide-react';
 
@@ -49,14 +50,13 @@ const PinnedNoteCard = memo(function PinnedNoteCard({
   );
 });
 
-const SkeletonCard = memo(function SkeletonCard() {
+const NoteSkeletonRow = memo(function NoteSkeletonRow({ delay = 0 }: { delay?: number }) {
   return (
     <div className="flex items-start gap-2 py-2 px-2.5 border-b border-border/40 last:border-0">
-      <div className="w-3.5 h-3.5 rounded bg-muted/30 animate-pulse" />
+      <Skeleton className="w-3.5 h-3.5 flex-shrink-0" rounded="sm" style={{ animationDelay: `${delay}ms` }} />
       <div className="flex-1 space-y-1.5">
-        <div className="h-3 w-3/4 bg-muted/30 rounded animate-pulse" />
-        <div className="h-2.5 w-full bg-muted/20 rounded animate-pulse" />
-        <div className="h-2.5 w-12 bg-muted/20 rounded animate-pulse" />
+        <Skeleton className="h-3 w-3/4" style={{ animationDelay: `${delay}ms` }} />
+        <Skeleton className="h-2.5 w-full" style={{ animationDelay: `${delay + 50}ms` }} />
       </div>
     </div>
   );
@@ -75,9 +75,9 @@ export const PinnedNotesWidget = memo(function PinnedNotesWidget() {
               Pinned Notes
             </h3>
           </div>
-          <SkeletonCard />
-          <SkeletonCard />
-          <SkeletonCard />
+          <NoteSkeletonRow delay={0} />
+          <NoteSkeletonRow delay={100} />
+          <NoteSkeletonRow delay={200} />
         </CardContent>
       </Card>
     );

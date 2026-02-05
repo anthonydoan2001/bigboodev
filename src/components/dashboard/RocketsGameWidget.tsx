@@ -1,6 +1,7 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { GameScore } from '@/types/sports';
 import { useQuery } from '@tanstack/react-query';
 import { Clock } from 'lucide-react';
@@ -132,20 +133,25 @@ export function RocketsGameWidget() {
 
   if (isLoading) {
     return (
-      <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden py-0 gap-0 transition-all hover:shadow-md">
-        <CardContent className="p-3 h-full flex flex-col justify-center">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-muted/30 animate-pulse rounded-full" />
-              <div className="h-5 w-20 bg-muted/20 animate-pulse rounded-md" />
+      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden py-0 gap-0">
+        <CardContent className="p-3 flex flex-col justify-center">
+          <Skeleton className="h-3 w-12 mb-3" />
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Skeleton className="w-8 h-8" rounded="full" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+              <Skeleton className="h-6 w-10" />
             </div>
-            <div className="h-8 w-8 bg-muted/20 animate-pulse rounded-md" />
-            <div className="flex items-center gap-3">
-              <div className="h-5 w-20 bg-muted/20 animate-pulse rounded-md" />
-              <div className="w-10 h-10 bg-muted/30 animate-pulse rounded-full" />
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Skeleton className="w-8 h-8" rounded="full" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+              <Skeleton className="h-6 w-10" />
             </div>
           </div>
-          <div className="mt-3 h-4 w-32 bg-muted/20 animate-pulse rounded-md mx-auto" />
         </CardContent>
       </Card>
     );
@@ -153,7 +159,7 @@ export function RocketsGameWidget() {
 
   if (error || !data) {
     return (
-      <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm flex items-center justify-center py-0 gap-0 transition-all hover:shadow-md">
+      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm flex items-center justify-center py-0 gap-0 transition-all hover:shadow-md">
         <p className="text-body-sm text-muted-foreground">Failed to load Rockets game</p>
       </Card>
     );
@@ -166,7 +172,7 @@ export function RocketsGameWidget() {
 
   if (!gameToShow) {
     return (
-      <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm flex items-center justify-center py-0 gap-0 transition-all hover:shadow-md">
+      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm flex items-center justify-center py-0 gap-0 transition-all hover:shadow-md">
         <CardContent className="p-3 text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             <Image
@@ -260,7 +266,7 @@ export function RocketsGameWidget() {
   // For scheduled games, show a different layout
   if (isScheduled) {
     return (
-      <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden py-0 gap-0 transition-all hover:shadow-md">
+      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden py-0 gap-0 transition-all hover:shadow-md">
         <CardContent className="p-3 h-full flex flex-col justify-center items-center text-center">
           {/* Team Matchup */}
           <div className="flex items-center justify-center gap-4 mb-4">
@@ -335,7 +341,7 @@ export function RocketsGameWidget() {
 
   // For live and finished games, show scores
   return (
-    <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden py-0 gap-0 transition-all hover:shadow-md">
+    <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden py-0 gap-0 transition-all hover:shadow-md">
       <CardContent className="p-3 h-full flex flex-col">
         {/* Header with status */}
         <div className="flex items-center justify-between mb-3">
