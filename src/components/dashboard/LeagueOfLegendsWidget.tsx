@@ -185,7 +185,7 @@ export function LeagueOfLegendsWidget() {
 
   if (isLoading) {
     return (
-      <Card className="col-span-1 !py-0 bg-background/40 backdrop-blur-md border-white/10 shadow-none h-full">
+      <Card className="col-span-1 !py-0 bg-background/40 backdrop-blur-md border-white/10 shadow-none">
         <CardContent className="!px-3 !py-2">
           <div className="space-y-2">
             {/* Summoner header */}
@@ -214,7 +214,7 @@ export function LeagueOfLegendsWidget() {
     const isApiKeyError = errorMessage.includes('API_KEY') || errorMessage.includes('403') || errorMessage.includes('expired');
 
     return (
-      <Card className="col-span-1 !py-0 bg-background/40 backdrop-blur-md border-white/10 shadow-none h-full">
+      <Card className="col-span-1 !py-0 bg-background/40 backdrop-blur-md border-white/10 shadow-none">
         <CardContent className="!px-3 !py-2">
           <div className="text-center py-3">
             <p className="text-sm text-muted-foreground">
@@ -232,7 +232,7 @@ export function LeagueOfLegendsWidget() {
   }
 
   return (
-    <Card className="col-span-1 !py-0 bg-background/40 backdrop-blur-md border-white/10 shadow-none h-full">
+    <Card className="col-span-1 !py-0 bg-background/40 backdrop-blur-md border-white/10 shadow-none">
       <CardContent className="!px-3 !py-2">
         <div className="space-y-2">
           {/* Header with summoner name and icon */}
