@@ -69,12 +69,6 @@ export const PinnedNotesWidget = memo(function PinnedNotesWidget() {
     return (
       <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0">
         <CardContent className="p-0">
-          <div className="px-2.5 py-2 border-b border-border/40">
-            <h3 className="font-semibold text-xs flex items-center gap-1.5">
-              <Pin className="h-3.5 w-3.5 text-favorite" />
-              Pinned Notes
-            </h3>
-          </div>
           <NoteSkeletonRow delay={0} />
           <NoteSkeletonRow delay={100} />
           <NoteSkeletonRow delay={200} />
@@ -99,12 +93,6 @@ export const PinnedNotesWidget = memo(function PinnedNotesWidget() {
     return (
       <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0">
         <CardContent className="p-0">
-          <div className="px-2.5 py-2 border-b border-border/40">
-            <h3 className="font-semibold text-xs flex items-center gap-1.5">
-              <Pin className="h-3.5 w-3.5 text-favorite" />
-              Pinned Notes
-            </h3>
-          </div>
           <div className="flex flex-col items-center justify-center py-6 px-3 text-center">
             <FileText className="h-7 w-7 text-muted-foreground/40 mb-1.5" />
             <p className="text-xs text-muted-foreground">No pinned notes</p>
@@ -127,12 +115,6 @@ export const PinnedNotesWidget = memo(function PinnedNotesWidget() {
   return (
     <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0 transition-all hover:shadow-md">
       <CardContent className="p-0">
-        <div className="px-2.5 py-2 border-b border-border/40">
-          <h3 className="font-semibold text-xs flex items-center gap-1.5">
-            <Pin className="h-3.5 w-3.5 text-favorite" />
-            Pinned Notes
-          </h3>
-        </div>
         <div className="divide-y divide-border/40">
           {notes.map((note) => (
             <PinnedNoteCard key={note.id} note={{ id: note.id, title: note.title, content: note.content }} />
