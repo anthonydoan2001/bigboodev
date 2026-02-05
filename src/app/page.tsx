@@ -8,7 +8,7 @@ import { ImagePlaceholderWidget } from "@/components/dashboard/ImagePlaceholderW
 import { LeagueOfLegendsWidget } from "@/components/dashboard/LeagueOfLegendsWidget";
 import { PinnedNotesWidget } from "@/components/dashboard/PinnedNotesWidget";
 import { RocketsGameWidget } from "@/components/dashboard/RocketsGameWidget";
-import { StocksCryptoWidget } from "@/components/dashboard/StocksCryptoWidget";
+import { PricesWidget } from "@/components/dashboard/PricesWidget";
 import { WeatherInline } from "@/components/dashboard/WeatherInline";
 import { fetchQuote } from "@/lib/api/quote";
 import { fetchWeather } from "@/lib/api/weather";
@@ -237,9 +237,9 @@ export default function Home() {
           {/* Row 1: Calendar + Image side by side (cols 1-2), Stocks starts (col 3) */}
           <CalendarWidget />
           <ImagePlaceholderWidget />
-          {/* Stocks spans the full column 3 across all rows */}
+          {/* Prices spans the full column 3 across all rows */}
           <div className="col-span-1 row-span-3 flex flex-col min-h-0">
-            <StocksCryptoWidget />
+            <PricesWidget />
           </div>
 
           {/* Row 2 col 1: Continue Reading + Countdown */}

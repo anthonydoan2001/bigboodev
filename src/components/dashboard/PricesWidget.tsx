@@ -181,7 +181,7 @@ const GasPriceCard = memo(function GasPriceCard({ gas }: { gas: GasPriceData }) 
   );
 });
 
-export function StocksCryptoWidget() {
+export function PricesWidget() {
   const { data: gasData } = useQuery({
     queryKey: ['gasPrice'],
     queryFn: fetchGasPrice,
