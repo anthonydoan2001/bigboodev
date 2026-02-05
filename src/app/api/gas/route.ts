@@ -37,22 +37,22 @@ async function scrapeGasPrice(): Promise<number> {
     throw new Error('CLOUDFLARE_BLOCKED');
   }
 
-  // Strategy 1: Look for dollar amount after "Regular" label
-  const regularMatch = html.match(/Regular[\s\S]{0,300}?\$(\d+\.\d{2})/i);
+  // Strategy 1: Parse from Apollo state JSON — regular_gas price
+  const apolloRegularMatch = html.match(/"fuelProduct"\s*:\s*"regular_gas"[\s\S]{0,300}?"price"\s*:\s*(\d+\.?\d*)/);
+  if (apolloRegularMatch) {
+    return parseFloat(apolloRegularMatch[1]);
+  }
+
+  // Strategy 2: Apollo state formattedPrice for regular_gas
+  const apolloFormattedMatch = html.match(/"fuelProduct"\s*:\s*"regular_gas"[\s\S]{0,300}?"formattedPrice"\s*:\s*"\$(\d+\.\d{2})"/);
+  if (apolloFormattedMatch) {
+    return parseFloat(apolloFormattedMatch[1]);
+  }
+
+  // Strategy 3: Look for "Regular" label followed by a dollar amount (skip Premium)
+  const regularMatch = html.match(/"longName"\s*:\s*"Regular"[\s\S]{0,300}?"price"\s*:\s*(\d+\.?\d*)/);
   if (regularMatch) {
     return parseFloat(regularMatch[1]);
-  }
-
-  // Strategy 2: Look for price near "FuelTypePriceDisplay" class
-  const fuelTypeMatch = html.match(/FuelTypePriceDisplay[\s\S]{0,200}?\$(\d+\.\d{2})/i);
-  if (fuelTypeMatch) {
-    return parseFloat(fuelTypeMatch[1]);
-  }
-
-  // Strategy 3: Look in "Station Prices" section
-  const stationPricesMatch = html.match(/Station\s*Prices[\s\S]{0,500}?\$(\d+\.\d{2})/i);
-  if (stationPricesMatch) {
-    return parseFloat(stationPricesMatch[1]);
   }
 
   // Strategy 4: First dollar amount on the page as last resort
