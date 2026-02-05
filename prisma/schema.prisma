@@ -505,6 +505,17 @@ model TikTokVideo {
   @@map("tiktok_videos")
 }
 
+model GasPrice {
+  stationId   String   @id @map("station_id")
+  station     String
+  regular     Float
+  scrapedAt   DateTime @map("scraped_at")
+  lastUpdated DateTime @default(now()) @map("last_updated")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("gas_prices")
+}
+
 model KomgaSettings {
   id        String   @id @default(cuid())
   userId    String   @unique @map("user_id") // Single user app, but keeps structure flexible
