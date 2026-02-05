@@ -3,12 +3,14 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchCryptoQuotesFromDB } from '@/lib/api/crypto';
+import { fetchGasPrice } from '@/lib/api/gas';
 import { fetchStockQuotes } from '@/lib/api/stocks';
 import { cn } from '@/lib/utils';
 import { CryptoQuote } from '@/types/crypto';
+import { GasPriceData } from '@/types/gas';
 import { StockQuote } from '@/types/stocks';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowUp, ArrowDown, Fuel } from 'lucide-react';
 import Image from 'next/image';
 import { memo } from 'react';
 
@@ -139,7 +141,55 @@ const CryptoCard = memo(function CryptoCard({ crypto }: { crypto: CryptoQuote })
   );
 });
 
+function formatRelativeTime(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diffMin = Math.round((now - then) / 60000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHrs = Math.round(diffMin / 60);
+  if (diffHrs < 24) return `${diffHrs}h ago`;
+  return `${Math.round(diffHrs / 24)}d ago`;
+}
+
+const GasPriceCard = memo(function GasPriceCard({ gas }: { gas: GasPriceData }) {
+  return (
+    <div className="flex items-center justify-between py-2 px-2.5 border-b border-border/40 last:border-0 hover:bg-muted/20 transition-colors">
+      {/* Left side: Icon & Label */}
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div className="relative w-6 h-6 flex-shrink-0 rounded-full bg-emerald-500/15 flex items-center justify-center ring-1 ring-emerald-500/20">
+          <Fuel className="h-3.5 w-3.5 text-emerald-500" />
+        </div>
+        <div className="flex flex-col min-w-0">
+          <span className="font-semibold font-mono text-xs leading-none">GAS</span>
+          <span className="text-[9px] text-muted-foreground truncate leading-none mt-0.5">{gas.station}</span>
+        </div>
+      </div>
+
+      {/* Middle: Price */}
+      <div className="flex-shrink-0 mx-3">
+        <span className="font-mono text-xs font-medium tabular-nums">${gas.regular.toFixed(2)}</span>
+      </div>
+
+      {/* Right: Last updated */}
+      <div className="flex items-center gap-0.5 flex-shrink-0 min-w-[70px] justify-end">
+        <span className="text-[10px] font-mono text-muted-foreground tabular-nums">
+          {formatRelativeTime(gas.scrapedAt)}
+        </span>
+      </div>
+    </div>
+  );
+});
+
 export function StocksCryptoWidget() {
+  const { data: gasData } = useQuery({
+    queryKey: ['gasPrice'],
+    queryFn: fetchGasPrice,
+    staleTime: 1800000, // 30 minutes
+    refetchInterval: 1800000,
+    refetchOnMount: 'always' as const,
+  });
+
   const { data: stocksData, isLoading: stocksLoading, error: stocksError } = useQuery({
     queryKey: ['stockQuotes'],
     queryFn: fetchStockQuotes,
@@ -202,6 +252,11 @@ export function StocksCryptoWidget() {
       <CardContent className="p-0 flex-1 min-h-0 overflow-y-auto scrollbar-hide">
         <div className="py-1">
           <div className="divide-y divide-border/40">
+            {/* Gas Price */}
+            {gasData?.gasPrice && (
+              <GasPriceCard gas={gasData.gasPrice} />
+            )}
+
             {/* Stocks */}
             {hasStocks && stocksData.quotes.map((quote) => (
               <StockCard key={quote.symbol} quote={quote} />

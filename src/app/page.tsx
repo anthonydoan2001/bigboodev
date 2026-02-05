@@ -14,6 +14,7 @@ import { fetchQuote } from "@/lib/api/quote";
 import { fetchWeather } from "@/lib/api/weather";
 import { fetchStockQuotes } from "@/lib/api/stocks";
 import { fetchCryptoQuotesFromDB } from "@/lib/api/crypto";
+import { fetchGasPrice } from "@/lib/api/gas";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { memo, useEffect, useState, useMemo, useRef } from "react";
@@ -179,6 +180,15 @@ export default function Home() {
     queryFn: fetchCryptoQuotesFromDB,
     staleTime: 3600000,
     refetchInterval: 3600000,
+    refetchOnMount: 'always',
+  });
+
+  // Fetch gas price data
+  useQuery({
+    queryKey: ['gasPrice'],
+    queryFn: fetchGasPrice,
+    staleTime: 1800000,
+    refetchInterval: 1800000,
     refetchOnMount: 'always',
   });
 
