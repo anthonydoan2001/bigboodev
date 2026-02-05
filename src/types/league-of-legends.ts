@@ -11,6 +11,7 @@ export interface LeagueStatsResponse {
   summonerName: string;
   summonerLevel: number;
   profileIconId: number;
+  ddragonVersion: string;
   soloQueue: RankedEntry | null;
   flexQueue: RankedEntry | null;
   lastUpdated: string;
