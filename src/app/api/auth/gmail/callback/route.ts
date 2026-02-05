@@ -37,12 +37,12 @@ export async function GET(request: Request) {
   // Handle OAuth errors
   if (error) {
     console.error('Gmail OAuth error:', error);
-    return NextResponse.redirect(`${baseUrl}/?gmail_error=${encodeURIComponent(error)}`);
+    return NextResponse.redirect(`${baseUrl}/settings?tab=account&gmail_error=${encodeURIComponent(error)}`);
   }
 
   if (!code || !state) {
     console.error('Missing code or state in callback');
-    return NextResponse.redirect(`${baseUrl}/?gmail_error=missing_params`);
+    return NextResponse.redirect(`${baseUrl}/settings?tab=account&gmail_error=missing_params`);
   }
 
   // Validate state parameter
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
 
   if (!storedState || storedState !== state) {
     console.error('State mismatch in Gmail OAuth callback');
-    return NextResponse.redirect(`${baseUrl}/?gmail_error=invalid_state`);
+    return NextResponse.redirect(`${baseUrl}/settings?tab=account&gmail_error=invalid_state`);
   }
 
   // Clear the state cookie
@@ -59,7 +59,7 @@ export async function GET(request: Request) {
 
   if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REDIRECT_URI) {
     console.error('Missing Google OAuth configuration');
-    return NextResponse.redirect(`${baseUrl}/?gmail_error=config_error`);
+    return NextResponse.redirect(`${baseUrl}/settings?tab=account&gmail_error=config_error`);
   }
 
   try {
@@ -81,7 +81,7 @@ export async function GET(request: Request) {
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.text();
       console.error('Failed to exchange code for tokens:', errorData);
-      return NextResponse.redirect(`${baseUrl}/?gmail_error=token_exchange_failed`);
+      return NextResponse.redirect(`${baseUrl}/settings?tab=account&gmail_error=token_exchange_failed`);
     }
 
     const tokens: GoogleTokenResponse = await tokenResponse.json();
@@ -101,14 +101,14 @@ export async function GET(request: Request) {
 
     if (!userInfoResponse.ok) {
       console.error('Failed to get user info');
-      return NextResponse.redirect(`${baseUrl}/?gmail_error=userinfo_failed`);
+      return NextResponse.redirect(`${baseUrl}/settings?tab=account&gmail_error=userinfo_failed`);
     }
 
     const userInfo: GoogleUserInfo = await userInfoResponse.json();
 
     if (!userInfo.email) {
       console.error('No email in user info response');
-      return NextResponse.redirect(`${baseUrl}/?gmail_error=no_email`);
+      return NextResponse.redirect(`${baseUrl}/settings?tab=account&gmail_error=no_email`);
     }
 
     // Calculate token expiration time
@@ -131,8 +131,8 @@ export async function GET(request: Request) {
     });
 
     // Redirect to dashboard with success
-    return NextResponse.redirect(`${baseUrl}/?gmail_connected=true`);
+    return NextResponse.redirect(`${baseUrl}/settings?tab=account&gmail_connected=true`);
   } catch {
-    return NextResponse.redirect(`${baseUrl}/?gmail_error=unknown`);
+    return NextResponse.redirect(`${baseUrl}/settings?tab=account&gmail_error=unknown`);
   }
 }
