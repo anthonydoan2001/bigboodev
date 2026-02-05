@@ -182,7 +182,7 @@ const GasPriceCard = memo(function GasPriceCard({ gas }: { gas: GasPriceData }) 
 });
 
 export function PricesWidget() {
-  const { data: gasData } = useQuery({
+  const { data: gasData, isLoading: gasLoading } = useQuery({
     queryKey: ['gasPrice'],
     queryFn: fetchGasPrice,
     staleTime: 1800000, // 30 minutes
@@ -206,7 +206,7 @@ export function PricesWidget() {
     refetchOnMount: 'always', // Refetch on mount if stale
   });
 
-  const isLoading = stocksLoading || cryptoLoading;
+  const isLoading = stocksLoading || cryptoLoading || gasLoading;
   const hasError = stocksError || cryptoError;
   const hasStocks = stocksData && stocksData.quotes.length > 0;
   const hasCrypto = cryptoData && cryptoData.quotes.length > 0;
