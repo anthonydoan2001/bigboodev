@@ -226,7 +226,7 @@ export function LeagueOfLegendsWidget() {
           <div className="flex items-center gap-2">
             <div className="relative w-7 h-7 flex-shrink-0 rounded-full bg-background/50 overflow-hidden ring-1 ring-border/20">
               <Image
-                src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/${data.profileIconId}.png`}
+                src={`https://ddragon.leagueoflegends.com/cdn/${data.ddragonVersion}/img/profileicon/${data.profileIconId}.png`}
                 alt="Profile Icon"
                 fill
                 className="object-cover"

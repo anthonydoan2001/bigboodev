@@ -54,9 +54,14 @@ async function getLeagueStats(): Promise<LeagueStatsResponse> {
     return cachedData;
   }
 
-  // Step 1: Get PUUID from Riot ID (Account-V1)
-  const accountUrl = `https://${AMERICAS_REGION}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(SUMMONER_NAME)}/${encodeURIComponent(SUMMONER_TAG)}`;
-  const account = await fetchRiotApi<RiotAccountResponse>(accountUrl);
+  // Fetch latest DDragon version and account in parallel
+  const [versionsRes, account] = await Promise.all([
+    fetch('https://ddragon.leagueoflegends.com/api/versions.json', { cache: 'no-store' }).then(r => r.json() as Promise<string[]>),
+    fetchRiotApi<RiotAccountResponse>(
+      `https://${AMERICAS_REGION}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(SUMMONER_NAME)}/${encodeURIComponent(SUMMONER_TAG)}`
+    ),
+  ]);
+  const ddragonVersion = versionsRes[0];
 
   // Step 2: Get summoner data (Summoner-V4)
   const summonerUrl = `https://${REGION}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${account.puuid}`;
@@ -96,6 +101,7 @@ async function getLeagueStats(): Promise<LeagueStatsResponse> {
     summonerName: `${account.gameName}#${account.tagLine}`,
     summonerLevel: summoner.summonerLevel,
     profileIconId: summoner.profileIconId,
+    ddragonVersion,
     soloQueue,
     flexQueue,
     lastUpdated: new Date().toISOString(),
