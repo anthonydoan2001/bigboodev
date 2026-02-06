@@ -272,7 +272,7 @@ export function RocketsGameWidget() {
           <div className="flex items-center justify-center gap-4 md:gap-6 mb-2 md:mb-3">
             {/* Away Team */}
             <div className="relative flex items-center justify-center w-16 h-16 md:w-20 md:h-20">
-              <span className="absolute inset-0 flex items-center justify-center text-2xl md:text-3xl font-black text-foreground/[0.07] select-none tracking-wider">
+              <span className="absolute inset-0 flex items-center justify-center text-3xl md:text-4xl font-black text-foreground/[0.15] select-none tracking-wider">
                 {gameToShow.awayTeamAbbr || gameToShow.awayTeam.slice(0, 3).toUpperCase()}
               </span>
               <div className="relative w-11 h-11 md:w-14 md:h-14 z-10">
@@ -297,7 +297,7 @@ export function RocketsGameWidget() {
 
             {/* Home Team */}
             <div className="relative flex items-center justify-center w-16 h-16 md:w-20 md:h-20">
-              <span className="absolute inset-0 flex items-center justify-center text-2xl md:text-3xl font-black text-foreground/[0.07] select-none tracking-wider">
+              <span className="absolute inset-0 flex items-center justify-center text-3xl md:text-4xl font-black text-foreground/[0.15] select-none tracking-wider">
                 {gameToShow.homeTeamAbbr || gameToShow.homeTeam.slice(0, 3).toUpperCase()}
               </span>
               <div className="relative w-11 h-11 md:w-14 md:h-14 z-10">
