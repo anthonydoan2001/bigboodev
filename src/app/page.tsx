@@ -243,7 +243,7 @@ export default function Home() {
           </div>
 
           {/* Row 2 col 1: Continue Reading + Countdown */}
-          <div className="grid grid-cols-2 gap-3 items-start">
+          <div className="grid grid-cols-2 gap-3">
             <ContinueReadingWidget />
             <CountdownWidget />
           </div>
