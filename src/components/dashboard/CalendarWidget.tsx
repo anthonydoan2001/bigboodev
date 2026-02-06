@@ -59,7 +59,7 @@ export function CalendarWidget() {
             {monthNames[month]}
           </CardTitle>
           <span className="text-xs md:text-[length:var(--dash-text-sm)] text-muted-foreground bg-accent/50 px-2 py-0.5 rounded">
-            {year}
+            {monthNames[month]} {today.getDate()}, {year}
           </span>
         </div>
       </CardHeader>
@@ -77,10 +77,10 @@ export function CalendarWidget() {
         </div>
 
         {/* Calendar grid */}
-        <div className="grid grid-cols-7 gap-1 flex-1 content-center">
+        <div className="grid grid-cols-7 gap-1 flex-1">
           {days.map((day, index) => {
             if (day === null) {
-              return <div key={`empty-${index}`} className="h-7 lg:h-8" />;
+              return <div key={`empty-${index}`} />;
             }
 
             const isTodayDate = isToday(day);
@@ -88,14 +88,18 @@ export function CalendarWidget() {
             return (
               <div
                 key={day}
-                className={cn(
-                  "h-7 lg:h-8 flex items-center justify-center text-xs md:text-[length:var(--dash-text-sm)] rounded-full transition-all",
-                  isTodayDate
-                    ? "bg-primary text-primary-foreground font-bold shadow-md scale-105"
-                    : "text-muted-foreground font-medium hover:bg-muted/30"
-                )}
+                className="flex items-center justify-center"
               >
-                {day}
+                <span
+                  className={cn(
+                    "flex items-center justify-center aspect-square w-7 md:w-[2.2vw] max-w-9 text-sm md:text-[length:var(--dash-text-base)] rounded-full transition-all",
+                    isTodayDate
+                      ? "bg-primary text-primary-foreground font-bold shadow-md scale-105"
+                      : "text-muted-foreground font-medium hover:bg-muted/30"
+                  )}
+                >
+                  {day}
+                </span>
               </div>
             );
           })}

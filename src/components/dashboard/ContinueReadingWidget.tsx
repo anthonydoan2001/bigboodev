@@ -32,7 +32,7 @@ export function ContinueReadingWidget() {
 
   if (isLoading) {
     return (
-      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0">
+      <Card className="w-full h-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0">
         <CardContent className="!px-3 !py-2 md:!px-[var(--dash-px)] md:!py-[var(--dash-py)] flex items-center gap-2 md:gap-[var(--dash-gap-sm)]">
           <Skeleton className="h-3.5 w-24" />
           <Skeleton className="h-3 w-3 ml-auto" rounded="full" />
@@ -43,7 +43,7 @@ export function ContinueReadingWidget() {
 
   if (error || !book) {
     return (
-      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0">
+      <Card className="w-full h-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0">
         <CardContent className="!px-3 !py-2 md:!px-[var(--dash-px)] md:!py-[var(--dash-py)] flex items-center justify-center gap-2 md:gap-[var(--dash-gap-sm)]">
           <BookOpen className="h-4 w-4 md:h-[var(--dash-icon-md)] md:w-[var(--dash-icon-md)] text-muted-foreground" />
           <span className="text-xs md:text-[length:var(--dash-text-sm)] text-muted-foreground">No manga in progress</span>
@@ -56,9 +56,9 @@ export function ContinueReadingWidget() {
   const displayTitle = containingReadList ? containingReadList.name : book.seriesTitle;
 
   return (
-    <Link href={readLink} className="block group">
-      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0 transition-all hover:bg-background/60 hover:shadow-md">
-        <CardContent className="!px-3 !py-2 md:!px-[var(--dash-px)] md:!py-[var(--dash-py)] flex items-center gap-2 md:gap-[var(--dash-gap-sm)]">
+    <Link href={readLink} className="block group h-full">
+      <Card className="w-full h-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0 transition-all hover:bg-background/60 hover:shadow-md">
+        <CardContent className="!px-3 !py-2 md:!px-[var(--dash-px)] md:!py-[var(--dash-py)] h-full flex items-center gap-2 md:gap-[var(--dash-gap-sm)]">
           <BookOpen className="h-4 w-4 md:h-[var(--dash-icon-md)] md:w-[var(--dash-icon-md)] text-muted-foreground flex-shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="text-[10px] md:text-[length:var(--dash-text-xxs)] text-muted-foreground leading-none mb-0.5">Continue Reading</p>

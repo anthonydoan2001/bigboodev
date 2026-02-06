@@ -58,10 +58,10 @@ export function CountdownWidget() {
   }, []);
 
   return (
-    <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0 transition-all hover:shadow-md">
-      <CardContent className="!px-3 !py-2 md:!px-[var(--dash-px)] md:!py-[var(--dash-py)] flex items-center gap-2 md:gap-[var(--dash-gap-sm)]">
-        <span className="text-2xl md:text-[length:var(--dash-text-3xl)] font-bold tabular-nums">{days}</span>
-        <span className="text-xs md:text-[length:var(--dash-text-sm)] text-muted-foreground tracking-wide">days until April 5th</span>
+    <Card className="w-full h-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0 transition-all hover:shadow-md">
+      <CardContent className="!px-3 !py-2 md:!px-[var(--dash-px)] md:!py-[var(--dash-py)] h-full flex flex-col items-center justify-center">
+        <span className="text-2xl md:text-[length:var(--dash-text-3xl)] font-bold tabular-nums leading-none">{days}</span>
+        <span className="text-[10px] md:text-[length:var(--dash-text-xxs)] text-muted-foreground tracking-wide mt-0.5">days until April 5th</span>
       </CardContent>
     </Card>
   );
