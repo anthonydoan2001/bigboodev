@@ -100,8 +100,8 @@
 
   /* Game preview (scheduled) */
   --dash-preview-box: clamp(4rem, 8vh, 7rem);
-  --dash-preview-logo: clamp(2.25rem, 4.5vh, 4rem);
-  --dash-preview-abbr: clamp(2.25rem, 5.5vh, 4.5rem);
+  --dash-preview-logo: clamp(2.75rem, 5.5vh, 5rem);
+  --dash-preview-abbr: clamp(1.5rem, 3.5vh, 2.75rem);
 
   /* Header section */
   --dash-greeting: clamp(1.875rem, 3.3vh, 3rem);
