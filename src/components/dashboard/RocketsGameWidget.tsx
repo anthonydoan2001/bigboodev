@@ -269,10 +269,10 @@ export function RocketsGameWidget() {
       <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-none overflow-hidden py-0 gap-0">
         <CardContent className="!px-3 !py-3 md:!px-[var(--dash-px)] md:!py-[var(--dash-py)] h-full flex flex-col justify-center items-center text-center">
           {/* Team Matchup */}
-          <div className="flex items-center justify-center gap-4 md:gap-6 mb-2 md:mb-3">
+          <div className="flex items-center justify-center gap-2 md:gap-3">
             {/* Away Team */}
-            <div className="relative flex items-center justify-center w-16 h-16 md:w-20 md:h-20">
-              <span className="absolute inset-0 flex items-center justify-center text-3xl md:text-4xl font-black text-foreground/[0.15] select-none tracking-wider">
+            <div className="relative flex items-center justify-center w-20 h-20 md:w-24 md:h-24">
+              <span className="absolute inset-0 flex items-center justify-center text-6xl md:text-7xl font-black text-foreground/[0.15] select-none tracking-wider leading-none">
                 {gameToShow.awayTeamAbbr || gameToShow.awayTeam.slice(0, 3).toUpperCase()}
               </span>
               <div className="relative w-11 h-11 md:w-14 md:h-14 z-10">
@@ -296,8 +296,8 @@ export function RocketsGameWidget() {
             </div>
 
             {/* Home Team */}
-            <div className="relative flex items-center justify-center w-16 h-16 md:w-20 md:h-20">
-              <span className="absolute inset-0 flex items-center justify-center text-3xl md:text-4xl font-black text-foreground/[0.15] select-none tracking-wider">
+            <div className="relative flex items-center justify-center w-20 h-20 md:w-24 md:h-24">
+              <span className="absolute inset-0 flex items-center justify-center text-6xl md:text-7xl font-black text-foreground/[0.15] select-none tracking-wider leading-none">
                 {gameToShow.homeTeamAbbr || gameToShow.homeTeam.slice(0, 3).toUpperCase()}
               </span>
               <div className="relative w-11 h-11 md:w-14 md:h-14 z-10">
