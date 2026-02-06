@@ -99,9 +99,7 @@
   --dash-logo-lg: clamp(4rem, 7.5vh, 7rem);
 
   /* Game preview (scheduled) */
-  --dash-preview-box: clamp(4rem, 8vh, 7rem);
   --dash-preview-logo: clamp(2.75rem, 5.5vh, 5rem);
-  --dash-preview-abbr: clamp(1.75rem, 4vh, 3.25rem);
 
   /* Header section */
   --dash-greeting: clamp(1.875rem, 3.3vh, 3rem);
