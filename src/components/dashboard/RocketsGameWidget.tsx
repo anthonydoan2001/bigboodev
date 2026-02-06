@@ -271,8 +271,11 @@ export function RocketsGameWidget() {
           {/* Team Matchup */}
           <div className="flex items-center justify-center gap-4 md:gap-6 mb-2 md:mb-3">
             {/* Away Team */}
-            <div className="flex flex-col items-center gap-1">
-              <div className="relative w-9 h-9 md:w-[var(--dash-logo-sm)] md:h-[var(--dash-logo-sm)]">
+            <div className="relative flex items-center justify-center w-16 h-16 md:w-20 md:h-20">
+              <span className="absolute inset-0 flex items-center justify-center text-2xl md:text-3xl font-black text-foreground/[0.07] select-none tracking-wider">
+                {gameToShow.awayTeamAbbr || gameToShow.awayTeam.slice(0, 3).toUpperCase()}
+              </span>
+              <div className="relative w-11 h-11 md:w-14 md:h-14 z-10">
                 {gameToShow.awayTeamLogo ? (
                   <Image
                     src={gameToShow.awayTeamLogo}
@@ -285,7 +288,6 @@ export function RocketsGameWidget() {
                   <div className="w-full h-full rounded-full bg-muted/50" />
                 )}
               </div>
-              <span className="text-xs md:text-[length:var(--dash-text-sm)] font-medium">{gameToShow.awayTeam}</span>
             </div>
 
             {/* VS */}
@@ -294,8 +296,11 @@ export function RocketsGameWidget() {
             </div>
 
             {/* Home Team */}
-            <div className="flex flex-col items-center gap-1">
-              <div className="relative w-9 h-9 md:w-[var(--dash-logo-sm)] md:h-[var(--dash-logo-sm)]">
+            <div className="relative flex items-center justify-center w-16 h-16 md:w-20 md:h-20">
+              <span className="absolute inset-0 flex items-center justify-center text-2xl md:text-3xl font-black text-foreground/[0.07] select-none tracking-wider">
+                {gameToShow.homeTeamAbbr || gameToShow.homeTeam.slice(0, 3).toUpperCase()}
+              </span>
+              <div className="relative w-11 h-11 md:w-14 md:h-14 z-10">
                 {gameToShow.homeTeamLogo ? (
                   <Image
                     src={gameToShow.homeTeamLogo}
@@ -308,7 +313,6 @@ export function RocketsGameWidget() {
                   <div className="w-full h-full rounded-full bg-muted/50" />
                 )}
               </div>
-              <span className="text-xs md:text-[length:var(--dash-text-sm)] font-medium">{gameToShow.homeTeam}</span>
             </div>
           </div>
 
