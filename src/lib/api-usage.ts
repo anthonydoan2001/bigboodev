@@ -5,14 +5,15 @@
 
 import { db } from './db';
 
-export type ApiName = 
-  | 'finnhub' 
-  | 'coinmarketcap' 
-  | 'rawg' 
-  | 'tmdb' 
-  | 'jikan' 
-  | 'espn' 
-  | 'openweather';
+export type ApiName =
+  | 'finnhub'
+  | 'coinmarketcap'
+  | 'rawg'
+  | 'tmdb'
+  | 'jikan'
+  | 'espn'
+  | 'openweather'
+  | 'metalpriceapi';
 
 export interface ApiLimit {
   name: string;
@@ -78,6 +79,13 @@ export const API_LIMITS: Record<ApiName, ApiLimit> = {
     limits: {
       perMinute: 60,
       perDay: 1000, // Free tier daily limit
+    },
+  },
+  metalpriceapi: {
+    name: 'metalpriceapi',
+    displayName: 'MetalpriceAPI (Commodities)',
+    limits: {
+      perMonth: 100, // Free tier monthly limit
     },
   },
 };
