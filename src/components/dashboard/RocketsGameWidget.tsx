@@ -271,23 +271,18 @@ export function RocketsGameWidget() {
           {/* Team Matchup */}
           <div className="flex items-center justify-center w-full gap-3">
             {/* Away Team */}
-            <div className="relative flex items-center justify-center" style={{ width: 'var(--dash-preview-box)', height: 'var(--dash-preview-box)' }}>
-              <span className="absolute inset-0 flex items-center justify-center font-black text-foreground/[0.15] select-none tracking-wider leading-none" style={{ fontSize: 'var(--dash-preview-abbr)' }}>
-                {gameToShow.awayTeamAbbr || gameToShow.awayTeam.slice(0, 3).toUpperCase()}
-              </span>
-              <div className="relative z-10" style={{ width: 'var(--dash-preview-logo)', height: 'var(--dash-preview-logo)' }}>
-                {gameToShow.awayTeamLogo ? (
-                  <Image
-                    src={gameToShow.awayTeamLogo}
-                    alt={`${gameToShow.awayTeam} logo`}
-                    fill
-                    className="object-contain"
-                    unoptimized
-                  />
-                ) : (
-                  <div className="w-full h-full rounded-full bg-muted/50" />
-                )}
-              </div>
+            <div className="relative" style={{ width: 'var(--dash-preview-logo)', height: 'var(--dash-preview-logo)' }}>
+              {gameToShow.awayTeamLogo ? (
+                <Image
+                  src={gameToShow.awayTeamLogo}
+                  alt={`${gameToShow.awayTeam} logo`}
+                  fill
+                  className="object-contain"
+                  unoptimized
+                />
+              ) : (
+                <div className="w-full h-full rounded-full bg-muted/50" />
+              )}
             </div>
 
             {/* VS */}
@@ -296,23 +291,18 @@ export function RocketsGameWidget() {
             </div>
 
             {/* Home Team */}
-            <div className="relative flex items-center justify-center" style={{ width: 'var(--dash-preview-box)', height: 'var(--dash-preview-box)' }}>
-              <span className="absolute inset-0 flex items-center justify-center font-black text-foreground/[0.15] select-none tracking-wider leading-none" style={{ fontSize: 'var(--dash-preview-abbr)' }}>
-                {gameToShow.homeTeamAbbr || gameToShow.homeTeam.slice(0, 3).toUpperCase()}
-              </span>
-              <div className="relative z-10" style={{ width: 'var(--dash-preview-logo)', height: 'var(--dash-preview-logo)' }}>
-                {gameToShow.homeTeamLogo ? (
-                  <Image
-                    src={gameToShow.homeTeamLogo}
-                    alt={`${gameToShow.homeTeam} logo`}
-                    fill
-                    className="object-contain"
-                    unoptimized
-                  />
-                ) : (
-                  <div className="w-full h-full rounded-full bg-muted/50" />
-                )}
-              </div>
+            <div className="relative" style={{ width: 'var(--dash-preview-logo)', height: 'var(--dash-preview-logo)' }}>
+              {gameToShow.homeTeamLogo ? (
+                <Image
+                  src={gameToShow.homeTeamLogo}
+                  alt={`${gameToShow.homeTeam} logo`}
+                  fill
+                  className="object-contain"
+                  unoptimized
+                />
+              ) : (
+                <div className="w-full h-full rounded-full bg-muted/50" />
+              )}
             </div>
           </div>
 
