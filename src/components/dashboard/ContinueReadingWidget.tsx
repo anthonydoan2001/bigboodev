@@ -3,9 +3,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useBooksInProgress, useReadLists } from '@/lib/hooks/useManga';
-import { getBookThumbnailUrl, getReadListThumbnailUrl } from '@/lib/api/manga';
-import { BookOpen, List } from 'lucide-react';
-import Image from 'next/image';
+import { BookOpen, ArrowRight, List } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
 
@@ -34,13 +32,10 @@ export function ContinueReadingWidget() {
 
   if (isLoading) {
     return (
-      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm h-full">
-        <CardContent className="p-2 h-full flex items-center justify-center gap-2">
-          <Skeleton className="w-10 h-14 flex-shrink-0" rounded="sm" />
-          <div className="min-w-0 space-y-1.5">
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-2.5 w-16" />
-          </div>
+      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0">
+        <CardContent className="!px-3 !py-2 md:!px-[var(--dash-px)] md:!py-[var(--dash-py)] flex items-center gap-2 md:gap-[var(--dash-gap-sm)]">
+          <Skeleton className="h-3.5 w-24" />
+          <Skeleton className="h-3 w-3 ml-auto" rounded="full" />
         </CardContent>
       </Card>
     );
@@ -48,12 +43,10 @@ export function ContinueReadingWidget() {
 
   if (error || !book) {
     return (
-      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm h-full">
-        <CardContent className="p-3 flex flex-col items-center justify-center h-full text-center gap-2">
-          <BookOpen className="h-7 w-7 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">
-            No manga in progress
-          </span>
+      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0">
+        <CardContent className="!px-3 !py-2 md:!px-[var(--dash-px)] md:!py-[var(--dash-py)] flex items-center justify-center gap-2 md:gap-[var(--dash-gap-sm)]">
+          <BookOpen className="h-4 w-4 md:h-[var(--dash-icon-md)] md:w-[var(--dash-icon-md)] text-muted-foreground" />
+          <span className="text-xs md:text-[length:var(--dash-text-sm)] text-muted-foreground">No manga in progress</span>
         </CardContent>
       </Card>
     );
@@ -62,41 +55,23 @@ export function ContinueReadingWidget() {
   // Display reading list name if in a reading list, otherwise series title
   const displayTitle = containingReadList ? containingReadList.name : book.seriesTitle;
 
-  // Use reading list thumbnail if in a reading list, otherwise book thumbnail
-  const thumbnailUrl = containingReadList
-    ? getReadListThumbnailUrl(containingReadList.id)
-    : getBookThumbnailUrl(book.id);
-
   return (
-    <Link href={readLink} className="block group h-full">
-      <Card className="w-full h-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm transition-all hover:bg-background/60 hover:shadow-md hover:scale-[1.01]">
-        <CardContent className="p-2 h-full flex items-center justify-center gap-2">
-          {/* Thumbnail */}
-          <div className="relative w-10 h-14 flex-shrink-0 rounded overflow-hidden bg-muted">
-            <Image
-              src={thumbnailUrl}
-              alt={displayTitle}
-              fill
-              className="object-cover"
-              sizes="40px"
-              unoptimized
-            />
-          </div>
-
-          {/* Info */}
-          <div className="min-w-0">
-            <div className="flex items-center gap-1 mb-0.5">
+    <Link href={readLink} className="block group">
+      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0 transition-all hover:bg-background/60 hover:shadow-md">
+        <CardContent className="!px-3 !py-2 md:!px-[var(--dash-px)] md:!py-[var(--dash-py)] flex items-center gap-2 md:gap-[var(--dash-gap-sm)]">
+          <BookOpen className="h-4 w-4 md:h-[var(--dash-icon-md)] md:w-[var(--dash-icon-md)] text-muted-foreground flex-shrink-0" />
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] md:text-[length:var(--dash-text-xxs)] text-muted-foreground leading-none mb-0.5">Continue Reading</p>
+            <div className="flex items-center gap-1">
               {containingReadList && (
-                <List className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                <List className="h-3 w-3 md:h-[var(--dash-icon-xs)] md:w-[var(--dash-icon-xs)] text-muted-foreground flex-shrink-0" />
               )}
-              <h3 className="font-semibold text-xs leading-tight line-clamp-1 group-hover:text-primary transition-colors">
+              <h3 className="font-semibold text-xs md:text-[length:var(--dash-text-sm)] leading-tight truncate group-hover:text-primary transition-colors">
                 {displayTitle}
               </h3>
             </div>
-            <p className="text-[0.65rem] text-muted-foreground truncate">
-              {book.metadata.title || book.name}
-            </p>
           </div>
+          <ArrowRight className="h-4 w-4 md:h-[var(--dash-icon-md)] md:w-[var(--dash-icon-md)] text-muted-foreground flex-shrink-0 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
         </CardContent>
       </Card>
     </Link>

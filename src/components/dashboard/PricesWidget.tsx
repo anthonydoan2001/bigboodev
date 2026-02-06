@@ -53,11 +53,11 @@ const StockCard = memo(function StockCard({ quote }: { quote: StockQuote }) {
   const changeColor = isPositive ? 'text-success' : 'text-destructive';
 
   return (
-    <div className="flex items-center justify-between py-2 px-2.5 border-b border-border/40 last:border-0 hover:bg-muted/20 transition-colors">
+    <div className="flex items-center justify-between py-2 px-2.5 md:py-[var(--dash-py)] md:px-[var(--dash-px)] border-b border-border/40 last:border-0 hover:bg-muted/20 transition-colors">
       {/* Left side: Logo & Ticker */}
-      <div className="flex items-center gap-2 min-w-0 flex-1">
+      <div className="flex items-center gap-2 md:gap-[var(--dash-gap-sm)] min-w-0 flex-1">
         {/* Logo */}
-        <div className="relative w-7 h-7 flex-shrink-0 rounded-full bg-background/50 flex items-center justify-center overflow-hidden ring-1 ring-border/10">
+        <div className="relative w-7 h-7 md:w-[var(--dash-logo-sm)] md:h-[var(--dash-logo-sm)] flex-shrink-0 rounded-full bg-background/50 flex items-center justify-center overflow-hidden ring-1 ring-border/10">
           {quote.logoUrl ? (
             <Image
               src={quote.logoUrl}
@@ -67,26 +67,26 @@ const StockCard = memo(function StockCard({ quote }: { quote: StockQuote }) {
               unoptimized
             />
           ) : (
-            <span className="text-xs font-semibold text-muted-foreground">{quote.symbol.charAt(0)}</span>
+            <span className="text-xs md:text-[length:var(--dash-text-xs)] font-semibold text-muted-foreground">{quote.symbol.charAt(0)}</span>
           )}
         </div>
 
         {/* Ticker */}
-        <span className="font-semibold font-mono text-base leading-none">{quote.symbol}</span>
+        <span className="font-semibold font-mono text-base md:text-[length:var(--dash-text-lg)] leading-none">{quote.symbol}</span>
       </div>
 
       {/* Middle: Price */}
       <div className="flex-shrink-0 mx-3">
-        <span className="font-mono text-base font-medium tabular-nums">{formatPrice(quote.currentPrice)}</span>
+        <span className="font-mono text-base md:text-[length:var(--dash-text-lg)] font-medium tabular-nums">{formatPrice(quote.currentPrice)}</span>
       </div>
 
       {/* Right: Change */}
       <div className="flex items-center gap-0.5 flex-shrink-0 min-w-[80px] justify-end">
-        <span className={cn("text-sm font-mono font-medium flex items-center gap-0.5 tabular-nums", changeColor)}>
+        <span className={cn("text-sm md:text-[length:var(--dash-text-base)] font-mono font-medium flex items-center gap-0.5 tabular-nums", changeColor)}>
           {isPositive ? (
-            <ArrowUp className="h-3.5 w-3.5" />
+            <ArrowUp className="h-3.5 w-3.5 md:h-[var(--dash-icon-sm)] md:w-[var(--dash-icon-sm)]" />
           ) : (
-            <ArrowDown className="h-3.5 w-3.5" />
+            <ArrowDown className="h-3.5 w-3.5 md:h-[var(--dash-icon-sm)] md:w-[var(--dash-icon-sm)]" />
           )}
           {formatPercentChange(quote.percentChange)}
         </span>
@@ -101,11 +101,11 @@ const CryptoCard = memo(function CryptoCard({ crypto }: { crypto: CryptoQuote })
   const changeColor = isPositive ? 'text-success' : 'text-destructive';
 
   return (
-    <div className="flex items-center justify-between py-2 px-2.5 border-b border-border/40 last:border-0 hover:bg-muted/20 transition-colors">
+    <div className="flex items-center justify-between py-2 px-2.5 md:py-[var(--dash-py)] md:px-[var(--dash-px)] border-b border-border/40 last:border-0 hover:bg-muted/20 transition-colors">
       {/* Left side: Logo & Symbol */}
-      <div className="flex items-center gap-2 min-w-0 flex-1">
+      <div className="flex items-center gap-2 md:gap-[var(--dash-gap-sm)] min-w-0 flex-1">
         {/* Logo */}
-        <div className="relative w-7 h-7 flex-shrink-0 rounded-full bg-background/50 flex items-center justify-center overflow-hidden ring-1 ring-border/10">
+        <div className="relative w-7 h-7 md:w-[var(--dash-logo-sm)] md:h-[var(--dash-logo-sm)] flex-shrink-0 rounded-full bg-background/50 flex items-center justify-center overflow-hidden ring-1 ring-border/10">
           {crypto.logoUrl ? (
             <Image
               src={crypto.logoUrl}
@@ -115,26 +115,26 @@ const CryptoCard = memo(function CryptoCard({ crypto }: { crypto: CryptoQuote })
               unoptimized
             />
           ) : (
-            <span className="text-xs font-semibold text-muted-foreground">{crypto.symbol.charAt(0)}</span>
+            <span className="text-xs md:text-[length:var(--dash-text-xs)] font-semibold text-muted-foreground">{crypto.symbol.charAt(0)}</span>
           )}
         </div>
 
         {/* Symbol */}
-        <span className="font-semibold font-mono text-base leading-none">{crypto.symbol}</span>
+        <span className="font-semibold font-mono text-base md:text-[length:var(--dash-text-lg)] leading-none">{crypto.symbol}</span>
       </div>
 
       {/* Middle: Price */}
       <div className="flex-shrink-0 mx-3">
-        <span className="font-mono text-base font-medium tabular-nums">{formatPrice(crypto.price)}</span>
+        <span className="font-mono text-base md:text-[length:var(--dash-text-lg)] font-medium tabular-nums">{formatPrice(crypto.price)}</span>
       </div>
 
       {/* Right: Change */}
       <div className="flex items-center gap-0.5 flex-shrink-0 min-w-[80px] justify-end">
-        <span className={cn("text-sm font-mono font-medium flex items-center gap-0.5 tabular-nums", changeColor)}>
+        <span className={cn("text-sm md:text-[length:var(--dash-text-base)] font-mono font-medium flex items-center gap-0.5 tabular-nums", changeColor)}>
           {isPositive ? (
-            <ArrowUp className="h-3.5 w-3.5" />
+            <ArrowUp className="h-3.5 w-3.5 md:h-[var(--dash-icon-sm)] md:w-[var(--dash-icon-sm)]" />
           ) : (
-            <ArrowDown className="h-3.5 w-3.5" />
+            <ArrowDown className="h-3.5 w-3.5 md:h-[var(--dash-icon-sm)] md:w-[var(--dash-icon-sm)]" />
           )}
           {formatPercentChange(crypto.percentChange24h)}
         </span>
@@ -156,26 +156,26 @@ function formatRelativeTime(dateStr: string): string {
 
 const GasPriceCard = memo(function GasPriceCard({ gas }: { gas: GasPriceData }) {
   return (
-    <div className="flex items-center justify-between py-2 px-2.5 border-b border-border/40 last:border-0 hover:bg-muted/20 transition-colors">
+    <div className="flex items-center justify-between py-2 px-2.5 md:py-[var(--dash-py)] md:px-[var(--dash-px)] border-b border-border/40 last:border-0 hover:bg-muted/20 transition-colors">
       {/* Left side: Icon & Label */}
-      <div className="flex items-center gap-2 min-w-0 flex-1">
-        <div className="relative w-7 h-7 flex-shrink-0 rounded-full bg-emerald-500/15 flex items-center justify-center ring-1 ring-emerald-500/20">
-          <Fuel className="h-4 w-4 text-emerald-500" />
+      <div className="flex items-center gap-2 md:gap-[var(--dash-gap-sm)] min-w-0 flex-1">
+        <div className="relative w-7 h-7 md:w-[var(--dash-logo-sm)] md:h-[var(--dash-logo-sm)] flex-shrink-0 rounded-full bg-emerald-500/15 flex items-center justify-center ring-1 ring-emerald-500/20">
+          <Fuel className="h-4 w-4 md:h-[var(--dash-icon-md)] md:w-[var(--dash-icon-md)] text-emerald-500" />
         </div>
         <div className="flex flex-col min-w-0">
-          <span className="font-semibold font-mono text-base leading-none">GAS</span>
-          <span className="text-xs text-muted-foreground truncate leading-none mt-0.5">{gas.station}</span>
+          <span className="font-semibold font-mono text-base md:text-[length:var(--dash-text-lg)] leading-none">GAS</span>
+          <span className="text-xs md:text-[length:var(--dash-text-xs)] text-muted-foreground truncate leading-none mt-0.5">{gas.station}</span>
         </div>
       </div>
 
       {/* Middle: Price */}
       <div className="flex-shrink-0 mx-3">
-        <span className="font-mono text-base font-medium tabular-nums">${gas.regular.toFixed(2)}</span>
+        <span className="font-mono text-base md:text-[length:var(--dash-text-lg)] font-medium tabular-nums">${gas.regular.toFixed(2)}</span>
       </div>
 
       {/* Right: Last updated */}
       <div className="flex items-center gap-0.5 flex-shrink-0 min-w-[80px] justify-end">
-        <span className="text-sm font-mono text-muted-foreground tabular-nums">
+        <span className="text-sm md:text-[length:var(--dash-text-base)] font-mono text-muted-foreground tabular-nums">
           {formatRelativeTime(gas.scrapedAt)}
         </span>
       </div>
@@ -199,31 +199,31 @@ const CommodityCard = memo(function CommodityCard({ commodity }: { commodity: Co
   const { Icon } = display;
 
   return (
-    <div className="flex items-center justify-between py-2 px-2.5 border-b border-border/40 last:border-0 hover:bg-muted/20 transition-colors">
+    <div className="flex items-center justify-between py-2 px-2.5 md:py-[var(--dash-py)] md:px-[var(--dash-px)] border-b border-border/40 last:border-0 hover:bg-muted/20 transition-colors">
       {/* Left side: Icon & Name */}
-      <div className="flex items-center gap-2 min-w-0 flex-1">
-        <Icon className={cn("h-5 w-5 flex-shrink-0", display.iconColor)} />
-        <span className="font-semibold font-mono text-base leading-none">{display.label}</span>
+      <div className="flex items-center gap-2 md:gap-[var(--dash-gap-sm)] min-w-0 flex-1">
+        <Icon className={cn("h-5 w-5 md:h-[var(--dash-icon-md)] md:w-[var(--dash-icon-md)] flex-shrink-0", display.iconColor)} />
+        <span className="font-semibold font-mono text-base md:text-[length:var(--dash-text-lg)] leading-none">{display.label}</span>
       </div>
 
       {/* Middle: Price */}
       <div className="flex-shrink-0 mx-3">
-        <span className="font-mono text-base font-medium tabular-nums">{formatPrice(commodity.price)}</span>
+        <span className="font-mono text-base md:text-[length:var(--dash-text-lg)] font-medium tabular-nums">{formatPrice(commodity.price)}</span>
       </div>
 
       {/* Right: Change */}
       <div className="flex items-center gap-0.5 flex-shrink-0 min-w-[80px] justify-end">
         {commodity.percentChange !== null ? (
-          <span className={cn("text-sm font-mono font-medium flex items-center gap-0.5 tabular-nums", changeColor)}>
+          <span className={cn("text-sm md:text-[length:var(--dash-text-base)] font-mono font-medium flex items-center gap-0.5 tabular-nums", changeColor)}>
             {isPositive ? (
-              <ArrowUp className="h-3.5 w-3.5" />
+              <ArrowUp className="h-3.5 w-3.5 md:h-[var(--dash-icon-sm)] md:w-[var(--dash-icon-sm)]" />
             ) : (
-              <ArrowDown className="h-3.5 w-3.5" />
+              <ArrowDown className="h-3.5 w-3.5 md:h-[var(--dash-icon-sm)] md:w-[var(--dash-icon-sm)]" />
             )}
             {formatPercentChange(commodity.percentChange)}
           </span>
         ) : (
-          <span className="text-sm font-mono text-muted-foreground tabular-nums">
+          <span className="text-sm md:text-[length:var(--dash-text-base)] font-mono text-muted-foreground tabular-nums">
             {formatRelativeTime(commodity.lastUpdated)}
           </span>
         )}
