@@ -9,16 +9,13 @@ const METALPRICEAPI_BASE_URL = 'https://api.metalpriceapi.com/v1';
 export const MONTHLY_LIMIT = 100;
 export const MIN_REFRESH_INTERVAL_HOURS = 6;
 
-export const COMMODITY_SYMBOLS = ['XAU', 'XAG', 'XPT', 'XIN', 'XLI', 'XU', 'NATURALGAS'] as const;
+// Free tier only supports precious metals (XIN, XLI, XU, NATURALGAS require paid plan)
+export const COMMODITY_SYMBOLS = ['XAU', 'XAG', 'XPT'] as const;
 
 export const COMMODITY_META: Record<string, { name: string; unit: string }> = {
   XAU: { name: 'Gold', unit: 'Troy Ounce' },
   XAG: { name: 'Silver', unit: 'Troy Ounce' },
   XPT: { name: 'Platinum', unit: 'Troy Ounce' },
-  XIN: { name: 'Indium', unit: 'Ounce' },
-  XLI: { name: 'Lithium', unit: 'Ounce' },
-  XU: { name: 'Uranium', unit: 'Ounce' },
-  NATURALGAS: { name: 'Natural Gas', unit: 'MMBtu' },
 };
 
 /**
@@ -179,6 +176,22 @@ export async function fetchCommodityPrices(): Promise<MetalpriceApiResponse> {
 export function inverseRateToUsd(rate: number): number {
   if (rate === 0) return 0;
   return 1 / rate;
+}
+
+/**
+ * Extract the rate for a symbol from the API response.
+ * The API returns both "XAU" (inverse) and "USDXAU" (direct USD price) keys.
+ * We prefer the "USD{symbol}" key (direct price) if available, otherwise invert.
+ */
+export function extractUsdPrice(rates: Record<string, number>, symbol: string): number {
+  const directKey = `USD${symbol}`;
+  if (directKey in rates && rates[directKey] > 0) {
+    return rates[directKey];
+  }
+  if (symbol in rates && rates[symbol] > 0) {
+    return inverseRateToUsd(rates[symbol]);
+  }
+  return 0;
 }
 
 /**
