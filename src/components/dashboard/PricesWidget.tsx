@@ -183,10 +183,10 @@ const GasPriceCard = memo(function GasPriceCard({ gas }: { gas: GasPriceData }) 
   );
 });
 
-const COMMODITY_DISPLAY: Record<string, { label: string; Icon: LucideIcon; iconColor: string }> = {
-  XAU: { label: 'GOLD', Icon: CircleDollarSign, iconColor: 'text-amber-400' },
-  XAG: { label: 'SILVER', Icon: Coins, iconColor: 'text-slate-300' },
-  XPT: { label: 'PLATINUM', Icon: Diamond, iconColor: 'text-sky-300' },
+const COMMODITY_DISPLAY: Record<string, { label: string; Icon: LucideIcon; iconColor: string; ringColor: string }> = {
+  XAU: { label: 'GOLD', Icon: CircleDollarSign, iconColor: 'text-amber-400', ringColor: 'bg-amber-400/15 ring-amber-400/20' },
+  XAG: { label: 'SILVER', Icon: Coins, iconColor: 'text-slate-300', ringColor: 'bg-slate-300/15 ring-slate-300/20' },
+  XPT: { label: 'PLATINUM', Icon: Diamond, iconColor: 'text-sky-300', ringColor: 'bg-sky-300/15 ring-sky-300/20' },
 };
 
 const COMMODITY_SORT_ORDER = ['XAU', 'XAG', 'XPT'];
@@ -195,14 +195,16 @@ const CommodityCard = memo(function CommodityCard({ commodity }: { commodity: Co
   const percentChange = commodity.percentChange ?? 0;
   const isPositive = percentChange >= 0;
   const changeColor = isPositive ? 'text-success' : 'text-destructive';
-  const display = COMMODITY_DISPLAY[commodity.symbol] || { label: commodity.symbol, Icon: Coins, iconColor: 'text-amber-400' };
+  const display = COMMODITY_DISPLAY[commodity.symbol] || { label: commodity.symbol, Icon: Coins, iconColor: 'text-amber-400', ringColor: 'bg-amber-400/15 ring-amber-400/20' };
   const { Icon } = display;
 
   return (
     <div className="flex items-center justify-between py-2 px-2.5 md:py-[var(--dash-py)] md:px-[var(--dash-px)] border-b border-border/40 last:border-0 hover:bg-muted/20 transition-colors">
       {/* Left side: Icon & Name */}
       <div className="flex items-center gap-2 md:gap-[var(--dash-gap-sm)] min-w-0 flex-1">
-        <Icon className={cn("h-5 w-5 md:h-[var(--dash-icon-md)] md:w-[var(--dash-icon-md)] flex-shrink-0", display.iconColor)} />
+        <div className={cn("relative w-7 h-7 md:w-[var(--dash-logo-sm)] md:h-[var(--dash-logo-sm)] flex-shrink-0 rounded-full flex items-center justify-center ring-1", display.ringColor)}>
+          <Icon className={cn("h-4 w-4 md:h-[var(--dash-icon-sm)] md:w-[var(--dash-icon-sm)]", display.iconColor)} />
+        </div>
         <span className="font-semibold font-mono text-base md:text-[length:var(--dash-text-lg)] leading-none">{display.label}</span>
       </div>
 
@@ -213,20 +215,14 @@ const CommodityCard = memo(function CommodityCard({ commodity }: { commodity: Co
 
       {/* Right: Change */}
       <div className="flex items-center gap-0.5 flex-shrink-0 min-w-[80px] justify-end">
-        {commodity.percentChange !== null ? (
-          <span className={cn("text-sm md:text-[length:var(--dash-text-base)] font-mono font-medium flex items-center gap-0.5 tabular-nums", changeColor)}>
-            {isPositive ? (
-              <ArrowUp className="h-3.5 w-3.5 md:h-[var(--dash-icon-sm)] md:w-[var(--dash-icon-sm)]" />
-            ) : (
-              <ArrowDown className="h-3.5 w-3.5 md:h-[var(--dash-icon-sm)] md:w-[var(--dash-icon-sm)]" />
-            )}
-            {formatPercentChange(commodity.percentChange)}
-          </span>
-        ) : (
-          <span className="text-sm md:text-[length:var(--dash-text-base)] font-mono text-muted-foreground tabular-nums">
-            {formatRelativeTime(commodity.lastUpdated)}
-          </span>
-        )}
+        <span className={cn("text-sm md:text-[length:var(--dash-text-base)] font-mono font-medium flex items-center gap-0.5 tabular-nums", changeColor)}>
+          {isPositive ? (
+            <ArrowUp className="h-3.5 w-3.5 md:h-[var(--dash-icon-sm)] md:w-[var(--dash-icon-sm)]" />
+          ) : (
+            <ArrowDown className="h-3.5 w-3.5 md:h-[var(--dash-icon-sm)] md:w-[var(--dash-icon-sm)]" />
+          )}
+          {formatPercentChange(commodity.percentChange)}
+        </span>
       </div>
     </div>
   );

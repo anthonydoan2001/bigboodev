@@ -76,17 +76,24 @@ async function handleRefresh(request: Request, auth: { type: 'session' | 'cron';
         }
         const meta = COMMODITY_META[symbol];
 
-        // Get existing record for change calculation
-        const existing = await db.commodityQuote.findUnique({
-          where: { symbol },
+        // Record price in history for true 24h change calculation
+        await db.commodityPriceHistory.create({
+          data: { symbol, price: usdPrice },
         });
 
+        // Look back 24h in history for true daily change
         let dailyChange: number | null = null;
         let percentChange: number | null = null;
 
-        if (existing && existing.price > 0) {
-          dailyChange = usdPrice - existing.price;
-          percentChange = (dailyChange / existing.price) * 100;
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const historicRecord = await db.commodityPriceHistory.findFirst({
+          where: { symbol, recordedAt: { lte: twentyFourHoursAgo } },
+          orderBy: { recordedAt: 'desc' },
+        });
+
+        if (historicRecord && historicRecord.price > 0) {
+          dailyChange = usdPrice - historicRecord.price;
+          percentChange = (dailyChange / historicRecord.price) * 100;
         }
 
         await db.commodityQuote.upsert({
@@ -97,7 +104,7 @@ async function handleRefresh(request: Request, auth: { type: 'session' | 'cron';
             unit: meta.unit,
             dailyChange,
             percentChange,
-            previousPrice: existing?.price ?? null,
+            previousPrice: historicRecord?.price ?? null,
             lastUpdated: new Date(),
           },
           create: {
@@ -118,6 +125,12 @@ async function handleRefresh(request: Request, auth: { type: 'session' | 'cron';
         errors.push({ symbol, error: errorMessage });
       }
     }
+
+    // Clean up history older than 48h
+    const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    await db.commodityPriceHistory.deleteMany({
+      where: { recordedAt: { lt: cutoff } },
+    });
 
     const budget = await checkMonthlyBudget();
     const nextRefreshAt = new Date(Date.now() + MIN_REFRESH_INTERVAL_HOURS * 60 * 60 * 1000);

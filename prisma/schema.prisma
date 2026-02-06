@@ -521,6 +521,16 @@ model CommodityQuote {
   @@map("commodity_quotes")
 }
 
+model CommodityPriceHistory {
+  id         String   @id @default(cuid())
+  symbol     String
+  price      Float
+  recordedAt DateTime @default(now()) @map("recorded_at")
+
+  @@index([symbol, recordedAt])
+  @@map("commodity_price_history")
+}
+
 model GasPrice {
   stationId   String   @id @map("station_id")
   station     String
