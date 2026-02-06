@@ -32,19 +32,19 @@ const PinnedNoteCard = memo(function PinnedNoteCard({
 
   return (
     <Link href={`/notes?note=${note.id}`}>
-      <div className="group flex items-start gap-2 py-2 px-2.5 border-b border-border/40 last:border-0 hover:bg-accent/30 transition-colors cursor-pointer">
-        <Pin className="h-3.5 w-3.5 text-favorite flex-shrink-0 mt-0.5" />
+      <div className="group flex items-start gap-2 md:gap-[var(--dash-gap-sm)] py-2 md:py-[var(--dash-py)] px-2.5 md:px-[var(--dash-px)] border-b border-border/40 last:border-0 hover:bg-accent/30 transition-colors cursor-pointer">
+        <Pin className="h-3.5 w-3.5 md:h-[var(--dash-icon-sm)] md:w-[var(--dash-icon-sm)] text-favorite flex-shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0 space-y-0.5">
-          <h4 className="font-semibold text-xs line-clamp-1 group-hover:text-primary transition-colors">
+          <h4 className="font-semibold text-xs md:text-[length:var(--dash-text-sm)] line-clamp-1 group-hover:text-primary transition-colors">
             {note.title || 'Untitled'}
           </h4>
           {preview && (
-            <p className="text-[0.65rem] text-muted-foreground line-clamp-1">
+            <p className="text-[0.65rem] md:text-[length:var(--dash-text-xxs)] text-muted-foreground line-clamp-1">
               {preview}
             </p>
           )}
         </div>
-        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+        <ChevronRight className="h-3.5 w-3.5 md:h-[var(--dash-icon-sm)] md:w-[var(--dash-icon-sm)] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
       </div>
     </Link>
   );
@@ -94,18 +94,18 @@ export const PinnedNotesWidget = memo(function PinnedNotesWidget() {
       <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0">
         <CardContent className="p-0">
           <div className="flex flex-col items-center justify-center py-6 px-3 text-center">
-            <FileText className="h-7 w-7 text-muted-foreground/40 mb-1.5" />
-            <p className="text-xs text-muted-foreground">No pinned notes</p>
-            <p className="text-[0.65rem] text-muted-foreground/80 mt-0.5">
+            <FileText className="h-7 w-7 md:h-[var(--dash-icon-lg)] md:w-[var(--dash-icon-lg)] text-muted-foreground/40 mb-1.5" />
+            <p className="text-xs md:text-[length:var(--dash-text-sm)] text-muted-foreground">No pinned notes</p>
+            <p className="text-[0.65rem] md:text-[length:var(--dash-text-xxs)] text-muted-foreground/80 mt-0.5">
               Pin notes to see them here
             </p>
           </div>
           <Link
             href="/notes"
-            className="flex items-center justify-center gap-1 py-2 text-[0.65rem] text-primary hover:bg-accent/50 transition-colors border-t border-border/40 uppercase tracking-wide font-medium"
+            className="flex items-center justify-center gap-1 py-2 text-[0.65rem] md:text-[length:var(--dash-text-xxs)] text-primary hover:bg-accent/50 transition-colors border-t border-border/40 uppercase tracking-wide font-medium"
           >
             View All Notes
-            <ChevronRight className="h-3 w-3" />
+            <ChevronRight className="h-3 w-3 md:h-[var(--dash-icon-xs)] md:w-[var(--dash-icon-xs)]" />
           </Link>
         </CardContent>
       </Card>
@@ -122,10 +122,10 @@ export const PinnedNotesWidget = memo(function PinnedNotesWidget() {
         </div>
         <Link
           href="/notes"
-          className="flex items-center justify-center gap-1 py-2 text-[0.65rem] text-primary hover:bg-accent/50 transition-colors border-t border-border/40 uppercase tracking-wide font-medium"
+          className="flex items-center justify-center gap-1 py-2 text-[0.65rem] md:text-[length:var(--dash-text-xxs)] text-primary hover:bg-accent/50 transition-colors border-t border-border/40 uppercase tracking-wide font-medium"
         >
           View All Notes
-          <ChevronRight className="h-3 w-3" />
+          <ChevronRight className="h-3 w-3 md:h-[var(--dash-icon-xs)] md:w-[var(--dash-icon-xs)]" />
         </Link>
       </CardContent>
     </Card>

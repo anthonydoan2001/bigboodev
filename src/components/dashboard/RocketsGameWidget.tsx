@@ -134,22 +134,22 @@ export function RocketsGameWidget() {
   if (isLoading) {
     return (
       <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-none overflow-hidden py-0 gap-0">
-        <CardContent className="!px-2 !py-1 flex flex-col justify-center">
-          <Skeleton className="h-2.5 w-10 mb-1" />
-          <div className="space-y-1">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5">
-                <Skeleton className="w-6 h-6" rounded="full" />
-                <Skeleton className="h-3 w-14" />
+        <CardContent className="!px-3 !py-2 md:!px-[var(--dash-px)] md:!py-[var(--dash-py)] flex flex-col justify-center">
+          <Skeleton className="h-3 w-12 mb-2" />
+          <div className="space-y-2 md:space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 md:gap-[var(--dash-gap-sm)]">
+                <Skeleton className="w-7 h-7 md:w-[var(--dash-logo-sm)] md:h-[var(--dash-logo-sm)]" rounded="full" />
+                <Skeleton className="h-4 w-16" />
               </div>
-              <Skeleton className="h-4 w-7" />
+              <Skeleton className="h-5 w-8" />
             </div>
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5">
-                <Skeleton className="w-6 h-6" rounded="full" />
-                <Skeleton className="h-3 w-14" />
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 md:gap-[var(--dash-gap-sm)]">
+                <Skeleton className="w-7 h-7 md:w-[var(--dash-logo-sm)] md:h-[var(--dash-logo-sm)]" rounded="full" />
+                <Skeleton className="h-4 w-16" />
               </div>
-              <Skeleton className="h-4 w-7" />
+              <Skeleton className="h-5 w-8" />
             </div>
           </div>
         </CardContent>
@@ -160,7 +160,7 @@ export function RocketsGameWidget() {
   if (error || !data) {
     return (
       <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-none flex items-center justify-center py-0 gap-0">
-        <p className="text-xs text-muted-foreground">Failed to load Rockets game</p>
+        <p className="text-sm text-muted-foreground">Failed to load Rockets game</p>
       </Card>
     );
   }
@@ -173,19 +173,19 @@ export function RocketsGameWidget() {
   if (!gameToShow) {
     return (
       <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-none flex items-center justify-center py-0 gap-0">
-        <CardContent className="!px-2 !py-1 text-center">
-          <div className="flex items-center justify-center gap-1.5 mb-1">
+        <CardContent className="!px-3 !py-3 md:!px-[var(--dash-px)] md:!py-[var(--dash-py)] text-center">
+          <div className="flex items-center justify-center gap-2 md:gap-[var(--dash-gap-sm)] mb-1.5">
             <Image
               src="https://a.espncdn.com/i/teamlogos/nba/500/hou.png"
               alt="Houston Rockets"
-              width={20}
-              height={20}
+              width={24}
+              height={24}
               className="object-contain"
               unoptimized
             />
-            <span className="text-xs font-medium">Rockets</span>
+            <span className="text-sm md:text-[length:var(--dash-text-base)] font-medium">Rockets</span>
           </div>
-          <p className="text-[10px] text-muted-foreground">No upcoming games found</p>
+          <p className="text-xs md:text-[length:var(--dash-text-sm)] text-muted-foreground">No upcoming games found</p>
         </CardContent>
       </Card>
     );
@@ -227,10 +227,10 @@ export function RocketsGameWidget() {
       }
 
       return (
-        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-live/10 text-live text-[10px] font-semibold tabular-nums">
-          <span className="relative flex h-1.5 w-1.5">
+        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-live/10 text-live text-xs md:text-[length:var(--dash-text-sm)] font-semibold tabular-nums">
+          <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-live/75 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-live"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-live"></span>
           </span>
           {displayText}
         </div>
@@ -239,7 +239,7 @@ export function RocketsGameWidget() {
 
     if (isFinal) {
       return (
-        <span className={`text-[10px] font-semibold ${rocketsWon ? 'text-success' : 'text-muted-foreground'}`}>
+        <span className={`text-xs md:text-[length:var(--dash-text-sm)] font-semibold ${rocketsWon ? 'text-success' : 'text-muted-foreground'}`}>
           {rocketsWon ? 'WIN' : 'FINAL'}
         </span>
       );
@@ -247,8 +247,8 @@ export function RocketsGameWidget() {
 
     // Scheduled
     return (
-      <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-        <Clock className="w-2.5 h-2.5" />
+      <div className="flex items-center gap-1.5 text-xs md:text-[length:var(--dash-text-sm)] text-muted-foreground">
+        <Clock className="w-3 h-3 md:w-[var(--dash-icon-xs)] md:h-[var(--dash-icon-xs)]" />
         <span suppressHydrationWarning>
           {isHydrated ? (
             gameToShow.startTime.toLocaleTimeString('en-US', {
@@ -267,12 +267,12 @@ export function RocketsGameWidget() {
   if (isScheduled) {
     return (
       <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-none overflow-hidden py-0 gap-0">
-        <CardContent className="!px-2 !py-1 h-full flex flex-col justify-center items-center text-center">
+        <CardContent className="!px-3 !py-3 md:!px-[var(--dash-px)] md:!py-[var(--dash-py)] h-full flex flex-col justify-center items-center text-center">
           {/* Team Matchup */}
-          <div className="flex items-center justify-center gap-2.5 mb-1">
+          <div className="flex items-center justify-center gap-4 md:gap-6 mb-2 md:mb-3">
             {/* Away Team */}
-            <div className="flex flex-col items-center gap-0.5">
-              <div className="relative w-7 h-7">
+            <div className="flex flex-col items-center gap-1">
+              <div className="relative w-9 h-9 md:w-[var(--dash-logo-sm)] md:h-[var(--dash-logo-sm)]">
                 {gameToShow.awayTeamLogo ? (
                   <Image
                     src={gameToShow.awayTeamLogo}
@@ -285,17 +285,17 @@ export function RocketsGameWidget() {
                   <div className="w-full h-full rounded-full bg-muted/50" />
                 )}
               </div>
-              <span className="text-[10px] font-medium">{gameToShow.awayTeam}</span>
+              <span className="text-xs md:text-[length:var(--dash-text-sm)] font-medium">{gameToShow.awayTeam}</span>
             </div>
 
             {/* VS */}
-            <div className="px-1.5 py-0.5 rounded-md bg-muted/20">
-              <span className="text-[10px] font-semibold text-muted-foreground">@</span>
+            <div className="px-2 py-1 rounded-md bg-muted/20">
+              <span className="text-xs md:text-[length:var(--dash-text-sm)] font-semibold text-muted-foreground">@</span>
             </div>
 
             {/* Home Team */}
-            <div className="flex flex-col items-center gap-0.5">
-              <div className="relative w-7 h-7">
+            <div className="flex flex-col items-center gap-1">
+              <div className="relative w-9 h-9 md:w-[var(--dash-logo-sm)] md:h-[var(--dash-logo-sm)]">
                 {gameToShow.homeTeamLogo ? (
                   <Image
                     src={gameToShow.homeTeamLogo}
@@ -308,14 +308,14 @@ export function RocketsGameWidget() {
                   <div className="w-full h-full rounded-full bg-muted/50" />
                 )}
               </div>
-              <span className="text-[10px] font-medium">{gameToShow.homeTeam}</span>
+              <span className="text-xs md:text-[length:var(--dash-text-sm)] font-medium">{gameToShow.homeTeam}</span>
             </div>
           </div>
 
           {/* Game Time & Date */}
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <Clock className="w-3 h-3" />
-            <span className="text-[10px]" suppressHydrationWarning>
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <Clock className="w-3.5 h-3.5 md:w-[var(--dash-icon-xs)] md:h-[var(--dash-icon-xs)]" />
+            <span className="text-xs md:text-[length:var(--dash-text-sm)]" suppressHydrationWarning>
               {isHydrated ? (
                 <>
                   {gameToShow.startTime.toLocaleDateString('en-US', {
@@ -342,21 +342,21 @@ export function RocketsGameWidget() {
   // For live and finished games, show scores
   return (
     <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-none overflow-hidden py-0 gap-0">
-      <CardContent className="!px-2 !py-1 h-full flex flex-col">
+      <CardContent className="!px-3 !py-2 md:!px-[var(--dash-px)] md:!py-[var(--dash-py)] h-full flex flex-col">
         {/* Header with status */}
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-[10px] font-medium text-muted-foreground tracking-wide uppercase">
+        <div className="flex items-center justify-between mb-2 md:mb-3">
+          <span className="text-xs md:text-[length:var(--dash-text-sm)] font-medium text-muted-foreground tracking-wide uppercase">
             {isFinal ? 'FINAL' : 'LIVE'}
           </span>
           {getStatusDisplay()}
         </div>
 
         {/* Teams & Scores */}
-        <div className="flex-1 flex flex-col justify-center space-y-1">
+        <div className="flex-1 flex flex-col justify-center space-y-2 md:space-y-3">
           {/* Away Team */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 flex-1 min-w-0">
-              <div className="relative w-6 h-6 flex-shrink-0">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 md:gap-2.5 flex-1 min-w-0">
+              <div className="relative w-7 h-7 md:w-[var(--dash-logo-sm)] md:h-[var(--dash-logo-sm)] flex-shrink-0">
                 {gameToShow.awayTeamLogo ? (
                   <Image
                     src={gameToShow.awayTeamLogo}
@@ -369,19 +369,19 @@ export function RocketsGameWidget() {
                   <div className="w-full h-full rounded-full bg-muted/50" />
                 )}
               </div>
-              <span className={`text-xs truncate ${isFinal && isAwayWinning ? 'font-bold' : 'font-medium'}`}>
+              <span className={`text-sm md:text-[length:var(--dash-text-base)] truncate ${isFinal && isAwayWinning ? 'font-bold' : 'font-medium'}`}>
                 {gameToShow.awayTeam}
               </span>
             </div>
-            <span className={`text-sm tabular-nums font-mono ${isFinal && isAwayWinning ? 'text-foreground font-bold' : 'text-muted-foreground font-medium'}`}>
+            <span className={`text-base md:text-[length:var(--dash-text-xl)] tabular-nums font-mono ${isFinal && isAwayWinning ? 'text-foreground font-bold' : 'text-muted-foreground font-medium'}`}>
               {gameToShow.awayScore}
             </span>
           </div>
 
           {/* Home Team */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 flex-1 min-w-0">
-              <div className="relative w-6 h-6 flex-shrink-0">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 md:gap-2.5 flex-1 min-w-0">
+              <div className="relative w-7 h-7 md:w-[var(--dash-logo-sm)] md:h-[var(--dash-logo-sm)] flex-shrink-0">
                 {gameToShow.homeTeamLogo ? (
                   <Image
                     src={gameToShow.homeTeamLogo}
@@ -394,11 +394,11 @@ export function RocketsGameWidget() {
                   <div className="w-full h-full rounded-full bg-muted/50" />
                 )}
               </div>
-              <span className={`text-xs truncate ${isFinal && isHomeWinning ? 'font-bold' : 'font-medium'}`}>
+              <span className={`text-sm md:text-[length:var(--dash-text-base)] truncate ${isFinal && isHomeWinning ? 'font-bold' : 'font-medium'}`}>
                 {gameToShow.homeTeam}
               </span>
             </div>
-            <span className={`text-sm tabular-nums font-mono ${isFinal && isHomeWinning ? 'text-foreground font-bold' : 'text-muted-foreground font-medium'}`}>
+            <span className={`text-base md:text-[length:var(--dash-text-xl)] tabular-nums font-mono ${isFinal && isHomeWinning ? 'text-foreground font-bold' : 'text-muted-foreground font-medium'}`}>
               {gameToShow.homeScore}
             </span>
           </div>

@@ -78,14 +78,14 @@ const QuoteDisplay = memo(function QuoteDisplay({
 
   if (quote) {
     return (
-      <p className="text-muted-foreground text-base md:text-lg italic font-normal truncate max-w-3xl">
+      <p className="text-muted-foreground text-base md:text-[length:var(--dash-quote)] italic font-normal truncate max-w-3xl">
         &ldquo;{quote.content}&rdquo; — {quote.author}
       </p>
     );
   }
 
   return (
-    <p className="text-muted-foreground text-base md:text-lg font-normal">
+    <p className="text-muted-foreground text-base md:text-[length:var(--dash-quote)] font-normal">
       Here&apos;s what&apos;s happening today
     </p>
   );
@@ -129,16 +129,16 @@ const Clock = memo(function Clock() {
   if (!mounted) {
     return (
       <div className="flex items-baseline gap-1 font-mono flex-shrink-0">
-        <span className="text-2xl md:text-3xl font-bold tabular-nums opacity-0">00:00:00</span>
-        <span className="text-base md:text-lg font-semibold text-muted-foreground opacity-0">AM</span>
+        <span className="text-2xl md:text-[length:var(--dash-clock)] font-bold tabular-nums opacity-0">00:00:00</span>
+        <span className="text-base md:text-[length:var(--dash-clock-sm)] font-semibold text-muted-foreground opacity-0">AM</span>
       </div>
     );
   }
 
   return (
     <div className="flex items-baseline gap-1 font-mono flex-shrink-0">
-      <span className="text-2xl md:text-3xl font-bold tabular-nums">{time}</span>
-      <span className="text-base md:text-lg font-semibold text-muted-foreground">{period}</span>
+      <span className="text-2xl md:text-[length:var(--dash-clock)] font-bold tabular-nums">{time}</span>
+      <span className="text-base md:text-[length:var(--dash-clock-sm)] font-semibold text-muted-foreground">{period}</span>
     </div>
   );
 });
@@ -209,9 +209,9 @@ export default function Home() {
 
   // Render immediately - don't block on widget loading for better LCP
   return (
-    <div className="w-full h-screen overflow-hidden flex flex-col py-3 px-4 sm:px-6 lg:px-8 lg:py-4">
+    <div className="w-full h-screen overflow-hidden flex flex-col py-3 px-4 sm:px-6 md:px-[var(--dash-page-px)] md:py-[var(--dash-page-py)]">
       {/* Compact Header Section */}
-      <div className="mb-2 lg:mb-2 flex-shrink-0">
+      <div className="mb-2 flex-shrink-0">
         <div className="flex flex-col md:flex-row gap-4 md:gap-6">
           {/* Left: Weather Widget - hidden on mobile, visible md+ */}
           <div className="hidden md:flex flex-shrink-0">
@@ -219,10 +219,10 @@ export default function Home() {
           </div>
 
           {/* Right: Greeting, Quote, and Clock */}
-          <div className="flex-1 flex flex-col justify-center gap-1 md:gap-2">
+          <div className="flex-1 flex flex-col justify-center gap-1 md:gap-[var(--dash-gap-sm)]">
             {/* Top: Greeting and Clock */}
             <div className="flex items-center justify-between gap-4">
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold">{greeting}, Big Boo</h1>
+              <h1 className="text-2xl md:text-[length:var(--dash-greeting)] font-bold">{greeting}, Big Boo</h1>
               <Clock />
             </div>
             {/* Bottom: Quote */}
@@ -233,7 +233,7 @@ export default function Home() {
 
       {/* Dashboard Grid - One page on lg+, scrollable below */}
       <div className="flex-1 overflow-y-auto lg:overflow-hidden min-h-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-2 h-full content-start pb-4 lg:pb-0 lg:grid-rows-[auto_auto_1fr]">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-[var(--dash-gap)] h-full content-start lg:content-normal pb-4 lg:pb-0 lg:grid-rows-[1fr_auto_1fr]">
           {/* Row 1: Calendar + Image side by side (cols 1-2), Stocks starts (col 3) */}
           <CalendarWidget />
           <ImagePlaceholderWidget />
@@ -243,21 +243,24 @@ export default function Home() {
           </div>
 
           {/* Row 2 col 1: Continue Reading + Countdown */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 items-start">
             <ContinueReadingWidget />
             <CountdownWidget />
           </div>
-          {/* Row 2 col 2: Pinned Notes */}
-          <PinnedNotesWidget />
-
-          {/* Row 3 col 1: Gmail (fills remaining) */}
-          <div className="min-h-0">
-            <GmailWidget />
-          </div>
-          {/* Row 3 col 2: Rockets, League */}
-          <div className="flex flex-col gap-1 min-h-0 overflow-y-auto lg:overflow-hidden">
+          {/* Row 2 col 2: Rockets, League */}
+          <div className="flex flex-col gap-2 md:gap-[var(--dash-gap)] min-h-0 overflow-y-auto row-span-2">
             <RocketsGameWidget />
             <LeagueOfLegendsWidget />
+          </div>
+
+          {/* Row 3 col 1: Notes + Gmail stacked */}
+          <div className="flex flex-col gap-2 md:gap-[var(--dash-gap-sm)] min-h-0">
+            <div className="flex-shrink-0">
+              <PinnedNotesWidget />
+            </div>
+            <div className="flex-1 min-h-0">
+              <GmailWidget />
+            </div>
           </div>
         </div>
       </div>
