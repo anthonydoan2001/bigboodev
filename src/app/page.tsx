@@ -211,7 +211,7 @@ export default function Home() {
   return (
     <div className="w-full h-screen overflow-hidden flex flex-col py-3 px-4 sm:px-6 lg:px-8 lg:py-4">
       {/* Compact Header Section */}
-      <div className="mb-3 lg:mb-3 flex-shrink-0">
+      <div className="mb-2 lg:mb-2 flex-shrink-0">
         <div className="flex flex-col md:flex-row gap-4 md:gap-6">
           {/* Left: Weather Widget - hidden on mobile, visible md+ */}
           <div className="hidden md:flex flex-shrink-0">
@@ -219,7 +219,7 @@ export default function Home() {
           </div>
 
           {/* Right: Greeting, Quote, and Clock */}
-          <div className="flex-1 flex flex-col justify-center gap-2 md:gap-4">
+          <div className="flex-1 flex flex-col justify-center gap-1 md:gap-2">
             {/* Top: Greeting and Clock */}
             <div className="flex items-center justify-between gap-4">
               <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold">{greeting}, Big Boo</h1>
@@ -233,7 +233,7 @@ export default function Home() {
 
       {/* Dashboard Grid - One page on lg+, scrollable below */}
       <div className="flex-1 overflow-y-auto lg:overflow-hidden min-h-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-3 h-full content-start pb-4 lg:pb-0 lg:grid-rows-[auto_auto_1fr]">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-2 h-full content-start pb-4 lg:pb-0 lg:grid-rows-[auto_auto_1fr]">
           {/* Row 1: Calendar + Image side by side (cols 1-2), Stocks starts (col 3) */}
           <CalendarWidget />
           <ImagePlaceholderWidget />
@@ -248,16 +248,14 @@ export default function Home() {
             <CountdownWidget />
           </div>
           {/* Row 2 col 2: Pinned Notes */}
-          <div className="pt-1">
-            <PinnedNotesWidget />
-          </div>
+          <PinnedNotesWidget />
 
           {/* Row 3 col 1: Gmail (fills remaining) */}
           <div className="min-h-0">
             <GmailWidget />
           </div>
           {/* Row 3 col 2: Rockets, League */}
-          <div className="flex flex-col gap-2 min-h-0">
+          <div className="flex flex-col gap-1 min-h-0 overflow-y-auto lg:overflow-hidden">
             <RocketsGameWidget />
             <LeagueOfLegendsWidget />
           </div>

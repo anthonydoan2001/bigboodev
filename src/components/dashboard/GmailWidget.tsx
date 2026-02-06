@@ -53,29 +53,29 @@ const EmailItem = memo(function EmailItem({ email }: { email: GmailEmail }) {
   return (
     <button
       onClick={handleClick}
-      className="w-full flex items-center gap-1.5 py-1 px-2 text-left hover:bg-muted/30 transition-colors rounded group"
+      className="w-full flex-1 flex items-center gap-2 px-2 text-left hover:bg-muted/30 transition-colors rounded group border-b border-border/20 last:border-b-0"
     >
       {/* Unread indicator */}
       {email.isUnread ? (
-        <Circle className="w-1.5 h-1.5 fill-info text-info flex-shrink-0" />
+        <Circle className="w-2 h-2 fill-info text-info flex-shrink-0" />
       ) : (
-        <Circle className="w-1.5 h-1.5 text-transparent flex-shrink-0" />
+        <Circle className="w-2 h-2 text-transparent flex-shrink-0" />
       )}
 
       {/* Sender */}
       <span
         className={cn(
-          'text-[11px] truncate flex-shrink-0 w-16',
+          'text-xs truncate flex-shrink-0 w-20',
           email.isUnread ? 'font-semibold text-foreground' : 'text-muted-foreground'
         )}
       >
-        {truncate(email.from, 14)}
+        {truncate(email.from, 16)}
       </span>
 
       {/* Subject */}
       <span
         className={cn(
-          'text-[10px] truncate flex-1 min-w-0',
+          'text-[11px] truncate flex-1 min-w-0',
           email.isUnread ? 'font-medium text-foreground' : 'text-muted-foreground'
         )}
       >
@@ -83,7 +83,7 @@ const EmailItem = memo(function EmailItem({ email }: { email: GmailEmail }) {
       </span>
 
       {/* Time */}
-      <span className="text-[9px] text-muted-foreground flex-shrink-0">
+      <span className="text-[10px] text-muted-foreground flex-shrink-0">
         {formatRelativeTime(email.date)}
       </span>
     </button>
@@ -114,21 +114,21 @@ export const GmailWidget = memo(function GmailWidget() {
   if (isLoading) {
     return (
       <Card className="w-full h-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0 flex flex-col">
-        <CardContent className="p-2.5 flex flex-col flex-1 min-h-0">
-          <div className="flex items-center justify-between mb-1.5 flex-shrink-0">
+        <CardContent className="p-3 flex flex-col flex-1 min-h-0">
+          <div className="flex items-center justify-between mb-2 flex-shrink-0">
             <div className="flex items-center gap-1.5">
-              <Skeleton className="w-3.5 h-3.5" rounded="sm" />
-              <Skeleton className="h-3 w-12" />
+              <Skeleton className="w-4 h-4" rounded="sm" />
+              <Skeleton className="h-3.5 w-14" />
             </div>
-            <Skeleton className="h-3 w-3" rounded="sm" />
+            <Skeleton className="h-3.5 w-3.5" rounded="sm" />
           </div>
           <div className="flex-1 space-y-0.5">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="flex items-center gap-1.5 py-1 px-2" style={{ animationDelay: `${i * 100}ms` }}>
-                <Skeleton className="w-1.5 h-1.5 flex-shrink-0" rounded="full" />
-                <Skeleton className="h-2.5 w-16 flex-shrink-0" />
-                <Skeleton className="h-2.5 flex-1" />
-                <Skeleton className="h-2 w-8 flex-shrink-0" />
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div key={i} className="flex items-center gap-2 py-2 px-2" style={{ animationDelay: `${i * 80}ms` }}>
+                <Skeleton className="w-2 h-2 flex-shrink-0" rounded="full" />
+                <Skeleton className="h-3 w-20 flex-shrink-0" />
+                <Skeleton className="h-3 flex-1" />
+                <Skeleton className="h-2.5 w-10 flex-shrink-0" />
               </div>
             ))}
           </div>
@@ -183,29 +183,29 @@ export const GmailWidget = memo(function GmailWidget() {
   }
 
   // Connected state - show emails
-  const displayEmails = data.emails.slice(0, 10);
+  const displayEmails = data.emails.slice(0, 5);
 
   return (
-    <Card className="w-full h-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0 transition-all hover:shadow-md flex flex-col">
-      <CardContent className="p-2.5 flex flex-col flex-1 min-h-0">
+    <Card className="w-full h-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0 flex flex-col">
+      <CardContent className="p-3 flex flex-col flex-1 min-h-0">
         {/* Header */}
-        <div className="flex items-center justify-between mb-1.5 flex-shrink-0">
+        <div className="flex items-center justify-between mb-2 flex-shrink-0">
           <div className="flex items-center gap-1.5">
-            <Mail className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="text-xs font-semibold">Gmail</span>
+            <Mail className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm font-semibold">Gmail</span>
           </div>
           <button
             onClick={handleDisconnect}
             className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
             title="Disconnect Gmail"
           >
-            <LogOut className="w-3 h-3" />
+            <LogOut className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* Email list */}
         {displayEmails.length > 0 ? (
-          <div className="flex-1 overflow-y-auto scrollbar-hide space-y-0.5 -mx-0.5 min-h-0">
+          <div className="flex-1 flex flex-col -mx-1 min-h-0">
             {displayEmails.map((email) => (
               <EmailItem key={email.id} email={email} />
             ))}
@@ -217,15 +217,15 @@ export const GmailWidget = memo(function GmailWidget() {
         )}
 
         {/* Footer */}
-        <div className="mt-1.5 pt-1.5 border-t border-border/40 flex-shrink-0">
+        <div className="mt-2 pt-2 border-t border-border/40 flex-shrink-0">
           <a
             href="https://mail.google.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-1 text-[0.65rem] text-primary hover:text-primary/80 transition-colors uppercase tracking-wide font-medium"
+            className="flex items-center justify-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors uppercase tracking-wide font-medium"
           >
             View all in Gmail
-            <ExternalLink className="w-2.5 h-2.5" />
+            <ExternalLink className="w-3 h-3" />
           </a>
         </div>
       </CardContent>

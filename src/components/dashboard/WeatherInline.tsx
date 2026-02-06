@@ -17,7 +17,7 @@ export function WeatherInline() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-between gap-6 lg:gap-8 px-5 lg:px-6 py-4 rounded-lg bg-background/40 backdrop-blur-md border border-white/10 h-full">
+      <div className="flex items-center justify-between gap-6 lg:gap-8 px-5 lg:px-6 py-3 rounded-lg bg-background/40 backdrop-blur-md border border-white/10 h-full">
         <div className="flex flex-col items-start gap-2">
           <Skeleton className="h-12 w-20" />
           <Skeleton className="h-4 w-24" />
@@ -30,7 +30,7 @@ export function WeatherInline() {
 
   if (error || !weather) {
     return (
-      <div className="flex items-center justify-between gap-6 lg:gap-8 px-5 lg:px-6 py-4 rounded-lg bg-background/40 backdrop-blur-md border border-white/10 h-full">
+      <div className="flex items-center justify-between gap-6 lg:gap-8 px-5 lg:px-6 py-3 rounded-lg bg-background/40 backdrop-blur-md border border-white/10 h-full">
         <div className="flex flex-col items-start gap-2">
           <span className="text-4xl lg:text-5xl font-bold text-foreground tabular-nums leading-none">--°</span>
           <span className="text-sm text-muted-foreground">Unavailable</span>
@@ -43,7 +43,7 @@ export function WeatherInline() {
   const { current } = weather;
 
   return (
-    <div className="flex items-center justify-between gap-6 lg:gap-8 px-5 lg:px-6 py-4 rounded-lg bg-background/40 backdrop-blur-md border border-white/10 h-full">
+    <div className="flex items-center justify-between gap-6 lg:gap-8 px-5 lg:px-6 py-3 rounded-lg bg-background/40 backdrop-blur-md border border-white/10 h-full">
       <div className="flex flex-col items-start gap-2">
         <span className="text-4xl lg:text-5xl font-bold text-foreground tabular-nums leading-none">
           {current.temperature}°
