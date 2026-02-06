@@ -55,3 +55,7 @@ next-env.d.ts
 *.claude.md
 API_MONITORING_ENHANCEMENT.md
 MIGRATION_CHECKLIST.md
+CLAUDE-CODE-WORKFLOWS.md
+package-scripts.md
+/remotion
+/scripts
