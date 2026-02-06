@@ -267,9 +267,9 @@ export function RocketsGameWidget() {
   if (isScheduled) {
     return (
       <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-none overflow-hidden py-0 gap-0">
-        <CardContent className="!px-3 !py-3 md:!px-[var(--dash-px)] md:!py-[var(--dash-py)] h-full flex flex-col justify-center items-center text-center">
+        <CardContent className="!px-3 !py-3 md:!px-[var(--dash-px)] md:!py-[var(--dash-py)] h-full flex flex-col justify-center">
           {/* Team Matchup */}
-          <div className="flex items-center justify-center" style={{ gap: 'var(--dash-preview-gap)' }}>
+          <div className="flex items-center justify-between w-full px-2">
             {/* Away Team */}
             <div className="relative flex items-center justify-center" style={{ width: 'var(--dash-preview-box)', height: 'var(--dash-preview-box)' }}>
               <span className="absolute inset-0 flex items-center justify-center font-black text-foreground/[0.15] select-none tracking-wider leading-none" style={{ fontSize: 'var(--dash-preview-abbr)' }}>
@@ -291,7 +291,7 @@ export function RocketsGameWidget() {
             </div>
 
             {/* VS */}
-            <div className="px-1 py-0.5 rounded-md bg-muted/20">
+            <div className="px-1.5 py-0.5 rounded-md bg-muted/20 flex-shrink-0">
               <span className="font-semibold text-muted-foreground" style={{ fontSize: 'var(--dash-text-sm)' }}>@</span>
             </div>
 
@@ -317,9 +317,9 @@ export function RocketsGameWidget() {
           </div>
 
           {/* Game Time & Date */}
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <Clock className="w-3.5 h-3.5 md:w-[var(--dash-icon-xs)] md:h-[var(--dash-icon-xs)]" />
-            <span className="text-xs md:text-[length:var(--dash-text-sm)]" suppressHydrationWarning>
+          <div className="flex items-center justify-center text-muted-foreground" style={{ gap: 'var(--dash-gap-sm)' }}>
+            <Clock style={{ width: 'var(--dash-icon-xs)', height: 'var(--dash-icon-xs)' }} />
+            <span style={{ fontSize: 'var(--dash-text-sm)' }} suppressHydrationWarning>
               {isHydrated ? (
                 <>
                   {gameToShow.startTime.toLocaleDateString('en-US', {
