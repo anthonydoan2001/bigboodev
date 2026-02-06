@@ -12,7 +12,7 @@ import { CryptoQuote } from '@/types/crypto';
 import { GasPriceData } from '@/types/gas';
 import { StockQuote } from '@/types/stocks';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowUp, ArrowDown, Fuel, Coins, Gem, Crown, type LucideIcon } from 'lucide-react';
+import { ArrowUp, ArrowDown, Fuel, CircleDollarSign, Coins, Diamond, type LucideIcon } from 'lucide-react';
 import Image from 'next/image';
 import { memo } from 'react';
 
@@ -183,10 +183,10 @@ const GasPriceCard = memo(function GasPriceCard({ gas }: { gas: GasPriceData }) 
   );
 });
 
-const COMMODITY_DISPLAY: Record<string, { label: string; Icon: LucideIcon; bg: string; ring: string; iconColor: string }> = {
-  XAU: { label: 'GOLD', Icon: Coins, bg: 'bg-amber-500/15', ring: 'ring-amber-500/20', iconColor: 'text-amber-500' },
-  XAG: { label: 'SILVER', Icon: Gem, bg: 'bg-slate-400/15', ring: 'ring-slate-400/20', iconColor: 'text-slate-400' },
-  XPT: { label: 'PLATINUM', Icon: Crown, bg: 'bg-indigo-400/15', ring: 'ring-indigo-400/20', iconColor: 'text-indigo-400' },
+const COMMODITY_DISPLAY: Record<string, { label: string; Icon: LucideIcon; iconColor: string }> = {
+  XAU: { label: 'GOLD', Icon: CircleDollarSign, iconColor: 'text-amber-400' },
+  XAG: { label: 'SILVER', Icon: Coins, iconColor: 'text-slate-300' },
+  XPT: { label: 'PLATINUM', Icon: Diamond, iconColor: 'text-sky-300' },
 };
 
 const COMMODITY_SORT_ORDER = ['XAU', 'XAG', 'XPT'];
@@ -195,16 +195,14 @@ const CommodityCard = memo(function CommodityCard({ commodity }: { commodity: Co
   const percentChange = commodity.percentChange ?? 0;
   const isPositive = percentChange >= 0;
   const changeColor = isPositive ? 'text-success' : 'text-destructive';
-  const display = COMMODITY_DISPLAY[commodity.symbol] || { label: commodity.symbol, Icon: Coins, bg: 'bg-amber-500/15', ring: 'ring-amber-500/20', iconColor: 'text-amber-500' };
+  const display = COMMODITY_DISPLAY[commodity.symbol] || { label: commodity.symbol, Icon: Coins, iconColor: 'text-amber-400' };
   const { Icon } = display;
 
   return (
     <div className="flex items-center justify-between py-2 px-2.5 border-b border-border/40 last:border-0 hover:bg-muted/20 transition-colors">
       {/* Left side: Icon & Name */}
       <div className="flex items-center gap-2 min-w-0 flex-1">
-        <div className={cn("relative w-7 h-7 flex-shrink-0 rounded-full flex items-center justify-center ring-1", display.bg, display.ring)}>
-          <Icon className={cn("h-4 w-4", display.iconColor)} />
-        </div>
+        <Icon className={cn("h-5 w-5 flex-shrink-0", display.iconColor)} />
         <span className="font-semibold font-mono text-base leading-none">{display.label}</span>
       </div>
 
