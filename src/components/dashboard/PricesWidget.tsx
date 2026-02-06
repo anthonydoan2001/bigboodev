@@ -187,10 +187,6 @@ const COMMODITY_ICON_LABELS: Record<string, string> = {
   XAU: 'Au',
   XAG: 'Ag',
   XPT: 'Pt',
-  XIN: 'In',
-  XLI: 'Li',
-  XU: 'U',
-  NATURALGAS: 'NG',
 };
 
 const CommodityCard = memo(function CommodityCard({ commodity }: { commodity: CommodityQuote }) {

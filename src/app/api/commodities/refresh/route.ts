@@ -2,7 +2,7 @@ import { db } from '@/lib/db';
 import {
   canRefresh,
   fetchCommodityPrices,
-  inverseRateToUsd,
+  extractUsdPrice,
   retryWithBackoff,
   COMMODITY_SYMBOLS,
   COMMODITY_META,
@@ -61,7 +61,7 @@ async function handleRefresh(request: Request, auth: { type: 'session' | 'cron';
       }
     }
 
-    // Fetch prices from MetalpriceAPI (1 call for all 7 commodities)
+    // Fetch prices from MetalpriceAPI (1 call for all commodities)
     const apiResponse = await retryWithBackoff(() => fetchCommodityPrices());
 
     const results = [];
@@ -69,13 +69,11 @@ async function handleRefresh(request: Request, auth: { type: 'session' | 'cron';
 
     for (const symbol of COMMODITY_SYMBOLS) {
       try {
-        const rate = apiResponse.rates[symbol];
-        if (rate === undefined || rate === null) {
+        const usdPrice = extractUsdPrice(apiResponse.rates, symbol);
+        if (usdPrice === 0) {
           errors.push({ symbol, error: `No rate returned for ${symbol}` });
           continue;
         }
-
-        const usdPrice = inverseRateToUsd(rate);
         const meta = COMMODITY_META[symbol];
 
         // Get existing record for change calculation
