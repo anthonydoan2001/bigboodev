@@ -12,7 +12,7 @@ import { CryptoQuote } from '@/types/crypto';
 import { GasPriceData } from '@/types/gas';
 import { StockQuote } from '@/types/stocks';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowUp, ArrowDown, Fuel } from 'lucide-react';
+import { ArrowUp, ArrowDown, Fuel, Coins, Gem, Crown, type LucideIcon } from 'lucide-react';
 import Image from 'next/image';
 import { memo } from 'react';
 
@@ -183,26 +183,29 @@ const GasPriceCard = memo(function GasPriceCard({ gas }: { gas: GasPriceData }) 
   );
 });
 
-const COMMODITY_ICON_LABELS: Record<string, string> = {
-  XAU: 'Au',
-  XAG: 'Ag',
-  XPT: 'Pt',
+const COMMODITY_DISPLAY: Record<string, { label: string; Icon: LucideIcon; bg: string; ring: string; iconColor: string }> = {
+  XAU: { label: 'GOLD', Icon: Coins, bg: 'bg-amber-500/15', ring: 'ring-amber-500/20', iconColor: 'text-amber-500' },
+  XAG: { label: 'SILVER', Icon: Gem, bg: 'bg-slate-400/15', ring: 'ring-slate-400/20', iconColor: 'text-slate-400' },
+  XPT: { label: 'PLATINUM', Icon: Crown, bg: 'bg-indigo-400/15', ring: 'ring-indigo-400/20', iconColor: 'text-indigo-400' },
 };
+
+const COMMODITY_SORT_ORDER = ['XAU', 'XAG', 'XPT'];
 
 const CommodityCard = memo(function CommodityCard({ commodity }: { commodity: CommodityQuote }) {
   const percentChange = commodity.percentChange ?? 0;
   const isPositive = percentChange >= 0;
   const changeColor = isPositive ? 'text-success' : 'text-destructive';
-  const iconLabel = COMMODITY_ICON_LABELS[commodity.symbol] || commodity.symbol.charAt(0);
+  const display = COMMODITY_DISPLAY[commodity.symbol] || { label: commodity.symbol, Icon: Coins, bg: 'bg-amber-500/15', ring: 'ring-amber-500/20', iconColor: 'text-amber-500' };
+  const { Icon } = display;
 
   return (
     <div className="flex items-center justify-between py-2 px-2.5 border-b border-border/40 last:border-0 hover:bg-muted/20 transition-colors">
       {/* Left side: Icon & Name */}
       <div className="flex items-center gap-2 min-w-0 flex-1">
-        <div className="relative w-6 h-6 flex-shrink-0 rounded-full bg-amber-500/15 flex items-center justify-center ring-1 ring-amber-500/20">
-          <span className="text-[9px] font-bold text-amber-500">{iconLabel}</span>
+        <div className={cn("relative w-6 h-6 flex-shrink-0 rounded-full flex items-center justify-center ring-1", display.bg, display.ring)}>
+          <Icon className={cn("h-3.5 w-3.5", display.iconColor)} />
         </div>
-        <span className="font-semibold font-mono text-xs leading-none">{commodity.symbol}</span>
+        <span className="font-semibold font-mono text-xs leading-none">{display.label}</span>
       </div>
 
       {/* Middle: Price */}
@@ -327,9 +330,11 @@ export function PricesWidget() {
             ))}
 
             {/* Commodities */}
-            {hasCommodities && commodityData.quotes.map((commodity: CommodityQuote) => (
-              <CommodityCard key={commodity.symbol} commodity={commodity} />
-            ))}
+            {hasCommodities && [...commodityData.quotes]
+              .sort((a, b) => COMMODITY_SORT_ORDER.indexOf(a.symbol) - COMMODITY_SORT_ORDER.indexOf(b.symbol))
+              .map((commodity: CommodityQuote) => (
+                <CommodityCard key={commodity.symbol} commodity={commodity} />
+              ))}
           </div>
         </div>
       </CardContent>
