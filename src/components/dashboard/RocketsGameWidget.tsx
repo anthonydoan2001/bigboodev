@@ -269,7 +269,7 @@ export function RocketsGameWidget() {
       <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-none overflow-hidden py-0 gap-0">
         <CardContent className="!px-3 !py-3 md:!px-[var(--dash-px)] md:!py-[var(--dash-py)] h-full flex flex-col justify-center">
           {/* Team Matchup */}
-          <div className="flex items-center justify-between w-full px-2">
+          <div className="flex items-center justify-center w-full gap-3">
             {/* Away Team */}
             <div className="relative flex items-center justify-center" style={{ width: 'var(--dash-preview-box)', height: 'var(--dash-preview-box)' }}>
               <span className="absolute inset-0 flex items-center justify-center font-black text-foreground/[0.15] select-none tracking-wider leading-none" style={{ fontSize: 'var(--dash-preview-abbr)' }}>
