@@ -67,26 +67,26 @@ const StockCard = memo(function StockCard({ quote }: { quote: StockQuote }) {
               unoptimized
             />
           ) : (
-            <span className="text-[9px] font-semibold text-muted-foreground">{quote.symbol.charAt(0)}</span>
+            <span className="text-[11px] font-semibold text-muted-foreground">{quote.symbol.charAt(0)}</span>
           )}
         </div>
 
         {/* Ticker */}
-        <span className="font-semibold font-mono text-xs leading-none">{quote.symbol}</span>
+        <span className="font-semibold font-mono text-sm leading-none">{quote.symbol}</span>
       </div>
 
       {/* Middle: Price */}
       <div className="flex-shrink-0 mx-3">
-        <span className="font-mono text-xs font-medium tabular-nums">{formatPrice(quote.currentPrice)}</span>
+        <span className="font-mono text-sm font-medium tabular-nums">{formatPrice(quote.currentPrice)}</span>
       </div>
 
       {/* Right: Change */}
       <div className="flex items-center gap-0.5 flex-shrink-0 min-w-[70px] justify-end">
-        <span className={cn("text-[10px] font-mono font-medium flex items-center gap-0.5 tabular-nums", changeColor)}>
+        <span className={cn("text-xs font-mono font-medium flex items-center gap-0.5 tabular-nums", changeColor)}>
           {isPositive ? (
-            <ArrowUp className="h-2.5 w-2.5" />
+            <ArrowUp className="h-3 w-3" />
           ) : (
-            <ArrowDown className="h-2.5 w-2.5" />
+            <ArrowDown className="h-3 w-3" />
           )}
           {formatPercentChange(quote.percentChange)}
         </span>
@@ -115,26 +115,26 @@ const CryptoCard = memo(function CryptoCard({ crypto }: { crypto: CryptoQuote })
               unoptimized
             />
           ) : (
-            <span className="text-[9px] font-semibold text-muted-foreground">{crypto.symbol.charAt(0)}</span>
+            <span className="text-[11px] font-semibold text-muted-foreground">{crypto.symbol.charAt(0)}</span>
           )}
         </div>
 
         {/* Symbol */}
-        <span className="font-semibold font-mono text-xs leading-none">{crypto.symbol}</span>
+        <span className="font-semibold font-mono text-sm leading-none">{crypto.symbol}</span>
       </div>
 
       {/* Middle: Price */}
       <div className="flex-shrink-0 mx-3">
-        <span className="font-mono text-xs font-medium tabular-nums">{formatPrice(crypto.price)}</span>
+        <span className="font-mono text-sm font-medium tabular-nums">{formatPrice(crypto.price)}</span>
       </div>
 
       {/* Right: Change */}
       <div className="flex items-center gap-0.5 flex-shrink-0 min-w-[70px] justify-end">
-        <span className={cn("text-[10px] font-mono font-medium flex items-center gap-0.5 tabular-nums", changeColor)}>
+        <span className={cn("text-xs font-mono font-medium flex items-center gap-0.5 tabular-nums", changeColor)}>
           {isPositive ? (
-            <ArrowUp className="h-2.5 w-2.5" />
+            <ArrowUp className="h-3 w-3" />
           ) : (
-            <ArrowDown className="h-2.5 w-2.5" />
+            <ArrowDown className="h-3 w-3" />
           )}
           {formatPercentChange(crypto.percentChange24h)}
         </span>
@@ -163,19 +163,19 @@ const GasPriceCard = memo(function GasPriceCard({ gas }: { gas: GasPriceData }) 
           <Fuel className="h-3.5 w-3.5 text-emerald-500" />
         </div>
         <div className="flex flex-col min-w-0">
-          <span className="font-semibold font-mono text-xs leading-none">GAS</span>
-          <span className="text-[9px] text-muted-foreground truncate leading-none mt-0.5">{gas.station}</span>
+          <span className="font-semibold font-mono text-sm leading-none">GAS</span>
+          <span className="text-[11px] text-muted-foreground truncate leading-none mt-0.5">{gas.station}</span>
         </div>
       </div>
 
       {/* Middle: Price */}
       <div className="flex-shrink-0 mx-3">
-        <span className="font-mono text-xs font-medium tabular-nums">${gas.regular.toFixed(2)}</span>
+        <span className="font-mono text-sm font-medium tabular-nums">${gas.regular.toFixed(2)}</span>
       </div>
 
       {/* Right: Last updated */}
       <div className="flex items-center gap-0.5 flex-shrink-0 min-w-[70px] justify-end">
-        <span className="text-[10px] font-mono text-muted-foreground tabular-nums">
+        <span className="text-xs font-mono text-muted-foreground tabular-nums">
           {formatRelativeTime(gas.scrapedAt)}
         </span>
       </div>
@@ -205,27 +205,27 @@ const CommodityCard = memo(function CommodityCard({ commodity }: { commodity: Co
         <div className={cn("relative w-6 h-6 flex-shrink-0 rounded-full flex items-center justify-center ring-1", display.bg, display.ring)}>
           <Icon className={cn("h-3.5 w-3.5", display.iconColor)} />
         </div>
-        <span className="font-semibold font-mono text-xs leading-none">{display.label}</span>
+        <span className="font-semibold font-mono text-sm leading-none">{display.label}</span>
       </div>
 
       {/* Middle: Price */}
       <div className="flex-shrink-0 mx-3">
-        <span className="font-mono text-xs font-medium tabular-nums">{formatPrice(commodity.price)}</span>
+        <span className="font-mono text-sm font-medium tabular-nums">{formatPrice(commodity.price)}</span>
       </div>
 
       {/* Right: Change */}
       <div className="flex items-center gap-0.5 flex-shrink-0 min-w-[70px] justify-end">
         {commodity.percentChange !== null ? (
-          <span className={cn("text-[10px] font-mono font-medium flex items-center gap-0.5 tabular-nums", changeColor)}>
+          <span className={cn("text-xs font-mono font-medium flex items-center gap-0.5 tabular-nums", changeColor)}>
             {isPositive ? (
-              <ArrowUp className="h-2.5 w-2.5" />
+              <ArrowUp className="h-3 w-3" />
             ) : (
-              <ArrowDown className="h-2.5 w-2.5" />
+              <ArrowDown className="h-3 w-3" />
             )}
             {formatPercentChange(commodity.percentChange)}
           </span>
         ) : (
-          <span className="text-[10px] font-mono text-muted-foreground tabular-nums">
+          <span className="text-xs font-mono text-muted-foreground tabular-nums">
             {formatRelativeTime(commodity.lastUpdated)}
           </span>
         )}
@@ -282,11 +282,11 @@ export function PricesWidget() {
             {[0, 1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="flex items-center justify-between py-2 px-2.5" style={{ animationDelay: `${i * 80}ms` }}>
                 <div className="flex items-center gap-2 flex-1">
-                  <Skeleton className="w-6 h-6" rounded="full" />
-                  <Skeleton className="h-3 w-10" />
+                  <Skeleton className="w-7 h-7" rounded="full" />
+                  <Skeleton className="h-3.5 w-12" />
                 </div>
-                <Skeleton className="h-3 w-14 mx-3" />
-                <Skeleton className="h-3 w-14" />
+                <Skeleton className="h-3.5 w-16 mx-3" />
+                <Skeleton className="h-3.5 w-16" />
               </div>
             ))}
           </div>
