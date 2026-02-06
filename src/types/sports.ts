@@ -25,6 +25,8 @@ export interface GameScore {
   awayScore: number;
   homeTeamLogo?: string;
   awayTeamLogo?: string;
+  homeTeamAbbr?: string;
+  awayTeamAbbr?: string;
   status: GameScoreStatus;
   quarter?: string;
   timeRemaining?: string;
