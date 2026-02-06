@@ -98,6 +98,12 @@
   --dash-logo-md: clamp(2rem, 3vh, 3rem);
   --dash-logo-lg: clamp(4rem, 7.5vh, 7rem);
 
+  /* Game preview (scheduled) */
+  --dash-preview-box: clamp(4.5rem, 9vh, 8rem);
+  --dash-preview-logo: clamp(2.5rem, 5vh, 4.5rem);
+  --dash-preview-abbr: clamp(2.5rem, 6vh, 5rem);
+  --dash-preview-gap: clamp(0.25rem, 0.8vh, 0.75rem);
+
   /* Header section */
   --dash-greeting: clamp(1.875rem, 3.3vh, 3rem);
   --dash-clock: clamp(1.5rem, 2.8vh, 2.25rem);
