@@ -53,19 +53,19 @@ export function CalendarWidget() {
 
   return (
     <Card className="w-full border-white/10 shadow-sm bg-background/40 backdrop-blur-md py-0 gap-0 transition-all hover:shadow-md">
-      <CardHeader className="pt-4 pb-2 px-4">
+      <CardHeader className="pt-2.5 pb-1 px-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">
+          <CardTitle className="text-base font-semibold">
             {monthNames[month]}
           </CardTitle>
-          <span className="text-xs text-muted-foreground bg-accent/50 px-2 py-1 rounded">
+          <span className="text-xs text-muted-foreground bg-accent/50 px-2 py-0.5 rounded">
             {year}
           </span>
         </div>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
+      <CardContent className="p-3 pt-0">
         {/* Day names header */}
-        <div className="grid grid-cols-7 gap-1 mb-2">
+        <div className="grid grid-cols-7 gap-1 mb-1">
           {dayNames.map((day) => (
             <div
               key={day}

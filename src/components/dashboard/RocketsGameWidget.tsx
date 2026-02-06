@@ -133,23 +133,23 @@ export function RocketsGameWidget() {
 
   if (isLoading) {
     return (
-      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden py-0 gap-0">
-        <CardContent className="p-3 flex flex-col justify-center">
-          <Skeleton className="h-3 w-12 mb-3" />
-          <div className="space-y-2">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <Skeleton className="w-8 h-8" rounded="full" />
-                <Skeleton className="h-4 w-20" />
+      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-none overflow-hidden py-0 gap-0">
+        <CardContent className="!px-2 !py-1 flex flex-col justify-center">
+          <Skeleton className="h-2.5 w-10 mb-1" />
+          <div className="space-y-1">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
+                <Skeleton className="w-6 h-6" rounded="full" />
+                <Skeleton className="h-3 w-14" />
               </div>
-              <Skeleton className="h-6 w-10" />
+              <Skeleton className="h-4 w-7" />
             </div>
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <Skeleton className="w-8 h-8" rounded="full" />
-                <Skeleton className="h-4 w-20" />
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
+                <Skeleton className="w-6 h-6" rounded="full" />
+                <Skeleton className="h-3 w-14" />
               </div>
-              <Skeleton className="h-6 w-10" />
+              <Skeleton className="h-4 w-7" />
             </div>
           </div>
         </CardContent>
@@ -159,8 +159,8 @@ export function RocketsGameWidget() {
 
   if (error || !data) {
     return (
-      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm flex items-center justify-center py-0 gap-0 transition-all hover:shadow-md">
-        <p className="text-body-sm text-muted-foreground">Failed to load Rockets game</p>
+      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-none flex items-center justify-center py-0 gap-0">
+        <p className="text-xs text-muted-foreground">Failed to load Rockets game</p>
       </Card>
     );
   }
@@ -172,20 +172,20 @@ export function RocketsGameWidget() {
 
   if (!gameToShow) {
     return (
-      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm flex items-center justify-center py-0 gap-0 transition-all hover:shadow-md">
-        <CardContent className="p-3 text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
+      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-none flex items-center justify-center py-0 gap-0">
+        <CardContent className="!px-2 !py-1 text-center">
+          <div className="flex items-center justify-center gap-1.5 mb-1">
             <Image
               src="https://a.espncdn.com/i/teamlogos/nba/500/hou.png"
               alt="Houston Rockets"
-              width={32}
-              height={32}
+              width={20}
+              height={20}
               className="object-contain"
               unoptimized
             />
-            <span className="text-body font-medium">Rockets</span>
+            <span className="text-xs font-medium">Rockets</span>
           </div>
-          <p className="text-body-sm text-muted-foreground">No upcoming games found</p>
+          <p className="text-[10px] text-muted-foreground">No upcoming games found</p>
         </CardContent>
       </Card>
     );
@@ -227,10 +227,10 @@ export function RocketsGameWidget() {
       }
 
       return (
-        <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-live/10 text-live text-caption font-semibold tabular-nums">
-          <span className="relative flex h-2 w-2">
+        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-live/10 text-live text-[10px] font-semibold tabular-nums">
+          <span className="relative flex h-1.5 w-1.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-live/75 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-live"></span>
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-live"></span>
           </span>
           {displayText}
         </div>
@@ -239,7 +239,7 @@ export function RocketsGameWidget() {
 
     if (isFinal) {
       return (
-        <span className={`text-caption font-semibold ${rocketsWon ? 'text-success' : 'text-muted-foreground'}`}>
+        <span className={`text-[10px] font-semibold ${rocketsWon ? 'text-success' : 'text-muted-foreground'}`}>
           {rocketsWon ? 'WIN' : 'FINAL'}
         </span>
       );
@@ -247,8 +247,8 @@ export function RocketsGameWidget() {
 
     // Scheduled
     return (
-      <div className="flex items-center gap-1 text-caption text-muted-foreground">
-        <Clock className="w-3 h-3" />
+      <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+        <Clock className="w-2.5 h-2.5" />
         <span suppressHydrationWarning>
           {isHydrated ? (
             gameToShow.startTime.toLocaleTimeString('en-US', {
@@ -266,13 +266,13 @@ export function RocketsGameWidget() {
   // For scheduled games, show a different layout
   if (isScheduled) {
     return (
-      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden py-0 gap-0 transition-all hover:shadow-md">
-        <CardContent className="p-3 h-full flex flex-col justify-center items-center text-center">
+      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-none overflow-hidden py-0 gap-0">
+        <CardContent className="!px-2 !py-1 h-full flex flex-col justify-center items-center text-center">
           {/* Team Matchup */}
-          <div className="flex items-center justify-center gap-4 mb-4">
+          <div className="flex items-center justify-center gap-2.5 mb-1">
             {/* Away Team */}
-            <div className="flex flex-col items-center gap-2">
-              <div className="relative w-12 h-12">
+            <div className="flex flex-col items-center gap-0.5">
+              <div className="relative w-7 h-7">
                 {gameToShow.awayTeamLogo ? (
                   <Image
                     src={gameToShow.awayTeamLogo}
@@ -285,17 +285,17 @@ export function RocketsGameWidget() {
                   <div className="w-full h-full rounded-full bg-muted/50" />
                 )}
               </div>
-              <span className="text-body-sm font-medium">{gameToShow.awayTeam}</span>
+              <span className="text-[10px] font-medium">{gameToShow.awayTeam}</span>
             </div>
 
             {/* VS */}
-            <div className="px-3 py-1 rounded-md bg-muted/20">
-              <span className="text-body-sm font-semibold text-muted-foreground">@</span>
+            <div className="px-1.5 py-0.5 rounded-md bg-muted/20">
+              <span className="text-[10px] font-semibold text-muted-foreground">@</span>
             </div>
 
             {/* Home Team */}
-            <div className="flex flex-col items-center gap-2">
-              <div className="relative w-12 h-12">
+            <div className="flex flex-col items-center gap-0.5">
+              <div className="relative w-7 h-7">
                 {gameToShow.homeTeamLogo ? (
                   <Image
                     src={gameToShow.homeTeamLogo}
@@ -308,14 +308,14 @@ export function RocketsGameWidget() {
                   <div className="w-full h-full rounded-full bg-muted/50" />
                 )}
               </div>
-              <span className="text-body-sm font-medium">{gameToShow.homeTeam}</span>
+              <span className="text-[10px] font-medium">{gameToShow.homeTeam}</span>
             </div>
           </div>
 
           {/* Game Time & Date */}
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Clock className="w-4 h-4" />
-            <span className="text-body-sm" suppressHydrationWarning>
+          <div className="flex items-center gap-1 text-muted-foreground">
+            <Clock className="w-3 h-3" />
+            <span className="text-[10px]" suppressHydrationWarning>
               {isHydrated ? (
                 <>
                   {gameToShow.startTime.toLocaleDateString('en-US', {
@@ -341,22 +341,22 @@ export function RocketsGameWidget() {
 
   // For live and finished games, show scores
   return (
-    <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm overflow-hidden py-0 gap-0 transition-all hover:shadow-md">
-      <CardContent className="p-3 h-full flex flex-col">
+    <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-none overflow-hidden py-0 gap-0">
+      <CardContent className="!px-2 !py-1 h-full flex flex-col">
         {/* Header with status */}
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-caption text-muted-foreground tracking-wide">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[10px] font-medium text-muted-foreground tracking-wide uppercase">
             {isFinal ? 'FINAL' : 'LIVE'}
           </span>
           {getStatusDisplay()}
         </div>
 
         {/* Teams & Scores */}
-        <div className="flex-1 flex flex-col justify-center space-y-2">
+        <div className="flex-1 flex flex-col justify-center space-y-1">
           {/* Away Team */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <div className="relative w-8 h-8 flex-shrink-0">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              <div className="relative w-6 h-6 flex-shrink-0">
                 {gameToShow.awayTeamLogo ? (
                   <Image
                     src={gameToShow.awayTeamLogo}
@@ -369,19 +369,19 @@ export function RocketsGameWidget() {
                   <div className="w-full h-full rounded-full bg-muted/50" />
                 )}
               </div>
-              <span className={`text-body-sm truncate ${isFinal && isAwayWinning ? 'font-bold' : 'font-medium'}`}>
+              <span className={`text-xs truncate ${isFinal && isAwayWinning ? 'font-bold' : 'font-medium'}`}>
                 {gameToShow.awayTeam}
               </span>
             </div>
-            <span className={`text-title-lg tabular-nums font-mono ${isFinal && isAwayWinning ? 'text-foreground font-bold' : 'text-muted-foreground font-medium'}`}>
+            <span className={`text-sm tabular-nums font-mono ${isFinal && isAwayWinning ? 'text-foreground font-bold' : 'text-muted-foreground font-medium'}`}>
               {gameToShow.awayScore}
             </span>
           </div>
 
           {/* Home Team */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <div className="relative w-8 h-8 flex-shrink-0">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              <div className="relative w-6 h-6 flex-shrink-0">
                 {gameToShow.homeTeamLogo ? (
                   <Image
                     src={gameToShow.homeTeamLogo}
@@ -394,11 +394,11 @@ export function RocketsGameWidget() {
                   <div className="w-full h-full rounded-full bg-muted/50" />
                 )}
               </div>
-              <span className={`text-body-sm truncate ${isFinal && isHomeWinning ? 'font-bold' : 'font-medium'}`}>
+              <span className={`text-xs truncate ${isFinal && isHomeWinning ? 'font-bold' : 'font-medium'}`}>
                 {gameToShow.homeTeam}
               </span>
             </div>
-            <span className={`text-title-lg tabular-nums font-mono ${isFinal && isHomeWinning ? 'text-foreground font-bold' : 'text-muted-foreground font-medium'}`}>
+            <span className={`text-sm tabular-nums font-mono ${isFinal && isHomeWinning ? 'text-foreground font-bold' : 'text-muted-foreground font-medium'}`}>
               {gameToShow.homeScore}
             </span>
           </div>

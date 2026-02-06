@@ -67,9 +67,9 @@ function getRankEmblemUrl(tier: string): string {
 function RankCard({ entry, queueLabel }: { entry: RankedEntry | null; queueLabel: string }) {
   if (!entry) {
     return (
-      <div className="flex items-center justify-between py-1.5 px-2.5 rounded-md bg-muted/30">
-        <span className="text-sm text-muted-foreground">{queueLabel}</span>
-        <span className="text-sm text-muted-foreground">Unranked</span>
+      <div className="flex items-center justify-between py-0.5 px-1.5 rounded-md bg-muted/30">
+        <span className="text-[10px] text-muted-foreground">{queueLabel}</span>
+        <span className="text-[10px] text-muted-foreground">Unranked</span>
       </div>
     );
   }
@@ -79,10 +79,10 @@ function RankCard({ entry, queueLabel }: { entry: RankedEntry | null; queueLabel
   const tierBg = tierBgColors[entry.tier] || 'bg-muted/30';
 
   return (
-    <div className={cn('flex items-center gap-2 py-1 px-2.5 rounded-md overflow-visible', tierBg)}>
+    <div className={cn('flex items-center gap-1.5 py-0.5 px-1.5 rounded-md overflow-visible', tierBg)}>
       {/* Rank Emblem */}
-      <div className="relative w-8 h-8 flex-shrink-0">
-        <div className="absolute -inset-[64px] z-10">
+      <div className="relative w-6 h-6 flex-shrink-0">
+        <div className="absolute -inset-[48px] z-10">
           <Image
             src={getRankEmblemUrl(entry.tier)}
             alt={`${entry.tier} emblem`}
@@ -95,23 +95,23 @@ function RankCard({ entry, queueLabel }: { entry: RankedEntry | null; queueLabel
 
       {/* Rank Info */}
       <div className="flex-1 min-w-0 z-20">
-        <span className="text-[10px] text-muted-foreground">{queueLabel}</span>
+        <span className="text-[9px] text-muted-foreground leading-none">{queueLabel}</span>
         <div className="flex items-baseline gap-1">
-          <span className={cn('font-bold text-sm', tierColor)}>
+          <span className={cn('font-bold text-xs', tierColor)}>
             {formatTier(entry.tier)} {entry.rank}
           </span>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-[10px] text-muted-foreground">
             {entry.leaguePoints} LP
           </span>
         </div>
       </div>
 
       {/* Win Rate */}
-      <div className="flex items-center gap-1.5 z-20">
-        <span className="text-[10px] text-muted-foreground">
+      <div className="flex items-center gap-1 z-20">
+        <span className="text-[9px] text-muted-foreground">
           {entry.wins}W {entry.losses}L
         </span>
-        <span className={cn('text-xs font-medium', winRate >= 50 ? 'text-success' : 'text-destructive')}>
+        <span className={cn('text-[10px] font-medium', winRate >= 50 ? 'text-success' : 'text-destructive')}>
           {winRate}%
         </span>
       </div>
@@ -125,14 +125,14 @@ function AramProgressBar({ data }: { data: AramChallengeResponse }) {
   const isAramGod = data.currentPoints >= data.targetPoints;
 
   return (
-    <div className="py-1 px-2.5 rounded-md bg-muted/30">
+    <div className="py-0.5 px-1.5 rounded-md bg-muted/30">
       {/* Header + Progress inline */}
-      <div className="flex items-center justify-between mb-1">
+      <div className="flex items-center justify-between mb-0.5">
         <div className="flex items-center gap-1">
-          <Swords className="h-3 w-3 text-muted-foreground" />
-          <span className="text-[10px] text-muted-foreground">ARAM God</span>
+          <Swords className="h-2.5 w-2.5 text-muted-foreground" />
+          <span className="text-[9px] text-muted-foreground">ARAM God</span>
         </div>
-        <span className={cn('text-[10px] font-medium', tierColor)}>
+        <span className={cn('text-[9px] font-medium', tierColor)}>
           {formatTier(data.tier)} · {isAramGod ? 'ARAM GOD!' : `${data.percentage}%`}
         </span>
       </div>
@@ -176,20 +176,20 @@ export function LeagueOfLegendsWidget() {
   if (isLoading) {
     return (
       <Card className="col-span-1 !py-0 bg-background/40 backdrop-blur-md border-white/10 shadow-none">
-        <CardContent className="!px-2.5 !py-1.5">
-          <div className="space-y-1.5">
+        <CardContent className="!px-2 !py-1">
+          <div className="space-y-0.5">
             {/* Summoner header */}
-            <div className="flex items-center gap-2">
-              <Skeleton className="w-7 h-7" rounded="full" />
-              <Skeleton className="h-4 w-28" />
+            <div className="flex items-center gap-1">
+              <Skeleton className="w-5 h-5" rounded="full" />
+              <Skeleton className="h-3 w-20" />
             </div>
             {/* Rank cards */}
-            <div className="space-y-1">
-              <Skeleton className="h-10 w-full" rounded="md" />
-              <Skeleton className="h-10 w-full" style={{ animationDelay: '100ms' }} rounded="md" />
+            <div className="space-y-0.5">
+              <Skeleton className="h-7 w-full" rounded="md" />
+              <Skeleton className="h-7 w-full" style={{ animationDelay: '100ms' }} rounded="md" />
             </div>
             {/* ARAM bar */}
-            <Skeleton className="h-7 w-full" style={{ animationDelay: '200ms' }} rounded="md" />
+            <Skeleton className="h-5 w-full" style={{ animationDelay: '200ms' }} rounded="md" />
           </div>
         </CardContent>
       </Card>
@@ -202,9 +202,9 @@ export function LeagueOfLegendsWidget() {
 
     return (
       <Card className="col-span-1 !py-0 bg-background/40 backdrop-blur-md border-white/10 shadow-none">
-        <CardContent className="!px-3 !py-2">
-          <div className="text-center py-3">
-            <p className="text-sm text-muted-foreground">
+        <CardContent className="!px-2 !py-1">
+          <div className="text-center py-2">
+            <p className="text-xs text-muted-foreground">
               {isApiKeyError ? 'Riot API key invalid or expired' : 'Failed to load League stats'}
             </p>
             {isApiKeyError && (
@@ -220,11 +220,11 @@ export function LeagueOfLegendsWidget() {
 
   return (
     <Card className="col-span-1 !py-0 bg-background/40 backdrop-blur-md border-white/10 shadow-none">
-      <CardContent className="!px-2.5 !py-1.5">
-        <div className="space-y-1.5">
+      <CardContent className="!px-2 !py-1">
+        <div className="space-y-0.5">
           {/* Header with summoner name and icon */}
-          <div className="flex items-center gap-2">
-            <div className="relative w-7 h-7 flex-shrink-0 rounded-full bg-background/50 overflow-hidden ring-1 ring-border/20">
+          <div className="flex items-center gap-1">
+            <div className="relative w-5 h-5 flex-shrink-0 rounded-full bg-background/50 overflow-hidden ring-1 ring-border/20">
               <Image
                 src={`https://ddragon.leagueoflegends.com/cdn/${data.ddragonVersion}/img/profileicon/${data.profileIconId}.png`}
                 alt="Profile Icon"
@@ -233,14 +233,14 @@ export function LeagueOfLegendsWidget() {
                 unoptimized
               />
             </div>
-            <div className="flex items-baseline gap-1.5 min-w-0">
-              <span className="font-bold text-sm leading-tight truncate">{data.summonerName}</span>
-              <span className="text-[10px] text-muted-foreground">Lv.{data.summonerLevel}</span>
+            <div className="flex items-baseline gap-1 min-w-0">
+              <span className="font-bold text-[10px] leading-tight truncate">{data.summonerName}</span>
+              <span className="text-[8px] text-muted-foreground">Lv.{data.summonerLevel}</span>
             </div>
           </div>
 
           {/* Ranked entries */}
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             <RankCard entry={data.soloQueue} queueLabel="Solo/Duo" />
             <RankCard entry={data.flexQueue} queueLabel="Flex" />
           </div>
