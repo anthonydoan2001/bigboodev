@@ -505,6 +505,22 @@ model TikTokVideo {
   @@map("tiktok_videos")
 }
 
+model CommodityQuote {
+  symbol        String   @id(map: "commodity_quotes_pkey")
+  name          String
+  price         Float
+  unit          String
+  dailyChange   Float?   @map("daily_change")
+  percentChange Float?   @map("percent_change")
+  previousPrice Float?   @map("previous_price")
+  lastUpdated   DateTime @default(now()) @map("last_updated")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([lastUpdated])
+  @@map("commodity_quotes")
+}
+
 model GasPrice {
   stationId   String   @id @map("station_id")
   station     String

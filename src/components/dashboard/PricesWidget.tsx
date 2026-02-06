@@ -2,10 +2,12 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { fetchCommodityQuotesFromDB } from '@/lib/api/commodities';
 import { fetchCryptoQuotesFromDB } from '@/lib/api/crypto';
 import { fetchGasPrice } from '@/lib/api/gas';
 import { fetchStockQuotes } from '@/lib/api/stocks';
 import { cn } from '@/lib/utils';
+import { CommodityQuote } from '@/types/commodities';
 import { CryptoQuote } from '@/types/crypto';
 import { GasPriceData } from '@/types/gas';
 import { StockQuote } from '@/types/stocks';
@@ -181,6 +183,58 @@ const GasPriceCard = memo(function GasPriceCard({ gas }: { gas: GasPriceData }) 
   );
 });
 
+const COMMODITY_ICON_LABELS: Record<string, string> = {
+  XAU: 'Au',
+  XAG: 'Ag',
+  XPT: 'Pt',
+  XIN: 'In',
+  XLI: 'Li',
+  XU: 'U',
+  NATURALGAS: 'NG',
+};
+
+const CommodityCard = memo(function CommodityCard({ commodity }: { commodity: CommodityQuote }) {
+  const percentChange = commodity.percentChange ?? 0;
+  const isPositive = percentChange >= 0;
+  const changeColor = isPositive ? 'text-success' : 'text-destructive';
+  const iconLabel = COMMODITY_ICON_LABELS[commodity.symbol] || commodity.symbol.charAt(0);
+
+  return (
+    <div className="flex items-center justify-between py-2 px-2.5 border-b border-border/40 last:border-0 hover:bg-muted/20 transition-colors">
+      {/* Left side: Icon & Name */}
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div className="relative w-6 h-6 flex-shrink-0 rounded-full bg-amber-500/15 flex items-center justify-center ring-1 ring-amber-500/20">
+          <span className="text-[9px] font-bold text-amber-500">{iconLabel}</span>
+        </div>
+        <span className="font-semibold font-mono text-xs leading-none">{commodity.symbol}</span>
+      </div>
+
+      {/* Middle: Price */}
+      <div className="flex-shrink-0 mx-3">
+        <span className="font-mono text-xs font-medium tabular-nums">{formatPrice(commodity.price)}</span>
+      </div>
+
+      {/* Right: Change */}
+      <div className="flex items-center gap-0.5 flex-shrink-0 min-w-[70px] justify-end">
+        {commodity.percentChange !== null ? (
+          <span className={cn("text-[10px] font-mono font-medium flex items-center gap-0.5 tabular-nums", changeColor)}>
+            {isPositive ? (
+              <ArrowUp className="h-2.5 w-2.5" />
+            ) : (
+              <ArrowDown className="h-2.5 w-2.5" />
+            )}
+            {formatPercentChange(commodity.percentChange)}
+          </span>
+        ) : (
+          <span className="text-[10px] font-mono text-muted-foreground tabular-nums">
+            {formatRelativeTime(commodity.lastUpdated)}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+});
+
 export function PricesWidget() {
   const { data: gasData, isLoading: gasLoading } = useQuery({
     queryKey: ['gasPrice'],
@@ -206,11 +260,20 @@ export function PricesWidget() {
     refetchOnMount: 'always', // Refetch on mount if stale
   });
 
-  const isLoading = stocksLoading || cryptoLoading || gasLoading;
-  const hasError = stocksError || cryptoError;
+  const { data: commodityData, isLoading: commodityLoading, error: commodityError } = useQuery({
+    queryKey: ['commodityQuotes'],
+    queryFn: fetchCommodityQuotesFromDB,
+    staleTime: 3600000, // Consider stale after 1 hour
+    refetchInterval: 3600000, // Auto-refresh every 1 hour
+    refetchOnMount: 'always',
+  });
+
+  const isLoading = stocksLoading || cryptoLoading || gasLoading || commodityLoading;
+  const hasError = stocksError || cryptoError || commodityError;
   const hasStocks = stocksData && stocksData.quotes.length > 0;
   const hasCrypto = cryptoData && cryptoData.quotes.length > 0;
-  const hasData = hasStocks || hasCrypto;
+  const hasCommodities = commodityData && commodityData.quotes.length > 0;
+  const hasData = hasStocks || hasCrypto || hasCommodities;
 
   if (isLoading) {
     return (
@@ -265,6 +328,11 @@ export function PricesWidget() {
             {/* Crypto */}
             {hasCrypto && cryptoData.quotes.map((crypto: CryptoQuote) => (
               <CryptoCard key={crypto.symbol} crypto={crypto} />
+            ))}
+
+            {/* Commodities */}
+            {hasCommodities && commodityData.quotes.map((commodity: CommodityQuote) => (
+              <CommodityCard key={commodity.symbol} commodity={commodity} />
             ))}
           </div>
         </div>
