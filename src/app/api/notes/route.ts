@@ -7,7 +7,6 @@ export const GET = withAuth(async (request: Request, _sessionToken: string) => {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
     const folderId = searchParams.get('folderId');
-    const tagId = searchParams.get('tagId');
     const isPinned = searchParams.get('isPinned');
     const isDeleted = searchParams.get('isDeleted');
     const limit = searchParams.get('limit');
@@ -30,15 +29,6 @@ export const GET = withAuth(async (request: Request, _sessionToken: string) => {
       } else {
         where.folderId = folderId;
       }
-    }
-
-    // Handle tag filter
-    if (tagId) {
-      where.tags = {
-        some: {
-          tagId,
-        },
-      };
     }
 
     // Handle pinned filter
@@ -78,18 +68,6 @@ export const GET = withAuth(async (request: Request, _sessionToken: string) => {
             select: {
               id: true,
               name: true,
-            },
-          },
-          // Tags with minimal data
-          tags: {
-            select: {
-              tag: {
-                select: {
-                  id: true,
-                  name: true,
-                  color: true,
-                },
-              },
             },
           },
           // Only count attachments and taskNotes, don't load them
@@ -163,17 +141,6 @@ export const POST = withAuth(async (request: Request, _sessionToken: string) => 
           select: {
             id: true,
             name: true,
-          },
-        },
-        tags: {
-          select: {
-            tag: {
-              select: {
-                id: true,
-                name: true,
-                color: true,
-              },
-            },
           },
         },
         _count: {

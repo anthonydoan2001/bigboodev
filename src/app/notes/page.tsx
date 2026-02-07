@@ -17,19 +17,17 @@ import { FolderTree } from '@/components/notes/FolderTree';
 import { NotesList } from '@/components/notes/NotesList';
 import { NoteEditor } from '@/components/notes/NoteEditor';
 import { TrashView } from '@/components/notes/TrashView';
-import { TagManager } from '@/components/notes/TagManager';
 import { TaskLinkModal } from '@/components/notes/TaskLinkModal';
-import { useNotes, useFolders, useTags, useNote } from '@/lib/hooks/useNotes';
+import { useNotes, useFolders, useNote } from '@/lib/hooks/useNotes';
 import { useTasks } from '@/lib/hooks/useTasks';
 import {
   useNotesMutations,
   useFoldersMutations,
-  useTagsMutations,
   useAttachmentsMutations,
   useTaskNoteMutations,
 } from '@/lib/hooks/useNotesMutations';
 import { useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Tags, PanelLeftClose, PanelLeft, Menu } from 'lucide-react';
+import { Plus, Search, PanelLeftClose, PanelLeft, Menu, Loader2 } from 'lucide-react';
 
 function NotesContent() {
   const router = useRouter();
@@ -39,20 +37,17 @@ function NotesContent() {
   // URL state
   const noteIdParam = searchParams.get('note');
   const folderIdParam = searchParams.get('folder');
-  const tagIdParam = searchParams.get('tag');
   const trashParam = searchParams.get('trash') === 'true';
 
   // Local state
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(noteIdParam);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(folderIdParam);
-  const [selectedTagId, setSelectedTagId] = useState<string | null>(tagIdParam);
   const [showTrash, setShowTrash] = useState(trashParam);
   const [searchQuery, setSearchQuery] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Dialogs
-  const [showTagManager, setShowTagManager] = useState(false);
   const [showTaskLinkModal, setShowTaskLinkModal] = useState(false);
   const [folderDialog, setFolderDialog] = useState<{
     open: boolean;
@@ -74,7 +69,6 @@ function NotesContent() {
   // Data hooks - use includeCounts to get total/trashed counts in one request
   const { notes, counts, isLoading: notesLoading } = useNotes({
     folderId: selectedFolderId,
-    tagId: selectedTagId || undefined,
     isDeleted: showTrash,
     search: searchQuery || undefined,
   }, { includeCounts: true });
@@ -85,15 +79,13 @@ function NotesContent() {
     { includeCounts: false, enabled: showTrash }
   );
 
-  const { note: selectedNote, refetch: refetchNote } = useNote(selectedNoteId);
+  const { note: selectedNote, isLoading: noteLoading, refetch: refetchNote } = useNote(selectedNoteId);
   const { folders, tree: folderTree } = useFolders();
-  const { tags } = useTags();
   const { tasks } = useTasks();
 
   // Mutations
   const { createNote, updateNote, deleteNote, restoreNote, permanentDeleteNote } = useNotesMutations();
   const { createFolder, updateFolder, deleteFolder } = useFoldersMutations();
-  const { createTag, updateTag, deleteTag, addTagToNote, removeTagFromNote } = useTagsMutations();
   const { uploadAttachment, deleteAttachment } = useAttachmentsMutations();
   const { linkTask, unlinkTask } = useTaskNoteMutations();
 
@@ -114,11 +106,10 @@ function NotesContent() {
 
   // Update URL when selection changes
   const updateUrl = useCallback(
-    (noteId: string | null, folderId: string | null, tagId: string | null, trash: boolean) => {
+    (noteId: string | null, folderId: string | null, trash: boolean) => {
       const params = new URLSearchParams();
       if (noteId) params.set('note', noteId);
       if (folderId) params.set('folder', folderId);
-      if (tagId) params.set('tag', tagId);
       if (trash) params.set('trash', 'true');
       router.push(`/notes${params.toString() ? `?${params.toString()}` : ''}`);
     },
@@ -128,29 +119,22 @@ function NotesContent() {
   // Handlers
   const handleSelectNote = useCallback((noteId: string) => {
     setSelectedNoteId(noteId);
-    updateUrl(noteId, selectedFolderId, selectedTagId, showTrash);
+    updateUrl(noteId, selectedFolderId, showTrash);
     setMobileMenuOpen(false);
-  }, [updateUrl, selectedFolderId, selectedTagId, showTrash]);
+  }, [updateUrl, selectedFolderId, showTrash]);
 
   const handleSelectFolder = useCallback((folderId: string | null) => {
     setSelectedFolderId(folderId);
     setShowTrash(false);
-    updateUrl(selectedNoteId, folderId, null, false);
-  }, [updateUrl, selectedNoteId]);
-
-  const handleSelectTag = useCallback((tagId: string | null) => {
-    setSelectedTagId(tagId);
-    setShowTrash(false);
-    updateUrl(selectedNoteId, null, tagId, false);
+    updateUrl(selectedNoteId, folderId, false);
   }, [updateUrl, selectedNoteId]);
 
   const handleToggleTrash = useCallback(() => {
     const newTrash = !showTrash;
     setShowTrash(newTrash);
     setSelectedFolderId(null);
-    setSelectedTagId(null);
     setSelectedNoteId(null);
-    updateUrl(null, null, null, newTrash);
+    updateUrl(null, null, newTrash);
   }, [showTrash, updateUrl]);
 
   const handleCreateNote = useCallback(async () => {
@@ -161,9 +145,9 @@ function NotesContent() {
     });
     if (result.item) {
       setSelectedNoteId(result.item.id);
-      updateUrl(result.item.id, selectedFolderId, selectedTagId, showTrash);
+      updateUrl(result.item.id, selectedFolderId, showTrash);
     }
-  }, [createNote, selectedFolderId, selectedTagId, showTrash, updateUrl]);
+  }, [createNote, selectedFolderId, showTrash, updateUrl]);
 
   const handleTitleChange = useCallback((title: string) => {
     setEditTitle(title);
@@ -288,9 +272,9 @@ function NotesContent() {
 
     if (result.item) {
       setSelectedNoteId(result.item.id);
-      updateUrl(result.item.id, selectedFolderId, selectedTagId, showTrash);
+      updateUrl(result.item.id, selectedFolderId, showTrash);
     }
-  }, [notes, createNote, selectedFolderId, selectedTagId, showTrash, updateUrl]);
+  }, [notes, createNote, selectedFolderId, showTrash, updateUrl]);
 
   // Folder handlers
   const handleCreateFolder = useCallback((parentId?: string) => {
@@ -332,19 +316,6 @@ function NotesContent() {
   const handlePinFolder = useCallback((folderId: string, isPinned: boolean) => {
     updateFolder.mutate({ id: folderId, input: { isPinned } });
   }, [updateFolder]);
-
-  // Tag handlers
-  const handleAddTag = useCallback((tagId: string) => {
-    if (selectedNoteId) {
-      addTagToNote.mutate({ noteId: selectedNoteId, tagId });
-    }
-  }, [selectedNoteId, addTagToNote]);
-
-  const handleRemoveTag = useCallback((tagId: string) => {
-    if (selectedNoteId) {
-      removeTagFromNote.mutate({ noteId: selectedNoteId, tagId });
-    }
-  }, [selectedNoteId, removeTagFromNote]);
 
   // Attachment handlers
   const handleUploadAttachment = useCallback((file: File) => {
@@ -409,12 +380,9 @@ function NotesContent() {
           {sidebarOpen && (
             <FolderTree
               folders={folderTree}
-              tags={tags}
               selectedFolderId={selectedFolderId}
-              selectedTagId={selectedTagId}
               showTrash={showTrash}
               onSelectFolder={handleSelectFolder}
-              onSelectTag={handleSelectTag}
               onToggleTrash={handleToggleTrash}
               onCreateFolder={handleCreateFolder}
               onRenameFolder={handleRenameFolder}
@@ -448,14 +416,6 @@ function NotesContent() {
                   className="pl-7 h-7 text-sm"
                 />
               </div>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => setShowTagManager(true)}
-                title="Manage Tags"
-              >
-                <Tags className="h-3.5 w-3.5" />
-              </Button>
               <Button size="sm" onClick={handleCreateNote} title="New Note" className="h-7 px-2">
                 <Plus className="h-3.5 w-3.5" />
               </Button>
@@ -487,6 +447,10 @@ function NotesContent() {
               isRestoring={restoreNote.isPending}
               isDeleting={permanentDeleteNote.isPending}
             />
+          ) : selectedNoteId && noteLoading ? (
+            <div className="flex-1 flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
           ) : selectedNote ? (
             <NoteEditor
               note={selectedNote}
@@ -495,11 +459,6 @@ function NotesContent() {
               onContentChange={handleContentChange}
               isPinned={editIsPinned}
               onPinToggle={handlePinToggle}
-              tags={tags}
-              noteTags={selectedNote.tags.map((nt) => nt.tag)}
-              onAddTag={handleAddTag}
-              onRemoveTag={handleRemoveTag}
-              onCreateTag={(name, color) => createTag.mutate({ name, color })}
               folders={folders.map((f) => ({ id: f.id, name: f.name }))}
               currentFolderId={editFolderId}
               onFolderChange={handleFolderChange}
@@ -571,19 +530,6 @@ function NotesContent() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Tag Manager */}
-      <TagManager
-        open={showTagManager}
-        onOpenChange={setShowTagManager}
-        tags={tags}
-        onCreateTag={(name, color) => createTag.mutate({ name, color })}
-        onUpdateTag={(id, name, color) => updateTag.mutate({ id, input: { name, color } })}
-        onDeleteTag={(id) => deleteTag.mutate(id)}
-        isCreating={createTag.isPending}
-        isUpdating={updateTag.isPending}
-        isDeleting={deleteTag.isPending}
-      />
 
       {/* Task Link Modal */}
       <TaskLinkModal

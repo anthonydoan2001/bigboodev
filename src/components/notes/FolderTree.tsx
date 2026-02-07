@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, memo, useCallback } from 'react';
-import { FolderTreeNode, TagWithCount } from '@/types/notes';
+import { FolderTreeNode } from '@/types/notes';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -19,7 +19,6 @@ import {
   MoreHorizontal,
   Plus,
   Pencil,
-  Tag,
   Pin,
   PinOff,
 } from 'lucide-react';
@@ -165,12 +164,9 @@ const FolderItem = memo(function FolderItem({
 
 interface FolderTreeProps {
   folders: FolderTreeNode[];
-  tags: TagWithCount[];
   selectedFolderId: string | null;
-  selectedTagId: string | null;
   showTrash: boolean;
   onSelectFolder: (folderId: string | null) => void;
-  onSelectTag: (tagId: string | null) => void;
   onToggleTrash: () => void;
   onCreateFolder: (parentId?: string) => void;
   onRenameFolder: (folderId: string, currentName: string) => void;
@@ -182,12 +178,9 @@ interface FolderTreeProps {
 
 export function FolderTree({
   folders,
-  tags,
   selectedFolderId,
-  selectedTagId,
   showTrash,
   onSelectFolder,
-  onSelectTag,
   onToggleTrash,
   onCreateFolder,
   onRenameFolder,
@@ -217,11 +210,10 @@ export function FolderTree({
         <div
           className={cn(
             'flex items-center gap-1.5 py-1 px-2 cursor-pointer hover:bg-accent/50 transition-colors',
-            selectedFolderId === null && selectedTagId === null && !showTrash && 'bg-accent'
+            selectedFolderId === null && !showTrash && 'bg-accent'
           )}
           onClick={() => {
             onSelectFolder(null);
-            onSelectTag(null);
           }}
         >
           <FileText className="h-4 w-4 text-info" />
@@ -243,7 +235,6 @@ export function FolderTree({
                 selectedFolderId={selectedFolderId}
                 onSelect={(id) => {
                   onSelectFolder(id);
-                  onSelectTag(null);
                 }}
                 onRename={onRenameFolder}
                 onDelete={onDeleteFolder}
@@ -254,31 +245,6 @@ export function FolderTree({
           </div>
         )}
 
-        {/* Tags */}
-        {tags.length > 0 && (
-          <div className="mt-2">
-            <div className="px-2 py-0.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              Tags
-            </div>
-            {tags.map((tag) => (
-              <div
-                key={tag.id}
-                className={cn(
-                  'flex items-center gap-1.5 py-1 px-2 cursor-pointer hover:bg-accent/50 transition-colors',
-                  selectedTagId === tag.id && 'bg-accent'
-                )}
-                onClick={() => {
-                  onSelectTag(tag.id);
-                  onSelectFolder(null);
-                }}
-              >
-                <Tag className="h-4 w-4" style={{ color: tag.color }} />
-                <span className="flex-1 text-sm truncate">{tag.name}</span>
-                <span className="text-[11px] text-muted-foreground">{tag._count?.notes || 0}</span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Trash */}

@@ -18,15 +18,7 @@ export const GET = withAuth(async (request: Request, _sessionToken: string) => {
     const taskNotes = await db.taskNote.findMany({
       where: { taskId },
       include: {
-        note: {
-          include: {
-            tags: {
-              include: {
-                tag: true,
-              },
-            },
-          },
-        },
+        note: true,
       },
     });
 
