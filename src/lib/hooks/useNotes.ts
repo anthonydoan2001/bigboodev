@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchNotes, fetchNote, fetchFolders, fetchTags, fetchPinnedNotes } from '@/lib/api/notes';
-import { NotesFilters, NoteWithRelations, FolderTreeNode, TagWithCount } from '@/types/notes';
+import { fetchNotes, fetchNote, fetchFolders, fetchPinnedNotes } from '@/lib/api/notes';
+import { NotesFilters, NoteWithRelations, FolderTreeNode } from '@/types/notes';
 
 export function useNotes(filters?: NotesFilters, options?: { includeCounts?: boolean; enabled?: boolean }) {
   const { data, isLoading, error, refetch } = useQuery({
@@ -48,22 +48,6 @@ export function useFolders() {
   return {
     folders: data?.items || [],
     tree: data?.tree as FolderTreeNode[] || [],
-    isLoading,
-    error,
-    refetch,
-  };
-}
-
-export function useTags() {
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['tags'],
-    queryFn: fetchTags,
-    staleTime: 120000, // 2 minutes
-    refetchOnWindowFocus: false,
-  });
-
-  return {
-    tags: data?.items as TagWithCount[] || [],
     isLoading,
     error,
     refetch,

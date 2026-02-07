@@ -1,11 +1,4 @@
-import { Folder, Note, Tag, NoteAttachment } from '@prisma/client';
-
-// Lightweight tag for list views
-export interface TagSummary {
-  id: string;
-  name: string;
-  color: string;
-}
+import { Folder, Note, NoteAttachment } from '@prisma/client';
 
 // Lightweight task for note editor
 export interface TaskSummary {
@@ -28,14 +21,12 @@ export interface NoteListItem {
   createdAt: Date;
   updatedAt: Date;
   folder?: { id: string; name: string } | null;
-  tags: { tag: TagSummary }[];
   _count?: { attachments: number; taskNotes: number };
 }
 
 // Extended Note type with relations (for detail view)
 export interface NoteWithRelations extends Note {
   folder?: { id: string; name: string } | null;
-  tags: { tag: TagSummary }[];
   attachments: {
     id: string;
     fileName: string;
@@ -64,11 +55,6 @@ export interface FolderTreeNode {
   isPinned: boolean;
 }
 
-// Tag with note count
-export interface TagWithCount extends Tag {
-  _count?: { notes: number };
-}
-
 // Input types for creating/updating
 export interface CreateNoteInput {
   title: string;
@@ -93,16 +79,6 @@ export interface UpdateFolderInput {
   name?: string;
   parentId?: string | null;
   isPinned?: boolean;
-}
-
-export interface CreateTagInput {
-  name: string;
-  color?: string;
-}
-
-export interface UpdateTagInput {
-  name?: string;
-  color?: string;
 }
 
 // Attachment input
@@ -135,14 +111,6 @@ export interface FolderResponse {
   item: FolderWithChildren;
 }
 
-export interface TagsResponse {
-  items: TagWithCount[];
-}
-
-export interface TagResponse {
-  item: Tag;
-}
-
 export interface AttachmentResponse {
   item: NoteAttachment;
 }
@@ -150,7 +118,6 @@ export interface AttachmentResponse {
 // Filter types
 export interface NotesFilters {
   folderId?: string | null;
-  tagId?: string;
   isPinned?: boolean;
   isDeleted?: boolean;
   search?: string;

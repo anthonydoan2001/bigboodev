@@ -4,16 +4,12 @@ import {
   NoteResponse,
   FoldersResponse,
   FolderResponse,
-  TagsResponse,
-  TagResponse,
   AttachmentResponse,
   NotesFilters,
   CreateNoteInput,
   UpdateNoteInput,
   CreateFolderInput,
   UpdateFolderInput,
-  CreateTagInput,
-  UpdateTagInput,
 } from '@/types/notes';
 import { Task, Note } from '@prisma/client';
 
@@ -29,7 +25,6 @@ function buildQueryString(filters?: NotesFilters, includeCounts?: boolean): stri
     if (filters.folderId) {
       params.set('folderId', filters.folderId);
     }
-    if (filters.tagId) params.set('tagId', filters.tagId);
     if (filters.isPinned !== undefined) params.set('isPinned', String(filters.isPinned));
     if (filters.isDeleted !== undefined) params.set('isDeleted', String(filters.isDeleted));
     if (filters.search) params.set('search', filters.search);
@@ -168,75 +163,6 @@ export async function deleteFolder(id: string): Promise<void> {
     const error = await res.json();
     throw new Error(error.error || 'Failed to delete folder');
   }
-}
-
-// ============ Tags API ============
-
-export async function fetchTags(): Promise<TagsResponse> {
-  const res = await fetch(`${BASE_URL}/tags`, {
-    headers: getAuthHeaders(),
-    credentials: 'include',
-  });
-  if (!res.ok) throw new Error('Failed to fetch tags');
-  return res.json();
-}
-
-export async function createTag(input: CreateTagInput): Promise<TagResponse> {
-  const res = await fetch(`${BASE_URL}/tags`, {
-    method: 'POST',
-    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-    credentials: 'include',
-    body: JSON.stringify(input),
-  });
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || 'Failed to create tag');
-  }
-  return res.json();
-}
-
-export async function updateTag(id: string, input: UpdateTagInput): Promise<TagResponse> {
-  const res = await fetch(`${BASE_URL}/tags/${id}`, {
-    method: 'PATCH',
-    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-    credentials: 'include',
-    body: JSON.stringify(input),
-  });
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || 'Failed to update tag');
-  }
-  return res.json();
-}
-
-export async function deleteTag(id: string): Promise<void> {
-  const res = await fetch(`${BASE_URL}/tags/${id}`, {
-    method: 'DELETE',
-    headers: getAuthHeaders(),
-    credentials: 'include',
-  });
-  if (!res.ok) throw new Error('Failed to delete tag');
-}
-
-// ============ Note Tags API ============
-
-export async function addTagToNote(noteId: string, tagId: string): Promise<void> {
-  const res = await fetch(`${BASE_URL}/notes/${noteId}/tags`, {
-    method: 'POST',
-    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-    credentials: 'include',
-    body: JSON.stringify({ tagId }),
-  });
-  if (!res.ok) throw new Error('Failed to add tag to note');
-}
-
-export async function removeTagFromNote(noteId: string, tagId: string): Promise<void> {
-  const res = await fetch(`${BASE_URL}/notes/${noteId}/tags?tagId=${tagId}`, {
-    method: 'DELETE',
-    headers: getAuthHeaders(),
-    credentials: 'include',
-  });
-  if (!res.ok) throw new Error('Failed to remove tag from note');
 }
 
 // ============ Attachments API ============

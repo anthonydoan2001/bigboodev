@@ -46,7 +46,6 @@ import {
   PinOff,
   Folder,
   FolderOpen,
-  Tags,
   LinkIcon as Link2Icon,
   Paperclip,
   Trash2,
@@ -58,7 +57,7 @@ import {
   File,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { NoteWithRelations, TagWithCount, TagSummary, TaskSummary } from '@/types/notes';
+import { NoteWithRelations, TaskSummary } from '@/types/notes';
 
 // Create lowlight instance with common languages
 const lowlight = createLowlight(common);
@@ -112,11 +111,6 @@ interface NoteEditorProps {
   onContentChange: (content: string) => void;
   isPinned: boolean;
   onPinToggle: () => void;
-  tags: TagWithCount[];
-  noteTags: TagSummary[];
-  onAddTag: (tagId: string) => void;
-  onRemoveTag: (tagId: string) => void;
-  onCreateTag: (name: string, color: string) => void;
   folders: { id: string; name: string }[];
   currentFolderId: string | null;
   onFolderChange: (folderId: string | null) => void;
@@ -451,11 +445,6 @@ export function NoteEditor({
   onContentChange,
   isPinned,
   onPinToggle,
-  tags,
-  noteTags,
-  onAddTag,
-  onRemoveTag,
-  onCreateTag: _onCreateTag,
   folders,
   currentFolderId,
   onFolderChange,
@@ -532,10 +521,6 @@ export function NoteEditor({
     e.target.value = '';
   }, [onUploadAttachment]);
 
-  const availableTags = tags.filter(
-    (tag) => !noteTags.some((nt) => nt.id === tag.id)
-  );
-
   // Get current folder name
   const currentFolder = folders.find((f) => f.id === currentFolderId);
 
@@ -610,66 +595,6 @@ export function NoteEditor({
             )}
           </DropdownMenuContent>
         </DropdownMenu>
-
-        <div className="w-px h-4 bg-border" />
-
-        {/* Tags */}
-        <div className="flex items-center gap-1 flex-wrap">
-          <Tags className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-          {noteTags.map((tag) => (
-            <span
-              key={tag.id}
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border transition-all hover:shadow-md group"
-              style={{
-                backgroundColor: tag.color + '15',
-                borderColor: tag.color + '40',
-                color: tag.color
-              }}
-            >
-              <span className="truncate max-w-[100px]">{tag.name}</span>
-              <button
-                onClick={() => onRemoveTag(tag.id)}
-                className="opacity-60 hover:opacity-100 group-hover:opacity-100 transition-opacity"
-                aria-label="Remove tag"
-              >
-                <X className="h-2.5 w-2.5" />
-              </button>
-            </span>
-          ))}
-          {availableTags.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-6 px-2 text-[11px] border-dashed gap-1 hover:bg-accent hover:border-primary/30 transition-all shadow-sm"
-                >
-                  + Add tag
-                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48 max-h-64 overflow-y-auto">
-                {availableTags.map((tag) => (
-                  <DropdownMenuItem
-                    key={tag.id}
-                    onClick={() => onAddTag(tag.id)}
-                    className="gap-2 cursor-pointer"
-                  >
-                    <div
-                      className="h-3 w-3 rounded-full border-2 flex-shrink-0"
-                      style={{
-                        borderColor: tag.color,
-                        backgroundColor: tag.color + '20'
-                      }}
-                    />
-                    <span className="flex-1 truncate">{tag.name}</span>
-                    <span className="text-xs text-muted-foreground">{tag._count?.notes || 0}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
 
         <div className="w-px h-4 bg-border" />
 

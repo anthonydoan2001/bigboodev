@@ -60,7 +60,6 @@ const NoteCard = memo(function NoteCard({
   onDuplicate?: () => void;
   folders?: FolderTreeNode[];
 }) {
-  const hasTags = note.tags && note.tags.length > 0;
   const attachmentCount = note._count?.attachments || 0;
   const taskNoteCount = note._count?.taskNotes || 0;
 
@@ -119,38 +118,18 @@ const NoteCard = memo(function NoteCard({
               </h3>
             </div>
 
-            {/* Tags & Folder - Combined row */}
-            {(hasTags || note.folder) && (
+            {/* Folder */}
+            {note.folder && (
               <div className="flex flex-wrap items-center gap-1">
-                {note.tags.slice(0, 2).map((noteTag) => (
-                  <span
-                    key={noteTag.tag.id}
-                    className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border"
-                    style={{
-                      backgroundColor: noteTag.tag.color + '12',
-                      borderColor: noteTag.tag.color + '30',
-                      color: noteTag.tag.color,
-                    }}
-                  >
-                    {noteTag.tag.name}
-                  </span>
-                ))}
-                {note.tags.length > 2 && (
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted/50 text-muted-foreground border border-border/50">
-                    +{note.tags.length - 2}
-                  </span>
-                )}
-                {note.folder && (
-                  <div className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                    <Folder className="h-3 w-3" />
-                    <span className="truncate max-w-[80px]">{note.folder.name}</span>
-                  </div>
-                )}
+                <div className="inline-flex items-center gap-1 text-xs text-foreground/50">
+                  <Folder className="h-3 w-3" />
+                  <span className="truncate max-w-[80px]">{note.folder.name}</span>
+                </div>
               </div>
             )}
 
             {/* Footer - Compact stats */}
-            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+            <div className="flex items-center gap-2 text-xs text-foreground/50">
               <div className="flex items-center gap-1">
                 <Calendar className="h-3.5 w-3.5" />
                 <span>{format(new Date(note.updatedAt), 'MMM d')}</span>

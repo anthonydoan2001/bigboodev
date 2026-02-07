@@ -37,17 +37,6 @@ export const POST = withAuth(async (request: Request, _sessionToken: string) => 
             name: true,
           },
         },
-        tags: {
-          select: {
-            tag: {
-              select: {
-                id: true,
-                name: true,
-                color: true,
-              },
-            },
-          },
-        },
         _count: {
           select: {
             attachments: true,

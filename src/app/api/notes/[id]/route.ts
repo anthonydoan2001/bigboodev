@@ -35,17 +35,6 @@ export const GET = withAuth(async (request: Request, _sessionToken: string) => {
             name: true,
           },
         },
-        tags: {
-          select: {
-            tag: {
-              select: {
-                id: true,
-                name: true,
-                color: true,
-              },
-            },
-          },
-        },
         attachments: {
           select: {
             id: true,
@@ -121,17 +110,6 @@ export const PATCH = withAuth(async (request: Request, _sessionToken: string) =>
           select: {
             id: true,
             name: true,
-          },
-        },
-        tags: {
-          select: {
-            tag: {
-              select: {
-                id: true,
-                name: true,
-                color: true,
-              },
-            },
           },
         },
         attachments: {

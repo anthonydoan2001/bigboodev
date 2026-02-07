@@ -8,11 +8,6 @@ import {
   createFolder,
   updateFolder,
   deleteFolder,
-  createTag,
-  updateTag,
-  deleteTag,
-  addTagToNote,
-  removeTagFromNote,
   uploadAttachment,
   deleteAttachment,
   linkTaskToNote,
@@ -23,8 +18,6 @@ import {
   UpdateNoteInput,
   CreateFolderInput,
   UpdateFolderInput,
-  CreateTagInput,
-  UpdateTagInput,
 } from '@/types/notes';
 
 export function useNotesMutations() {
@@ -186,79 +179,6 @@ export function useFoldersMutations() {
     createFolder: createFolderMutation,
     updateFolder: updateFolderMutation,
     deleteFolder: deleteFolderMutation,
-  };
-}
-
-export function useTagsMutations() {
-  const queryClient = useQueryClient();
-
-  const createTagMutation = useMutation({
-    mutationFn: (input: CreateTagInput) => createTag(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tags'] });
-    },
-    onError: (error: Error) => {
-      console.error('Create tag error:', error);
-      alert(`Failed to create tag: ${error.message}`);
-    },
-  });
-
-  const updateTagMutation = useMutation({
-    mutationFn: ({ id, input }: { id: string; input: UpdateTagInput }) => updateTag(id, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tags'] });
-      queryClient.invalidateQueries({ queryKey: ['notes'] });
-    },
-    onError: (error: Error) => {
-      console.error('Update tag error:', error);
-      alert(`Failed to update tag: ${error.message}`);
-    },
-  });
-
-  const deleteTagMutation = useMutation({
-    mutationFn: (id: string) => deleteTag(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tags'] });
-      queryClient.invalidateQueries({ queryKey: ['notes'] });
-    },
-    onError: (error: Error) => {
-      console.error('Delete tag error:', error);
-      alert(`Failed to delete tag: ${error.message}`);
-    },
-  });
-
-  const addTagToNoteMutation = useMutation({
-    mutationFn: ({ noteId, tagId }: { noteId: string; tagId: string }) => addTagToNote(noteId, tagId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notes'] });
-      queryClient.invalidateQueries({ queryKey: ['note'] });
-      queryClient.invalidateQueries({ queryKey: ['tags'] });
-    },
-    onError: (error: Error) => {
-      console.error('Add tag to note error:', error);
-      alert(`Failed to add tag: ${error.message}`);
-    },
-  });
-
-  const removeTagFromNoteMutation = useMutation({
-    mutationFn: ({ noteId, tagId }: { noteId: string; tagId: string }) => removeTagFromNote(noteId, tagId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notes'] });
-      queryClient.invalidateQueries({ queryKey: ['note'] });
-      queryClient.invalidateQueries({ queryKey: ['tags'] });
-    },
-    onError: (error: Error) => {
-      console.error('Remove tag from note error:', error);
-      alert(`Failed to remove tag: ${error.message}`);
-    },
-  });
-
-  return {
-    createTag: createTagMutation,
-    updateTag: updateTagMutation,
-    deleteTag: deleteTagMutation,
-    addTagToNote: addTagToNoteMutation,
-    removeTagFromNote: removeTagFromNoteMutation,
   };
 }
 
