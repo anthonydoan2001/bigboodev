@@ -15,9 +15,11 @@ function buildFolderTree(folders: FolderWithChildren[]): FolderTreeNode[] {
       id: folder.id,
       name: folder.name,
       parentId: folder.parentId,
+      sectionId: (folder as unknown as { sectionId: string | null }).sectionId ?? null,
       children: [],
       noteCount: folder._count?.notes || 0,
       isPinned: folder.isPinned ?? false,
+      position: (folder as unknown as { position: number }).position ?? 0,
     });
   });
 
@@ -31,12 +33,8 @@ function buildFolderTree(folders: FolderWithChildren[]): FolderTreeNode[] {
     }
   });
 
-  // Sort roots: pinned first, then alphabetical
-  roots.sort((a, b) => {
-    if (a.isPinned && !b.isPinned) return -1;
-    if (!a.isPinned && b.isPinned) return 1;
-    return a.name.localeCompare(b.name);
-  });
+  // Sort roots by position
+  roots.sort((a, b) => a.position - b.position);
 
   return roots;
 }
@@ -76,6 +74,8 @@ export const GET = withAuth(async (_request: Request, _sessionToken: string) => 
         name: true,
         parentId: true,
         isPinned: true,
+        sectionId: true,
+        position: true,
         createdAt: true,
         updatedAt: true,
         _count: {
@@ -86,7 +86,7 @@ export const GET = withAuth(async (_request: Request, _sessionToken: string) => 
           },
         },
       },
-      orderBy: [{ isPinned: 'desc' }, { name: 'asc' }],
+      orderBy: [{ position: 'asc' }],
     });
 
     const tree = buildFolderTree(folders as FolderWithChildren[]);
@@ -105,7 +105,7 @@ export const GET = withAuth(async (_request: Request, _sessionToken: string) => 
 export const POST = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const body = await request.json();
-    const { name, parentId } = body;
+    const { name, parentId, sectionId } = body;
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Folder name is required' }, { status: 400 });
@@ -122,16 +122,26 @@ export const POST = withAuth(async (request: Request, _sessionToken: string) => 
       }
     }
 
+    // Auto-assign position (max + 1 within section)
+    const maxPosition = await db.folder.aggregate({
+      where: { sectionId: sectionId || null, parentId: parentId || null },
+      _max: { position: true },
+    });
+
     const folder = await db.folder.create({
       data: {
         name: name.trim(),
         parentId: parentId || null,
+        sectionId: sectionId || null,
+        position: (maxPosition._max.position ?? -1) + 1,
       },
       select: {
         id: true,
         name: true,
         parentId: true,
         isPinned: true,
+        sectionId: true,
+        position: true,
         createdAt: true,
         updatedAt: true,
         _count: {

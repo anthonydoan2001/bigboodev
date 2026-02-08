@@ -57,6 +57,7 @@ export const GET = withAuth(async (request: Request, _sessionToken: string) => {
             select: {
               id: true,
               name: true,
+              sectionId: true,
             },
           },
         },
@@ -64,17 +65,89 @@ export const GET = withAuth(async (request: Request, _sessionToken: string) => {
           { isPinned: 'desc' },
           { createdAt: 'desc' },
         ],
-        take: limit ? parseInt(limit, 10) : 100,
+        take: limit ? parseInt(limit, 10) : undefined,
       }),
       // Total count query - only run if requested
       includeCounts ? db.bookmark.count() : Promise.resolve(null),
     ]);
 
     // Build response
-    const response: { items: typeof bookmarks; counts?: { total: number } } = { items: bookmarks };
+    const response: {
+      items: typeof bookmarks;
+      counts?: { total: number };
+      grouped?: { section: { id: string; name: string } | null; folders: { folder: { id: string; name: string } | null; bookmarks: typeof bookmarks }[] }[];
+    } = { items: bookmarks };
 
     if (totalCount !== null) {
       response.counts = { total: totalCount };
+    }
+
+    // Build grouped view if requested
+    const grouped = searchParams.get('grouped');
+    if (grouped === 'true') {
+      const sections = await db.bookmarkSection.findMany({
+        orderBy: { position: 'asc' },
+      });
+
+      // Group bookmarks by section > folder
+      const sectionMap = new Map<string | null, typeof bookmarks>();
+      const folderSectionMap = new Map<string | null, string | null>();
+
+      for (const bookmark of bookmarks) {
+        const folderId = bookmark.folderId;
+        const sectionId = bookmark.folder?.sectionId ?? null;
+        folderSectionMap.set(folderId, sectionId);
+
+        if (!sectionMap.has(sectionId)) {
+          sectionMap.set(sectionId, []);
+        }
+        sectionMap.get(sectionId)!.push(bookmark);
+      }
+
+      const groupedResult: typeof response.grouped = [];
+
+      // Add sections in order
+      for (const section of sections) {
+        const sectionBookmarks = sectionMap.get(section.id) || [];
+        if (sectionBookmarks.length === 0) continue;
+
+        // Group by folder within section
+        const folderMap = new Map<string | null, typeof bookmarks>();
+        for (const bm of sectionBookmarks) {
+          const key = bm.folderId;
+          if (!folderMap.has(key)) folderMap.set(key, []);
+          folderMap.get(key)!.push(bm);
+        }
+
+        groupedResult.push({
+          section: { id: section.id, name: section.name },
+          folders: Array.from(folderMap.entries()).map(([, bms]) => ({
+            folder: bms[0].folder ? { id: bms[0].folder.id, name: bms[0].folder.name } : null,
+            bookmarks: bms,
+          })),
+        });
+      }
+
+      // Add unsectioned bookmarks
+      const unsectionedBookmarks = sectionMap.get(null) || [];
+      if (unsectionedBookmarks.length > 0) {
+        const folderMap = new Map<string | null, typeof bookmarks>();
+        for (const bm of unsectionedBookmarks) {
+          const key = bm.folderId;
+          if (!folderMap.has(key)) folderMap.set(key, []);
+          folderMap.get(key)!.push(bm);
+        }
+
+        groupedResult.push({
+          section: null,
+          folders: Array.from(folderMap.entries()).map(([, bms]) => ({
+            folder: bms[0].folder ? { id: bms[0].folder.id, name: bms[0].folder.name } : null,
+            bookmarks: bms,
+          })),
+        });
+      }
+
+      response.grouped = groupedResult;
     }
 
     return NextResponse.json(response);
@@ -120,6 +193,7 @@ export const POST = withAuth(async (request: Request, _sessionToken: string) => 
           select: {
             id: true,
             name: true,
+            sectionId: true,
           },
         },
       },

@@ -9,7 +9,7 @@ export interface BookmarkListItem {
   isPinned: boolean;
   createdAt: Date;
   updatedAt: Date;
-  folder?: { id: string; name: string } | null;
+  folder?: { id: string; name: string; sectionId?: string | null } | null;
 }
 
 // Extended Bookmark type with relations (for detail view)
@@ -23,7 +23,16 @@ export interface BookmarkWithRelations {
   isPinned: boolean;
   createdAt: Date;
   updatedAt: Date;
-  folder?: { id: string; name: string } | null;
+  folder?: { id: string; name: string; sectionId?: string | null } | null;
+}
+
+// Section type
+export interface BookmarkSection {
+  id: string;
+  name: string;
+  position: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // Folder with nested children
@@ -31,7 +40,9 @@ export interface BookmarkFolderWithChildren {
   id: string;
   name: string;
   parentId: string | null;
+  sectionId: string | null;
   isPinned: boolean;
+  position: number;
   createdAt: Date;
   updatedAt: Date;
   children: BookmarkFolderWithChildren[];
@@ -44,9 +55,19 @@ export interface BookmarkFolderTreeNode {
   id: string;
   name: string;
   parentId: string | null;
+  sectionId: string | null;
   children: BookmarkFolderTreeNode[];
   bookmarkCount: number;
   isPinned: boolean;
+  position: number;
+}
+
+// Section with folders for sidebar rendering
+export interface BookmarkSectionWithFolders {
+  id: string;
+  name: string;
+  position: number;
+  folders: BookmarkFolderTreeNode[];
 }
 
 // Input types for creating/updating
@@ -71,12 +92,24 @@ export interface UpdateBookmarkInput {
 export interface CreateBookmarkFolderInput {
   name: string;
   parentId?: string | null;
+  sectionId?: string | null;
 }
 
 export interface UpdateBookmarkFolderInput {
   name?: string;
   parentId?: string | null;
+  sectionId?: string | null;
   isPinned?: boolean;
+  position?: number;
+}
+
+export interface CreateBookmarkSectionInput {
+  name: string;
+}
+
+export interface UpdateBookmarkSectionInput {
+  name?: string;
+  position?: number;
 }
 
 // API Response types
@@ -85,6 +118,7 @@ export interface BookmarksListResponse {
   counts?: {
     total: number;
   };
+  grouped?: GroupedBookmarks[];
 }
 
 export interface BookmarkResponse {
@@ -100,11 +134,29 @@ export interface BookmarkFolderResponse {
   item: BookmarkFolderWithChildren;
 }
 
+export interface BookmarkSectionsResponse {
+  items: BookmarkSection[];
+}
+
+export interface BookmarkSectionResponse {
+  item: BookmarkSection;
+}
+
+// Grouped bookmarks for "All Bookmarks" view
+export interface GroupedBookmarks {
+  section: { id: string; name: string } | null;
+  folders: {
+    folder: { id: string; name: string } | null;
+    bookmarks: BookmarkListItem[];
+  }[];
+}
+
 // Filter types
 export interface BookmarksFilters {
   folderId?: string | null;
   isPinned?: boolean;
   search?: string;
+  grouped?: boolean;
 }
 
 // URL metadata response

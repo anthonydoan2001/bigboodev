@@ -12,12 +12,14 @@ export const PATCH = withAuth(async (request: Request, _sessionToken: string) =>
     }
 
     const body = await request.json();
-    const { name, parentId, isPinned } = body;
+    const { name, parentId, sectionId, isPinned, position } = body;
 
     const updateData: Record<string, unknown> = {};
     if (name !== undefined) updateData.name = name.trim();
     if (parentId !== undefined) updateData.parentId = parentId || null;
+    if (sectionId !== undefined) updateData.sectionId = sectionId || null;
     if (isPinned !== undefined) updateData.isPinned = isPinned;
+    if (position !== undefined) updateData.position = position;
 
     const folder = await db.bookmarkFolder.update({
       where: { id },

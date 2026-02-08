@@ -54,9 +54,9 @@ export const PATCH = withAuth(async (request: Request, _sessionToken: string) =>
     }
 
     const body = await request.json();
-    const { name, parentId, isPinned } = body;
+    const { name, parentId, isPinned, sectionId, position } = body;
 
-    const updateData: { name?: string; parentId?: string | null; isPinned?: boolean } = {};
+    const updateData: { name?: string; parentId?: string | null; isPinned?: boolean; sectionId?: string | null; position?: number } = {};
 
     if (name !== undefined) {
       if (!name.trim()) {
@@ -110,6 +110,14 @@ export const PATCH = withAuth(async (request: Request, _sessionToken: string) =>
 
     if (isPinned !== undefined) {
       updateData.isPinned = isPinned;
+    }
+
+    if (sectionId !== undefined) {
+      updateData.sectionId = sectionId;
+    }
+
+    if (position !== undefined) {
+      updateData.position = position;
     }
 
     const folder = await db.folder.update({

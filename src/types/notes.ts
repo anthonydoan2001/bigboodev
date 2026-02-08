@@ -45,14 +45,25 @@ export interface FolderWithChildren extends Folder {
   _count?: { notes: number };
 }
 
+// Section type
+export interface NoteSection {
+  id: string;
+  name: string;
+  position: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // Folder tree structure for rendering
 export interface FolderTreeNode {
   id: string;
   name: string;
   parentId: string | null;
+  sectionId: string | null;
   children: FolderTreeNode[];
   noteCount: number;
   isPinned: boolean;
+  position: number;
 }
 
 // Input types for creating/updating
@@ -73,12 +84,24 @@ export interface UpdateNoteInput {
 export interface CreateFolderInput {
   name: string;
   parentId?: string | null;
+  sectionId?: string | null;
 }
 
 export interface UpdateFolderInput {
   name?: string;
   parentId?: string | null;
   isPinned?: boolean;
+  sectionId?: string | null;
+  position?: number;
+}
+
+export interface CreateNoteSectionInput {
+  name: string;
+}
+
+export interface UpdateNoteSectionInput {
+  name?: string;
+  position?: number;
 }
 
 // Attachment input
@@ -109,6 +132,14 @@ export interface FoldersResponse {
 
 export interface FolderResponse {
   item: FolderWithChildren;
+}
+
+export interface NoteSectionsResponse {
+  items: NoteSection[];
+}
+
+export interface NoteSectionResponse {
+  item: NoteSection;
 }
 
 export interface AttachmentResponse {

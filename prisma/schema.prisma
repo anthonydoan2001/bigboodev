@@ -344,19 +344,36 @@ model TopPerformer {
   @@map("top_performers")
 }
 
-model Folder {
+model NoteSection {
   id        String   @id @default(cuid())
   name      String
-  parentId  String?  @map("parent_id")
-  parent    Folder?  @relation("FolderToFolder", fields: [parentId], references: [id], onDelete: SetNull)
-  children  Folder[] @relation("FolderToFolder")
-  notes     Note[]
-  isPinned  Boolean  @default(false) @map("is_pinned")
+  position  Int      @default(0)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  folders   Folder[]
+
+  @@index([position])
+  @@map("note_sections")
+}
+
+model Folder {
+  id        String       @id @default(cuid())
+  name      String
+  parentId  String?      @map("parent_id")
+  parent    Folder?      @relation("FolderToFolder", fields: [parentId], references: [id], onDelete: SetNull)
+  children  Folder[]     @relation("FolderToFolder")
+  notes     Note[]
+  isPinned  Boolean      @default(false) @map("is_pinned")
+  sectionId String?      @map("section_id")
+  section   NoteSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  position  Int          @default(0)
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
 
   @@index([parentId])
   @@index([isPinned])
+  @@index([sectionId])
+  @@index([position])
   @@index([createdAt])
   @@map("folders")
 }
@@ -531,19 +548,36 @@ model KomgaSettings {
   @@map("komga_settings")
 }
 
+model BookmarkSection {
+  id        String           @id @default(cuid())
+  name      String
+  position  Int              @default(0)
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+  folders   BookmarkFolder[]
+
+  @@index([position])
+  @@map("bookmark_sections")
+}
+
 model BookmarkFolder {
   id        String           @id @default(cuid())
   name      String
   parentId  String?          @map("parent_id")
   parent    BookmarkFolder?  @relation("BookmarkFolderToBookmarkFolder", fields: [parentId], references: [id], onDelete: SetNull)
   children  BookmarkFolder[] @relation("BookmarkFolderToBookmarkFolder")
+  sectionId String?          @map("section_id")
+  section   BookmarkSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
   bookmarks Bookmark[]
   isPinned  Boolean          @default(false) @map("is_pinned")
+  position  Int              @default(0)
   createdAt DateTime         @default(now()) @map("created_at")
   updatedAt DateTime         @updatedAt @map("updated_at")
 
   @@index([parentId])
+  @@index([sectionId])
   @@index([isPinned])
+  @@index([position])
   @@index([createdAt])
   @@map("bookmark_folders")
 }

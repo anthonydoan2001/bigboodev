@@ -1,10 +1,7 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-export const dynamicParams = true;
-
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useMemo, useState, useEffect, useRef, Suspense, useCallback } from 'react';
+import { useMemo, useEffect, useRef, Suspense, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -180,15 +177,18 @@ function WatchlistContent() {
     return searchResults.filter(item => item.type.toLowerCase() === searchFilter);
   }, [searchResults, searchFilter]);
 
+  // Memoized filter counts
+  const filterCounts = useMemo(() => ({
+    anime: searchResults.filter(item => item.type.toLowerCase() === 'anime').length,
+    movie: searchResults.filter(item => item.type.toLowerCase() === 'movie').length,
+    show: searchResults.filter(item => item.type.toLowerCase() === 'show').length,
+  }), [searchResults]);
 
   // Grid card width hook - viewport aware
-  const { containerRef: searchContainerRef, itemsPerPage: searchItemsPerPage, isReady: searchGridReady } = useViewportGrid({
-    headerHeight: 160, // Nav + filters + spacing
-    footerHeight: 0, // No footer - pagination is in header
-    minCardWidth: 120, // 20% larger than before (was 100)
-    maxCardWidth: 204, // 20% larger than before (was 170)
-    gap: 8, // Tighter gap between cards
-    textHeightBelowCard: 45, // Compact text area
+  const { containerRef: searchContainerRef, itemsPerPage: searchItemsPerPage } = useViewportGrid({
+    headerHeight: 160,
+    gap: 8,
+    textHeightBelowCard: 45,
   });
 
   // Paginate filtered search results using viewport-aware items per page
@@ -199,47 +199,20 @@ function WatchlistContent() {
 
   const totalSearchPages = Math.ceil(filteredSearchResults.length / searchItemsPerPage);
 
-  // Track if this is the initial mount to prevent unnecessary redirects
-  const [hasMounted, setHasMounted] = useState(false);
-  const [isSearchStable, setIsSearchStable] = useState(false);
-
-  useEffect(() => {
-    setHasMounted(true);
-  }, []);
-
-  // Wait for search grid to stabilize before showing content
-  useEffect(() => {
-    if (searchGridReady && !searchLoading && searchQuery.length > 0) {
-      // Small delay to ensure grid has fully calculated and stabilized
-      const timer = setTimeout(() => {
-        setIsSearchStable(true);
-      }, 150);
-      return () => clearTimeout(timer);
-    } else {
-      setIsSearchStable(false);
-    }
-  }, [searchGridReady, searchLoading, searchQuery]);
-
   // Adjust page when itemsPerPage changes (e.g., on window resize)
-  // Only redirect if we've mounted AND grid is ready to prevent initial flash
-  useEffect(() => {
-    if (!hasMounted || !searchGridReady) return;
+  const hasMounted = useRef(false);
+  useEffect(() => { hasMounted.current = true; }, []);
 
+  useEffect(() => {
+    if (!hasMounted.current) return;
     if (totalSearchPages > 0 && searchPage > totalSearchPages) {
-      // Current page is invalid, redirect to last valid page
       const params = new URLSearchParams();
-      // Always preserve search query
-      if (searchQuery) {
-        params.set('search', searchQuery);
-      }
-      // Preserve filter
-      if (searchFilter && searchFilter !== 'all') {
-        params.set('filter', searchFilter);
-      }
+      if (searchQuery) params.set('search', searchQuery);
+      if (searchFilter && searchFilter !== 'all') params.set('filter', searchFilter);
       params.set('page', totalSearchPages.toString());
       router.replace(`/watchlist?${params.toString()}`);
     }
-  }, [searchItemsPerPage, totalSearchPages, searchPage, searchQuery, searchFilter, router, hasMounted, searchGridReady]);
+  }, [totalSearchPages, searchPage, searchQuery, searchFilter, router]);
 
   const handleFilterChange = useCallback((newFilter: 'all' | 'anime' | 'movie' | 'show') => {
     const params = new URLSearchParams(searchParams.toString());
@@ -258,9 +231,6 @@ function WatchlistContent() {
 
   const showingSearch = searchQuery.length > 0;
 
-  // Show loading overlay for search until grid is ready and stable
-  const showSearchLoading = showingSearch && (searchLoading || !searchGridReady || !isSearchStable);
-
   return (
     <div className={`w-full py-2 sm:py-3 md:py-4 px-2 sm:px-3 md:px-4 lg:px-6 ${showingSearch ? 'h-screen flex flex-col overflow-hidden' : 'min-h-screen'}`}>
       <div className={`w-full space-y-2 sm:space-y-3 md:space-y-4 ${showingSearch ? 'flex flex-col h-full' : ''}`}>
@@ -270,7 +240,7 @@ function WatchlistContent() {
         {showingSearch ? (
           <div className="flex flex-col flex-1 min-h-0 space-y-4 relative">
             {/* Loading Overlay for Search */}
-            {showSearchLoading && (
+            {searchLoading && (
               <div className="absolute inset-0 z-50 bg-background flex items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
@@ -295,7 +265,7 @@ function WatchlistContent() {
                       onClick={() => handleFilterChange('anime')}
                       className="text-caption sm:text-body-sm"
                     >
-                      Anime ({searchResults.filter(item => item.type.toLowerCase() === 'anime').length})
+                      Anime ({filterCounts.anime})
                     </Button>
                     <Button
                       variant={searchFilter === 'movie' ? 'default' : 'outline'}
@@ -303,7 +273,7 @@ function WatchlistContent() {
                       onClick={() => handleFilterChange('movie')}
                       className="text-caption sm:text-body-sm"
                     >
-                      Movie ({searchResults.filter(item => item.type.toLowerCase() === 'movie').length})
+                      Movie ({filterCounts.movie})
                     </Button>
                     <Button
                       variant={searchFilter === 'show' ? 'default' : 'outline'}
@@ -311,7 +281,7 @@ function WatchlistContent() {
                       onClick={() => handleFilterChange('show')}
                       className="text-caption sm:text-body-sm"
                     >
-                      TV Show ({searchResults.filter(item => item.type.toLowerCase() === 'show').length})
+                      TV Show ({filterCounts.show})
                     </Button>
                   </div>
                 ) : (

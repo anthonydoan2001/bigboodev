@@ -27,6 +27,7 @@ export const GET = withAuth(async (request: Request, _sessionToken: string) => {
           select: {
             id: true,
             name: true,
+            sectionId: true,
           },
         },
       },
@@ -80,6 +81,7 @@ export const PATCH = withAuth(async (request: Request, _sessionToken: string) =>
           select: {
             id: true,
             name: true,
+            sectionId: true,
           },
         },
       },

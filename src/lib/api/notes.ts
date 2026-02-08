@@ -5,11 +5,15 @@ import {
   FoldersResponse,
   FolderResponse,
   AttachmentResponse,
+  NoteSectionsResponse,
+  NoteSectionResponse,
   NotesFilters,
   CreateNoteInput,
   UpdateNoteInput,
   CreateFolderInput,
   UpdateFolderInput,
+  CreateNoteSectionInput,
+  UpdateNoteSectionInput,
 } from '@/types/notes';
 import { Task, Note } from '@prisma/client';
 
@@ -244,6 +248,72 @@ export async function linkNoteToTask(taskId: string, noteId: string): Promise<vo
     body: JSON.stringify({ noteId }),
   });
   if (!res.ok) throw new Error('Failed to link note to task');
+}
+
+// ============ Note Sections API ============
+
+export async function fetchNoteSections(): Promise<NoteSectionsResponse> {
+  const res = await fetch(`${BASE_URL}/note-sections`, {
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+  if (!res.ok) throw new Error('Failed to fetch note sections');
+  return res.json();
+}
+
+export async function createNoteSection(input: CreateNoteSectionInput): Promise<NoteSectionResponse> {
+  const res = await fetch(`${BASE_URL}/note-sections`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    credentials: 'include',
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to create note section');
+  }
+  return res.json();
+}
+
+export async function updateNoteSection(id: string, input: UpdateNoteSectionInput): Promise<NoteSectionResponse> {
+  const res = await fetch(`${BASE_URL}/note-sections/${id}`, {
+    method: 'PATCH',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    credentials: 'include',
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to update note section');
+  }
+  return res.json();
+}
+
+export async function deleteNoteSection(id: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/note-sections/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to delete note section');
+  }
+}
+
+// ============ Folder Reorder API ============
+
+export async function reorderFolders(folderIds: string[], sectionId: string | null): Promise<void> {
+  const res = await fetch(`${BASE_URL}/folders/reorder`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    credentials: 'include',
+    body: JSON.stringify({ folderIds, sectionId }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to reorder folders');
+  }
 }
 
 // ============ Pinned Notes (for dashboard widget) ============

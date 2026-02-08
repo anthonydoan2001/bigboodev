@@ -14,9 +14,11 @@ function buildFolderTree(folders: BookmarkFolderWithChildren[]): BookmarkFolderT
       id: folder.id,
       name: folder.name,
       parentId: folder.parentId,
+      sectionId: folder.sectionId ?? null,
       children: [],
       bookmarkCount: folder._count?.bookmarks || 0,
       isPinned: folder.isPinned ?? false,
+      position: folder.position ?? 0,
     });
   });
 
@@ -30,12 +32,8 @@ function buildFolderTree(folders: BookmarkFolderWithChildren[]): BookmarkFolderT
     }
   });
 
-  // Sort roots: pinned first, then alphabetical
-  roots.sort((a, b) => {
-    if (a.isPinned && !b.isPinned) return -1;
-    if (!a.isPinned && b.isPinned) return 1;
-    return a.name.localeCompare(b.name);
-  });
+  // Sort roots by position
+  roots.sort((a, b) => a.position - b.position);
 
   return roots;
 }
@@ -67,7 +65,9 @@ export const GET = withAuth(async (_request: Request, _sessionToken: string) => 
         id: true,
         name: true,
         parentId: true,
+        sectionId: true,
         isPinned: true,
+        position: true,
         createdAt: true,
         updatedAt: true,
         _count: {
@@ -76,7 +76,7 @@ export const GET = withAuth(async (_request: Request, _sessionToken: string) => 
           },
         },
       },
-      orderBy: [{ isPinned: 'desc' }, { name: 'asc' }],
+      orderBy: [{ position: 'asc' }, { name: 'asc' }],
     });
 
     const tree = buildFolderTree(folders as BookmarkFolderWithChildren[]);
@@ -92,7 +92,7 @@ export const GET = withAuth(async (_request: Request, _sessionToken: string) => 
 export const POST = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const body = await request.json();
-    const { name, parentId } = body;
+    const { name, parentId, sectionId } = body;
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Folder name is required' }, { status: 400 });
@@ -109,16 +109,28 @@ export const POST = withAuth(async (request: Request, _sessionToken: string) => 
       }
     }
 
+    // Auto-assign position at end of section/unsectioned group
+    const maxPosition = await db.bookmarkFolder.aggregate({
+      _max: { position: true },
+      where: {
+        sectionId: sectionId || null,
+        parentId: parentId || null,
+      },
+    });
+
     const folder = await db.bookmarkFolder.create({
       data: {
         name: name.trim(),
         parentId: parentId || null,
+        sectionId: sectionId || null,
+        position: (maxPosition._max.position ?? -1) + 1,
       },
       select: {
         id: true,
         name: true,
         parentId: true,
         isPinned: true,
+        position: true,
         createdAt: true,
         updatedAt: true,
         _count: {
