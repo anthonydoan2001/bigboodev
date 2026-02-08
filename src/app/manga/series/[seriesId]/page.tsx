@@ -3,7 +3,7 @@
 import { use } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useSeriesById, useBooks } from '@/lib/hooks/useManga';
+import { useSeriesById, useBooks, useUpdateReadProgress, useDeleteReadProgress } from '@/lib/hooks/useManga';
 import { getSeriesThumbnailUrl } from '@/lib/api/manga';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,14 @@ import {
   Calendar,
   User,
   Tag,
+  XCircle,
 } from 'lucide-react';
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+} from '@/components/ui/context-menu';
 import { useState } from 'react';
 
 interface SeriesPageProps {
@@ -29,6 +36,8 @@ export default function SeriesPage({ params }: SeriesPageProps) {
   const { series, isLoading: seriesLoading, error: seriesError } = useSeriesById(seriesId);
   const { books, isLoading: booksLoading, error: booksError } = useBooks(seriesId, { unpaged: true });
   const [imageError, setImageError] = useState(false);
+  const { updateProgress } = useUpdateReadProgress();
+  const { deleteProgress } = useDeleteReadProgress();
 
   if (seriesLoading || booksLoading) {
     return (
@@ -265,28 +274,53 @@ export default function SeriesPage({ params }: SeriesPageProps) {
                 const hasProgress = currentPage > 0 && !isComplete;
 
                 return (
-                  <Link
-                    key={book.id}
-                    href={`/manga/read/${book.id}`}
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
-                  >
-                    <span className="w-8 text-center text-muted-foreground text-sm">
-                      {book.metadata.numberSort || book.number}
-                    </span>
-                    <span className="flex-1 text-sm">
-                      {book.metadata.title || book.name}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {totalPages} pages
-                    </span>
-                    {isComplete ? (
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                    ) : hasProgress ? (
-                      <span className="text-xs text-blue-600">
-                        {currentPage}/{totalPages}
-                      </span>
-                    ) : null}
-                  </Link>
+                  <ContextMenu key={book.id}>
+                    <ContextMenuTrigger asChild>
+                      <Link
+                        href={`/manga/read/${book.id}`}
+                        className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
+                      >
+                        <span className="w-8 text-center text-muted-foreground text-sm">
+                          {book.metadata.numberSort || book.number}
+                        </span>
+                        <span className="flex-1 text-sm">
+                          {book.metadata.title || book.name}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {totalPages} pages
+                        </span>
+                        {isComplete ? (
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        ) : hasProgress ? (
+                          <span className="text-xs text-blue-600">
+                            {currentPage}/{totalPages}
+                          </span>
+                        ) : null}
+                      </Link>
+                    </ContextMenuTrigger>
+                    <ContextMenuContent>
+                      {isComplete ? (
+                        <ContextMenuItem
+                          onClick={() => deleteProgress(book.id)}
+                        >
+                          <XCircle className="h-4 w-4" />
+                          Mark as Unread
+                        </ContextMenuItem>
+                      ) : (
+                        <ContextMenuItem
+                          onClick={() =>
+                            updateProgress({
+                              bookId: book.id,
+                              progress: { page: totalPages, completed: true },
+                            })
+                          }
+                        >
+                          <CheckCircle className="h-4 w-4" />
+                          Mark as Read
+                        </ContextMenuItem>
+                      )}
+                    </ContextMenuContent>
+                  </ContextMenu>
                 );
               })}
             </div>
