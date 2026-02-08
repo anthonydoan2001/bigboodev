@@ -25,7 +25,8 @@ import {
 } from 'lucide-react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 
-const PDFJS_CDN_WORKER = `https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.624/build/pdf.worker.min.mjs`;
+const PDFJS_CDN = `https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.624`;
+const PDFJS_CDN_WORKER = `${PDFJS_CDN}/build/pdf.worker.min.mjs`;
 
 const PAGE_GAP = 8;
 const PADDING_Y = 16;
@@ -279,7 +280,10 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
         if (!response.ok) throw new Error('Failed to download PDF');
 
         const arrayBuffer = await response.arrayBuffer();
-        const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const pdfDoc = await pdfjsLib.getDocument({
+          data: arrayBuffer,
+          wasmUrl: `${PDFJS_CDN}/wasm/openjpeg.wasm`,
+        }).promise;
 
         if (!mounted) {
           pdfDoc.destroy();
