@@ -349,6 +349,7 @@ export function useUpdateReadProgress() {
       // Cancel any outgoing refetches so they don't overwrite our optimistic update
       await queryClient.cancelQueries({ queryKey: ['manga', 'book', bookId] });
       await queryClient.cancelQueries({ queryKey: ['manga', 'books'] });
+      await queryClient.cancelQueries({ queryKey: ['manga', 'readlist-books'] });
       await queryClient.cancelQueries({ queryKey: ['manga', 'in-progress'] });
       await queryClient.cancelQueries({ queryKey: ['manga', 'on-deck'] });
 
@@ -356,8 +357,11 @@ export function useUpdateReadProgress() {
       const previousBook = queryClient.getQueryData(['manga', 'book', bookId]);
       const previousBooksQueries: Array<{ key: readonly unknown[]; data: unknown }> = [];
 
-      // Get all books queries to update
+      // Get all books queries to update (series books + readlist books)
       queryClient.getQueriesData({ queryKey: ['manga', 'books'] }).forEach(([key, data]) => {
+        previousBooksQueries.push({ key, data });
+      });
+      queryClient.getQueriesData({ queryKey: ['manga', 'readlist-books'] }).forEach(([key, data]) => {
         previousBooksQueries.push({ key, data });
       });
 
@@ -410,6 +414,15 @@ export function useUpdateReadProgress() {
         };
       });
 
+      // Optimistically update readlist-books queries
+      queryClient.setQueriesData({ queryKey: ['manga', 'readlist-books'] }, (old: { content?: KomgaBook[] } | undefined) => {
+        if (!old?.content) return old;
+        return {
+          ...old,
+          content: old.content.map(updateBookProgress),
+        };
+      });
+
       // Return context for rollback
       return { previousBook, previousBooksQueries };
     },
@@ -430,6 +443,7 @@ export function useUpdateReadProgress() {
     onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: ['manga', 'book', variables.bookId] });
       queryClient.invalidateQueries({ queryKey: ['manga', 'books'] });
+      queryClient.invalidateQueries({ queryKey: ['manga', 'readlist-books'] });
       queryClient.invalidateQueries({ queryKey: ['manga', 'series'] }); // For read counts
       queryClient.invalidateQueries({ queryKey: ['manga', 'in-progress'] });
       queryClient.invalidateQueries({ queryKey: ['manga', 'on-deck'] });
@@ -455,6 +469,7 @@ export function useDeleteReadProgress() {
     onMutate: async (bookId) => {
       await queryClient.cancelQueries({ queryKey: ['manga', 'book', bookId] });
       await queryClient.cancelQueries({ queryKey: ['manga', 'books'] });
+      await queryClient.cancelQueries({ queryKey: ['manga', 'readlist-books'] });
       await queryClient.cancelQueries({ queryKey: ['manga', 'in-progress'] });
       await queryClient.cancelQueries({ queryKey: ['manga', 'on-deck'] });
 
@@ -462,6 +477,9 @@ export function useDeleteReadProgress() {
       const previousBooksQueries: Array<{ key: readonly unknown[]; data: unknown }> = [];
 
       queryClient.getQueriesData({ queryKey: ['manga', 'books'] }).forEach(([key, data]) => {
+        previousBooksQueries.push({ key, data });
+      });
+      queryClient.getQueriesData({ queryKey: ['manga', 'readlist-books'] }).forEach(([key, data]) => {
         previousBooksQueries.push({ key, data });
       });
 
@@ -478,6 +496,11 @@ export function useDeleteReadProgress() {
       });
 
       queryClient.setQueriesData({ queryKey: ['manga', 'books'] }, (old: { content?: KomgaBook[] } | undefined) => {
+        if (!old?.content) return old;
+        return { ...old, content: old.content.map(clearProgress) };
+      });
+
+      queryClient.setQueriesData({ queryKey: ['manga', 'readlist-books'] }, (old: { content?: KomgaBook[] } | undefined) => {
         if (!old?.content) return old;
         return { ...old, content: old.content.map(clearProgress) };
       });
@@ -499,6 +522,7 @@ export function useDeleteReadProgress() {
     onSettled: (_, __, bookId) => {
       queryClient.invalidateQueries({ queryKey: ['manga', 'book', bookId] });
       queryClient.invalidateQueries({ queryKey: ['manga', 'books'] });
+      queryClient.invalidateQueries({ queryKey: ['manga', 'readlist-books'] });
       queryClient.invalidateQueries({ queryKey: ['manga', 'series'] });
       queryClient.invalidateQueries({ queryKey: ['manga', 'in-progress'] });
       queryClient.invalidateQueries({ queryKey: ['manga', 'on-deck'] });
