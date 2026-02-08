@@ -282,7 +282,7 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
         const arrayBuffer = await response.arrayBuffer();
         const pdfDoc = await pdfjsLib.getDocument({
           data: arrayBuffer,
-          wasmUrl: `${PDFJS_CDN}/wasm/openjpeg.wasm`,
+          wasmUrl: `${PDFJS_CDN}/wasm/`,
         }).promise;
 
         if (!mounted) {
