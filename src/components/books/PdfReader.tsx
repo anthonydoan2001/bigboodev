@@ -23,7 +23,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
 
 const PDFJS_CDN = `https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.624`;
 const PDFJS_CDN_WORKER = `${PDFJS_CDN}/build/pdf.worker.min.mjs`;
@@ -53,7 +53,9 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
   const updateVisibleRef = useRef<() => void>(() => {});
   const hasRestoredPositionRef = useRef(false);
   const prevScaleRef = useRef(0);
+  const pageCacheRef = useRef<Map<number, PDFPageProxy>>(new Map());
   const MAX_CONCURRENT_RENDERS = 3;
+  const MAX_PAGE_CACHE = 20;
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,14 +64,28 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
   const [defaultPageSize, setDefaultPageSize] = useState<{ width: number; height: number } | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const [outline, setOutline] = useState<PdfOutlineItem[]>([]);
+  const [mountedRange, setMountedRange] = useState<{ start: number; end: number }>({ start: 1, end: 1 });
 
   // Store
   const {
-    zoomMode, customZoom,
+    zoomMode, customZoom, viewMode,
     isSettingsOpen, isTocOpen, isBookmarksOpen,
     closeSettings, closeToc, closeBookmarks,
     toggleSettings, toggleToc, toggleBookmarks,
   } = usePdfReaderStore();
+
+  const isPageMode = viewMode === 'single' || viewMode === 'double';
+
+  // Double-page spread helpers
+  const spreadStart = useMemo(() => {
+    if (viewMode !== 'double') return currentPage;
+    return Math.floor((currentPage - 1) / 2) * 2 + 1;
+  }, [viewMode, currentPage]);
+
+  const spreadEnd = useMemo(() => {
+    if (viewMode !== 'double') return currentPage;
+    return Math.min(spreadStart + 1, totalPages);
+  }, [viewMode, spreadStart, totalPages]);
 
   // Progress & bookmarks
   const bookIdStr = String(bookId);
@@ -97,31 +113,56 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
     { flushOnUnmount: true }
   );
 
-  // Computed scale
+  // Computed scale — accounts for double-page needing 2 pages side by side
   const scale = useMemo(() => {
     if (!defaultPageSize || containerWidth === 0) return 1;
     const availWidth = containerWidth - 32;
+    const pageWidthDivisor = viewMode === 'double'
+      ? defaultPageSize.width * 2 + PAGE_GAP
+      : defaultPageSize.width;
+
     switch (zoomMode) {
       case 'fit-width':
-        return availWidth / defaultPageSize.width;
+        return availWidth / pageWidthDivisor;
       case 'fit-page': {
         const containerH = scrollContainerRef.current?.clientHeight || 800;
         return Math.min(
-          availWidth / defaultPageSize.width,
+          availWidth / pageWidthDivisor,
           (containerH - 32) / defaultPageSize.height
         );
       }
       case 'custom':
         return customZoom / 100;
       default:
-        return availWidth / defaultPageSize.width;
+        return availWidth / pageWidthDivisor;
     }
-  }, [zoomMode, customZoom, containerWidth, defaultPageSize]);
+  }, [zoomMode, customZoom, containerWidth, defaultPageSize, viewMode]);
 
   const scaledWidth = defaultPageSize ? Math.floor(defaultPageSize.width * scale) : 0;
   const scaledHeight = defaultPageSize ? Math.floor(defaultPageSize.height * scale) : 0;
+  const totalContentHeight = PADDING_Y * 2 + totalPages * scaledHeight + Math.max(0, totalPages - 1) * PAGE_GAP;
   const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
   const scaleKey = `${scale.toFixed(4)}-${dpr}`;
+
+  // Get a page from cache or fetch it
+  const getCachedPage = useCallback(async (pageNum: number): Promise<PDFPageProxy | null> => {
+    const cached = pageCacheRef.current.get(pageNum);
+    if (cached) {
+      // Move to end for LRU behavior (delete + re-set)
+      pageCacheRef.current.delete(pageNum);
+      pageCacheRef.current.set(pageNum, cached);
+      return cached;
+    }
+    if (!pdfDocRef.current) return null;
+    const page = await pdfDocRef.current.getPage(pageNum);
+    pageCacheRef.current.set(pageNum, page);
+    if (pageCacheRef.current.size > MAX_PAGE_CACHE) {
+      const firstKey = pageCacheRef.current.keys().next().value!;
+      pageCacheRef.current.get(firstKey)?.cleanup();
+      pageCacheRef.current.delete(firstKey);
+    }
+    return page;
+  }, [MAX_PAGE_CACHE]);
 
   // Render a single page (concurrency-limited)
   const renderPage = useCallback(async (pageNum: number) => {
@@ -135,7 +176,8 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
     renderingCountRef.current++;
 
     try {
-      const page = await pdfDocRef.current.getPage(pageNum);
+      const page = await getCachedPage(pageNum);
+      if (!page) return;
       const viewport = page.getViewport({ scale });
 
       canvas.width = Math.floor(viewport.width * dpr);
@@ -155,10 +197,12 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
       // Process remaining pages that were skipped due to concurrency limit
       requestAnimationFrame(() => updateVisibleRef.current());
     }
-  }, [scale, scaleKey, dpr, MAX_CONCURRENT_RENDERS]);
+  }, [scale, scaleKey, dpr, MAX_CONCURRENT_RENDERS, getCachedPage]);
 
-  // Compute visible range and render buffered pages
+  // Compute visible range and render buffered pages (scroll mode only)
   const updateVisiblePages = useCallback(() => {
+    if (isPageMode) return;
+
     const container = scrollContainerRef.current;
     if (!container || totalPages === 0 || scaledHeight === 0 || containerWidth === 0) return;
 
@@ -174,18 +218,33 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
     const current = Math.max(1, Math.min(totalPages, Math.floor(centerY / pageStep) + 1));
     setCurrentPage(current);
 
-    // Render buffer ±3
+    // Buffer ±3
     const start = Math.max(1, firstVisible - 3);
     const end = Math.min(totalPages, lastVisible + 3);
+
+    // Update mounted range (only if changed to avoid re-renders)
+    setMountedRange(prev => {
+      if (prev.start === start && prev.end === end) return prev;
+      return { start, end };
+    });
+
+    // Clear render cache for pages outside the new range (frees memory on unmount)
+    for (const key of renderedAtScaleRef.current.keys()) {
+      if (key < start || key > end) {
+        renderedAtScaleRef.current.delete(key);
+      }
+    }
+
+    // Render buffered pages
     for (let i = start; i <= end; i++) {
       renderPage(i);
     }
-  }, [totalPages, scaledHeight, containerWidth, renderPage]);
+  }, [totalPages, scaledHeight, containerWidth, renderPage, isPageMode]);
 
   // Keep ref in sync for use inside renderPage's finally block
   updateVisibleRef.current = updateVisiblePages;
 
-  // Scroll to a specific page
+  // Scroll to a specific page (scroll mode)
   const scrollToPage = useCallback((pageNum: number, behavior: ScrollBehavior = 'smooth') => {
     const container = scrollContainerRef.current;
     if (!container || scaledHeight === 0) return;
@@ -193,32 +252,50 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
     container.scrollTo({ top: targetTop, behavior });
   }, [scaledHeight]);
 
+  // Mode-aware goToPage (used by TOC, bookmarks, progress slider)
+  const goToPage = useCallback(
+    (page: number) => {
+      if (page < 1 || page > totalPages) return;
+      if (isPageMode) {
+        setCurrentPage(page);
+      } else {
+        scrollToPage(page);
+      }
+    },
+    [totalPages, scrollToPage, isPageMode]
+  );
+
   // Navigation
   const handlePrevious = useCallback(() => {
-    scrollToPage(Math.max(1, currentPage - 1));
-  }, [currentPage, scrollToPage]);
+    if (viewMode === 'double') {
+      const newStart = Math.max(1, spreadStart - 2);
+      setCurrentPage(newStart);
+    } else if (viewMode === 'single') {
+      setCurrentPage(p => Math.max(1, p - 1));
+    } else {
+      scrollToPage(Math.max(1, currentPage - 1));
+    }
+  }, [viewMode, currentPage, scrollToPage, spreadStart]);
 
   const handleNext = useCallback(() => {
-    scrollToPage(Math.min(totalPages, currentPage + 1));
-  }, [currentPage, totalPages, scrollToPage]);
+    if (viewMode === 'double') {
+      const newStart = Math.min(totalPages, spreadStart + 2);
+      setCurrentPage(newStart);
+    } else if (viewMode === 'single') {
+      setCurrentPage(p => Math.min(totalPages, p + 1));
+    } else {
+      scrollToPage(Math.min(totalPages, currentPage + 1));
+    }
+  }, [viewMode, currentPage, totalPages, scrollToPage, spreadStart]);
 
   const handleProgressChange = useCallback(
     (value: number) => {
       if (totalPages > 0) {
         const targetPage = Math.max(1, Math.round((value / 100) * totalPages));
-        scrollToPage(targetPage);
+        goToPage(targetPage);
       }
     },
-    [totalPages, scrollToPage]
-  );
-
-  const goToPage = useCallback(
-    (page: number) => {
-      if (page >= 1 && page <= totalPages) {
-        scrollToPage(page);
-      }
-    },
-    [totalPages, scrollToPage]
+    [totalPages, goToPage]
   );
 
   // Bookmark toggle
@@ -311,6 +388,11 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
 
     return () => {
       mounted = false;
+      // Clean up cached page objects
+      for (const page of pageCacheRef.current.values()) {
+        page.cleanup();
+      }
+      pageCacheRef.current.clear();
       if (pdfDocRef.current) {
         pdfDocRef.current.destroy();
         pdfDocRef.current = null;
@@ -333,8 +415,10 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
     return () => observer.disconnect();
   }, []);
 
-  // Scroll listener for visible page tracking + lazy rendering
+  // Scroll listener for visible page tracking + lazy rendering (scroll mode only)
   useEffect(() => {
+    if (isPageMode) return;
+
     const container = scrollContainerRef.current;
     if (!container || isLoading) return;
 
@@ -351,10 +435,45 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
       container.removeEventListener('scroll', handleScroll);
       cancelAnimationFrame(raf);
     };
-  }, [updateVisiblePages, isLoading]);
+  }, [updateVisiblePages, isLoading, isPageMode]);
 
-  // Maintain scroll position when scale changes
+  // Page-mode render effect — render current page(s) when currentPage or scale changes
   useEffect(() => {
+    if (!isPageMode || isLoading || totalPages === 0 || scaledHeight === 0) return;
+
+    const pagesToRender = viewMode === 'double'
+      ? [spreadStart, ...(spreadEnd > spreadStart ? [spreadEnd] : [])]
+      : [currentPage];
+
+    // Update mounted range for page mode
+    const start = pagesToRender[0];
+    const end = pagesToRender[pagesToRender.length - 1];
+    setMountedRange(prev => {
+      if (prev.start === start && prev.end === end) return prev;
+      return { start, end };
+    });
+
+    // Clear render cache for pages not in the current view
+    for (const key of renderedAtScaleRef.current.keys()) {
+      if (key < start || key > end) {
+        renderedAtScaleRef.current.delete(key);
+      }
+    }
+
+    // Render after a frame so canvas refs are mounted
+    requestAnimationFrame(() => {
+      for (const p of pagesToRender) {
+        renderPage(p);
+      }
+    });
+  }, [isPageMode, isLoading, viewMode, currentPage, spreadStart, spreadEnd, totalPages, scaledHeight, renderPage]);
+
+  // Maintain scroll position when scale changes (scroll mode only)
+  useEffect(() => {
+    if (isPageMode) {
+      prevScaleRef.current = scale;
+      return;
+    }
     if (prevScaleRef.current !== 0 && prevScaleRef.current !== scale) {
       requestAnimationFrame(() => {
         scrollToPage(currentPage, 'instant');
@@ -362,7 +481,7 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
     }
     prevScaleRef.current = scale;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scale]);
+  }, [scale, isPageMode]);
 
   // Restore saved position
   useEffect(() => {
@@ -377,13 +496,17 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
       if (savedProgress?.position) {
         const savedPage = parseInt(savedProgress.position, 10);
         if (!isNaN(savedPage) && savedPage > 1 && savedPage <= totalPages) {
-          requestAnimationFrame(() => {
-            scrollToPage(savedPage, 'instant');
-          });
+          if (isPageMode) {
+            setCurrentPage(savedPage);
+          } else {
+            requestAnimationFrame(() => {
+              scrollToPage(savedPage, 'instant');
+            });
+          }
         }
       }
     }
-  }, [isLoading, containerWidth, totalPages, scaledHeight, savedProgress, scrollToPage]);
+  }, [isLoading, containerWidth, totalPages, scaledHeight, savedProgress, scrollToPage, isPageMode]);
 
   // Save progress on page change
   useEffect(() => {
@@ -391,6 +514,18 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
       debouncedSave(currentPage, totalPages);
     }
   }, [currentPage, totalPages, debouncedSave]);
+
+  // Location display
+  const currentLocation = useMemo(() => {
+    if (viewMode === 'double' && spreadEnd > spreadStart) {
+      return `${spreadStart}-${spreadEnd} / ${totalPages}`;
+    }
+    return `${currentPage} / ${totalPages}`;
+  }, [viewMode, currentPage, spreadStart, spreadEnd, totalPages]);
+
+  // hasPrevious / hasNext
+  const hasPrevious = viewMode === 'double' ? spreadStart > 1 : currentPage > 1;
+  const hasNext = viewMode === 'double' ? spreadEnd < totalPages : currentPage < totalPages;
 
   if (error) {
     return (
@@ -402,6 +537,12 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
       </div>
     );
   }
+
+  // Canvas ref callback
+  const canvasRef = (pageNum: number) => (el: HTMLCanvasElement | null) => {
+    if (el) canvasMapRef.current.set(pageNum, el);
+    else canvasMapRef.current.delete(pageNum);
+  };
 
   return (
     <>
@@ -416,13 +557,13 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
 
       <ReaderControls
         title={title}
-        currentLocation={`${currentPage} / ${totalPages}`}
+        currentLocation={currentLocation}
         progress={progressPct}
         onPrevious={handlePrevious}
         onNext={handleNext}
         onProgressChange={handleProgressChange}
-        hasPrevious={currentPage > 1}
-        hasNext={currentPage < totalPages}
+        hasPrevious={hasPrevious}
+        hasNext={hasNext}
         backHref="/books"
         hideBottomBar
         extraControls={
@@ -474,33 +615,70 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
       >
         <div
           ref={scrollContainerRef}
-          className="w-full h-full overflow-y-auto"
+          className={`w-full h-full ${isPageMode ? 'overflow-hidden' : 'overflow-y-auto'}`}
           style={{ backgroundColor: '#000' }}
         >
           {defaultPageSize && containerWidth > 0 && (
-            <div
-              className="flex flex-col items-center py-4"
-              style={{ gap: PAGE_GAP }}
-            >
-              {Array.from({ length: totalPages }, (_, i) => {
-                const pageNum = i + 1;
-                return (
-                  <div
-                    key={pageNum}
-                    className="relative flex-shrink-0"
-                    style={{ width: scaledWidth, height: scaledHeight }}
-                  >
+            <>
+              {/* Scroll mode: virtualized vertical layout */}
+              {viewMode === 'scroll' && (
+                <div
+                  className="relative"
+                  style={{ height: totalContentHeight }}
+                >
+                  {Array.from({ length: mountedRange.end - mountedRange.start + 1 }, (_, i) => {
+                    const pageNum = mountedRange.start + i;
+                    const top = PADDING_Y + (pageNum - 1) * (scaledHeight + PAGE_GAP);
+                    return (
+                      <div
+                        key={pageNum}
+                        className="absolute left-1/2 -translate-x-1/2 flex-shrink-0"
+                        style={{ width: scaledWidth, height: scaledHeight, top }}
+                      >
+                        <canvas ref={canvasRef(pageNum)} className="block shadow-lg" />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Single page mode */}
+              {viewMode === 'single' && (
+                <div className="w-full h-full flex items-center justify-center">
+                  <div style={{ width: scaledWidth, height: scaledHeight }}>
                     <canvas
-                      ref={(el) => {
-                        if (el) canvasMapRef.current.set(pageNum, el);
-                        else canvasMapRef.current.delete(pageNum);
-                      }}
+                      key={currentPage}
+                      ref={canvasRef(currentPage)}
                       className="block shadow-lg"
                     />
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              )}
+
+              {/* Double page mode */}
+              {viewMode === 'double' && (
+                <div className="w-full h-full flex items-center justify-center">
+                  <div className="flex" style={{ gap: PAGE_GAP }}>
+                    <div style={{ width: scaledWidth, height: scaledHeight }}>
+                      <canvas
+                        key={spreadStart}
+                        ref={canvasRef(spreadStart)}
+                        className="block shadow-lg"
+                      />
+                    </div>
+                    {spreadEnd > spreadStart && (
+                      <div style={{ width: scaledWidth, height: scaledHeight }}>
+                        <canvas
+                          key={spreadEnd}
+                          ref={canvasRef(spreadEnd)}
+                          className="block shadow-lg"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </ReaderControls>
