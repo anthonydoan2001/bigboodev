@@ -495,6 +495,7 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
         )}
         style={{
           width: isPageMode ? `${zoom * 100}%` : zoomedWidth,
+          maxWidth: readingMode === 'vertical-scroll' ? '100%' : undefined,
           height: isPageMode ? `${zoom * 100}%` : zoomedHeight,
           minWidth: isPageMode && zoom > 1 ? `${zoom * 100}%` : undefined,
           minHeight: isPageMode && zoom > 1 ? `${zoom * 100}%` : undefined,
@@ -679,7 +680,7 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
           // Only center in page mode when zoom <= 1 (content fits in viewport)
           // When zoomed in (zoom > 1), let content overflow naturally from top-left for proper scrolling
           isPageMode && zoom <= 1 && 'flex items-center justify-center',
-          readingMode === 'vertical-scroll' && 'overflow-y-auto overflow-x-auto',
+          readingMode === 'vertical-scroll' && 'overflow-y-auto overflow-x-hidden',
           readingMode === 'horizontal-scroll-ltr' && 'overflow-x-auto overflow-y-auto flex flex-row',
           readingMode === 'horizontal-scroll-rtl' && 'overflow-x-auto overflow-y-auto flex flex-row-reverse',
           isInitializing && 'invisible' // Hide content while initializing to prevent flash
@@ -699,7 +700,7 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
           // Scroll mode: show all pages with zoomed dimensions
           <div
             className={cn(
-              readingMode === 'vertical-scroll' && 'flex flex-col items-center',
+              readingMode === 'vertical-scroll' && 'flex flex-col items-center w-full',
               readingMode.includes('horizontal') && 'flex'
             )}
           >
