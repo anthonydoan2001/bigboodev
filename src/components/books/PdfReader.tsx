@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { getBookDownloadUrl } from '@/lib/api/calibre';
 import {
   useReadingProgress,
@@ -23,11 +23,12 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useSwipeable } from 'react-swipeable';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 
 const PDFJS_CDN_WORKER = `https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.624/build/pdf.worker.min.mjs`;
+
+const PAGE_GAP = 8;
+const PADDING_Y = 16;
 
 interface PdfReaderProps {
   bookId: number;
@@ -43,35 +44,34 @@ interface PdfOutlineItem {
 }
 
 export function PdfReader({ bookId, title }: PdfReaderProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const textLayerRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const pdfDocRef = useRef<PDFDocumentProxy | null>(null);
+  const canvasMapRef = useRef<Map<number, HTMLCanvasElement>>(new Map());
+  const textLayerMapRef = useRef<Map<number, HTMLDivElement>>(new Map());
+  const renderedAtScaleRef = useRef<Map<number, string>>(new Map());
+  const hasRestoredPositionRef = useRef(false);
+  const prevScaleRef = useRef(0);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [defaultPageSize, setDefaultPageSize] = useState<{ width: number; height: number } | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
   const [outline, setOutline] = useState<PdfOutlineItem[]>([]);
-  const [pageTransition, setPageTransition] = useState(false);
 
-  // For spread mode - second canvas
-  const canvas2Ref = useRef<HTMLCanvasElement>(null);
-  const textLayer2Ref = useRef<HTMLDivElement>(null);
-
-  // Store values
+  // Store
   const {
-    zoomMode, customZoom, theme, spreadMode,
+    zoomMode, customZoom,
     isSettingsOpen, isTocOpen, isBookmarksOpen,
     closeSettings, closeToc, closeBookmarks,
     toggleSettings, toggleToc, toggleBookmarks,
   } = usePdfReaderStore();
 
+  // Progress & bookmarks
   const bookIdStr = String(bookId);
   const { progress: savedProgress } = useReadingProgress(bookIdStr, 'pdf');
   const { saveProgress } = useSaveReadingProgress();
-
-  // Bookmarks
   const { bookmarks } = useBookmarks(bookIdStr);
   const bookmarkMutations = useBookmarkMutations(bookIdStr);
 
@@ -94,49 +94,44 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
     { flushOnUnmount: true }
   );
 
-  // Render a single page to a canvas + text layer
-  const renderPageToCanvas = useCallback(
-    async (
-      pageNum: number,
-      canvas: HTMLCanvasElement,
-      textLayer: HTMLDivElement | null,
-      container: HTMLElement,
-    ) => {
-      const pdfDoc = pdfDocRef.current;
-      if (!pdfDoc || pageNum < 1 || pageNum > pdfDoc.numPages) return;
-
-      const page = await pdfDoc.getPage(pageNum);
-      const unscaledViewport = page.getViewport({ scale: 1 });
-
-      // Calculate scale based on zoom mode
-      let scale: number;
-      const containerWidth = container.clientWidth;
-      const containerHeight = container.clientHeight;
-
-      // For spread mode, each canvas gets half the width
-      const availableWidth = spreadMode === 'double'
-        ? (containerWidth - 16) / 2 // 16px gap between pages
-        : containerWidth;
-
-      switch (zoomMode) {
-        case 'fit-width':
-          scale = availableWidth / unscaledViewport.width;
-          break;
-        case 'fit-page':
-          scale = Math.min(
-            availableWidth / unscaledViewport.width,
-            containerHeight / unscaledViewport.height
-          );
-          break;
-        case 'custom':
-          scale = customZoom / 100;
-          break;
-        default:
-          scale = availableWidth / unscaledViewport.width;
+  // Computed scale
+  const scale = useMemo(() => {
+    if (!defaultPageSize || containerWidth === 0) return 1;
+    const availWidth = containerWidth - 32;
+    switch (zoomMode) {
+      case 'fit-width':
+        return availWidth / defaultPageSize.width;
+      case 'fit-page': {
+        const containerH = scrollContainerRef.current?.clientHeight || 800;
+        return Math.min(
+          availWidth / defaultPageSize.width,
+          (containerH - 32) / defaultPageSize.height
+        );
       }
+      case 'custom':
+        return customZoom / 100;
+      default:
+        return availWidth / defaultPageSize.width;
+    }
+  }, [zoomMode, customZoom, containerWidth, defaultPageSize]);
 
+  const scaledWidth = defaultPageSize ? Math.floor(defaultPageSize.width * scale) : 0;
+  const scaledHeight = defaultPageSize ? Math.floor(defaultPageSize.height * scale) : 0;
+  const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
+  const scaleKey = `${scale.toFixed(4)}-${dpr}`;
+
+  // Render a single page
+  const renderPage = useCallback(async (pageNum: number) => {
+    if (renderedAtScaleRef.current.get(pageNum) === scaleKey) return;
+
+    const canvas = canvasMapRef.current.get(pageNum);
+    if (!canvas || !pdfDocRef.current) return;
+
+    renderedAtScaleRef.current.set(pageNum, scaleKey);
+
+    try {
+      const page = await pdfDocRef.current.getPage(pageNum);
       const viewport = page.getViewport({ scale });
-      const dpr = window.devicePixelRatio || 1;
 
       canvas.width = Math.floor(viewport.width * dpr);
       canvas.height = Math.floor(viewport.height * dpr);
@@ -145,114 +140,90 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
 
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      await page.render({
-        canvas,
-        viewport,
-      }).promise;
+      await page.render({ canvas, viewport }).promise;
 
-      // Render text layer for text selection
-      if (textLayer) {
-        textLayer.innerHTML = '';
-        textLayer.style.width = `${Math.floor(viewport.width)}px`;
-        textLayer.style.height = `${Math.floor(viewport.height)}px`;
-
+      // Text layer
+      const textLayerDiv = textLayerMapRef.current.get(pageNum);
+      if (textLayerDiv) {
+        textLayerDiv.innerHTML = '';
+        textLayerDiv.style.width = canvas.style.width;
+        textLayerDiv.style.height = canvas.style.height;
         const pdfjsLib = await import('pdfjs-dist');
         const textContent = await page.getTextContent();
-        const textLayerApi = new pdfjsLib.TextLayer({
+        const tl = new pdfjsLib.TextLayer({
           textContentSource: textContent,
-          container: textLayer,
+          container: textLayerDiv,
           viewport,
         });
-        await textLayerApi.render();
+        await tl.render();
       }
-    },
-    [zoomMode, customZoom, spreadMode]
-  );
-
-  // Render current page(s)
-  const renderCurrentPage = useCallback(async () => {
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container || !pdfDocRef.current) return;
-
-    await renderPageToCanvas(currentPage, canvas, textLayerRef.current, container);
-
-    // Render second page for spread mode
-    if (spreadMode === 'double' && canvas2Ref.current) {
-      const nextPage = currentPage + 1;
-      if (nextPage <= totalPages) {
-        canvas2Ref.current.style.display = 'block';
-        if (textLayer2Ref.current) textLayer2Ref.current.style.display = 'block';
-        await renderPageToCanvas(nextPage, canvas2Ref.current, textLayer2Ref.current, container);
-      } else {
-        canvas2Ref.current.style.display = 'none';
-        if (textLayer2Ref.current) textLayer2Ref.current.style.display = 'none';
-      }
+    } catch (err) {
+      console.error(`Error rendering page ${pageNum}:`, err);
+      renderedAtScaleRef.current.delete(pageNum);
     }
-  }, [currentPage, renderPageToCanvas, spreadMode, totalPages]);
+  }, [scale, scaleKey, dpr]);
+
+  // Compute visible range and render buffered pages
+  const updateVisiblePages = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container || totalPages === 0 || scaledHeight === 0 || containerWidth === 0) return;
+
+    const scrollTop = container.scrollTop;
+    const clientHeight = container.clientHeight;
+    const pageStep = scaledHeight + PAGE_GAP;
+
+    const firstVisible = Math.max(1, Math.floor((scrollTop - PADDING_Y) / pageStep) + 1);
+    const lastVisible = Math.min(totalPages, Math.ceil((scrollTop + clientHeight - PADDING_Y) / pageStep));
+
+    // Current page = most centered
+    const centerY = scrollTop + clientHeight / 2 - PADDING_Y;
+    const current = Math.max(1, Math.min(totalPages, Math.floor(centerY / pageStep) + 1));
+    setCurrentPage(current);
+
+    // Render buffer ±3
+    const start = Math.max(1, firstVisible - 3);
+    const end = Math.min(totalPages, lastVisible + 3);
+    for (let i = start; i <= end; i++) {
+      renderPage(i);
+    }
+  }, [totalPages, scaledHeight, containerWidth, renderPage]);
+
+  // Scroll to a specific page
+  const scrollToPage = useCallback((pageNum: number, behavior: ScrollBehavior = 'smooth') => {
+    const container = scrollContainerRef.current;
+    if (!container || scaledHeight === 0) return;
+    const targetTop = PADDING_Y + (pageNum - 1) * (scaledHeight + PAGE_GAP);
+    container.scrollTo({ top: targetTop, behavior });
+  }, [scaledHeight]);
 
   // Navigation
   const handlePrevious = useCallback(() => {
-    setCurrentPage((p) => {
-      const step = spreadMode === 'double' ? 2 : 1;
-      const newPage = Math.max(1, p - step);
-      if (newPage !== p) {
-        setPageTransition(true);
-        setTimeout(() => setPageTransition(false), 150);
-      }
-      return newPage;
-    });
-  }, [spreadMode]);
+    scrollToPage(Math.max(1, currentPage - 1));
+  }, [currentPage, scrollToPage]);
 
   const handleNext = useCallback(() => {
-    setCurrentPage((p) => {
-      const step = spreadMode === 'double' ? 2 : 1;
-      const newPage = Math.min(totalPages, p + step);
-      if (newPage !== p) {
-        setPageTransition(true);
-        setTimeout(() => setPageTransition(false), 150);
-      }
-      return newPage;
-    });
-  }, [totalPages, spreadMode]);
+    scrollToPage(Math.min(totalPages, currentPage + 1));
+  }, [currentPage, totalPages, scrollToPage]);
 
   const handleProgressChange = useCallback(
     (value: number) => {
       if (totalPages > 0) {
         const targetPage = Math.max(1, Math.round((value / 100) * totalPages));
-        setCurrentPage(targetPage);
+        scrollToPage(targetPage);
       }
     },
-    [totalPages]
+    [totalPages, scrollToPage]
   );
 
   const goToPage = useCallback(
     (page: number) => {
       if (page >= 1 && page <= totalPages) {
-        setCurrentPage(page);
+        scrollToPage(page);
       }
     },
-    [totalPages]
-  );
-
-  // Touch swipe
-  const swipeHandlers = useSwipeable({
-    onSwipedLeft: handleNext,
-    onSwipedRight: handlePrevious,
-    trackMouse: false,
-    delta: 50,
-  });
-
-  // Merge swipe ref with container ref
-  const mergedRef = useCallback(
-    (el: HTMLDivElement | null) => {
-      containerRef.current = el;
-      swipeHandlers.ref(el);
-    },
-    [swipeHandlers]
+    [totalPages, scrollToPage]
   );
 
   // Bookmark toggle
@@ -279,7 +250,6 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
 
       try {
         let resolvedDest = dest;
-        // If dest is a string, resolve the named destination first
         if (typeof dest === 'string') {
           resolvedDest = await pdfDoc.getDestination(dest);
         }
@@ -287,7 +257,7 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
 
         const ref = resolvedDest[0];
         const pageIndex = await pdfDoc.getPageIndex(ref);
-        return pageIndex + 1; // 1-based
+        return pageIndex + 1;
       } catch {
         return null;
       }
@@ -319,18 +289,15 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
         pdfDocRef.current = pdfDoc;
         setTotalPages(pdfDoc.numPages);
 
+        // Get first page dimensions
+        const firstPage = await pdfDoc.getPage(1);
+        const vp = firstPage.getViewport({ scale: 1 });
+        if (mounted) setDefaultPageSize({ width: vp.width, height: vp.height });
+
         // Extract outline
         const pdfOutline = await pdfDoc.getOutline();
         if (mounted && pdfOutline) {
           setOutline(pdfOutline as unknown as PdfOutlineItem[]);
-        }
-
-        // Restore saved position
-        if (savedProgress?.position) {
-          const savedPage = parseInt(savedProgress.position, 10);
-          if (!isNaN(savedPage) && savedPage >= 1 && savedPage <= pdfDoc.numPages) {
-            setCurrentPage(savedPage);
-          }
         }
 
         if (mounted) setIsLoading(false);
@@ -354,12 +321,71 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookId]);
 
-  // Re-render on page change, zoom change, etc.
+  // Container resize observer
   useEffect(() => {
-    if (!isLoading && pdfDocRef.current) {
-      renderCurrentPage();
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) setContainerWidth(entry.contentRect.width);
+    });
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  // Scroll listener for visible page tracking + lazy rendering
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container || isLoading) return;
+
+    let raf: number;
+    const handleScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(updateVisiblePages);
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    updateVisiblePages();
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, [updateVisiblePages, isLoading]);
+
+  // Maintain scroll position when scale changes
+  useEffect(() => {
+    if (prevScaleRef.current !== 0 && prevScaleRef.current !== scale) {
+      requestAnimationFrame(() => {
+        scrollToPage(currentPage, 'instant');
+      });
     }
-  }, [isLoading, renderCurrentPage]);
+    prevScaleRef.current = scale;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scale]);
+
+  // Restore saved position
+  useEffect(() => {
+    if (
+      !isLoading &&
+      !hasRestoredPositionRef.current &&
+      containerWidth > 0 &&
+      totalPages > 0 &&
+      scaledHeight > 0
+    ) {
+      hasRestoredPositionRef.current = true;
+      if (savedProgress?.position) {
+        const savedPage = parseInt(savedProgress.position, 10);
+        if (!isNaN(savedPage) && savedPage > 1 && savedPage <= totalPages) {
+          requestAnimationFrame(() => {
+            scrollToPage(savedPage, 'instant');
+          });
+        }
+      }
+    }
+  }, [isLoading, containerWidth, totalPages, scaledHeight, savedProgress, scrollToPage]);
 
   // Save progress on page change
   useEffect(() => {
@@ -367,23 +393,6 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
       debouncedSave(currentPage, totalPages);
     }
   }, [currentPage, totalPages, debouncedSave]);
-
-  // Re-render on window resize (debounced)
-  useEffect(() => {
-    let timeout: NodeJS.Timeout;
-    const handleResize = () => {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => {
-        if (pdfDocRef.current) renderCurrentPage();
-      }, 200);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      clearTimeout(timeout);
-    };
-  }, [renderCurrentPage]);
 
   if (error) {
     return (
@@ -395,8 +404,6 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
       </div>
     );
   }
-
-  const hasOutline = outline.length > 0;
 
   return (
     <>
@@ -419,6 +426,7 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
         hasPrevious={currentPage > 1}
         hasNext={currentPage < totalPages}
         backHref="/books"
+        hideBottomBar
         extraControls={
           <div className="flex items-center gap-1">
             <Button
@@ -430,17 +438,15 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
             >
               <Settings className="h-4 w-4" />
             </Button>
-            {hasOutline && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white hover:bg-white/20 h-8 w-8"
-                onClick={toggleToc}
-                title="Table of Contents"
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/20 h-8 w-8"
+              onClick={toggleToc}
+              title="Table of Contents"
+            >
+              <List className="h-4 w-4" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -469,56 +475,49 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
         }
       >
         <div
-          ref={mergedRef}
-          className={cn(
-            'w-full h-full overflow-auto flex items-start justify-center',
-            zoomMode !== 'custom' && 'items-center'
-          )}
-          style={{
-            backgroundColor: theme === 'dark' ? '#1a1a1a' : '#525659',
-          }}
-          onMouseDown={swipeHandlers.onMouseDown}
+          ref={scrollContainerRef}
+          className="w-full h-full overflow-y-auto"
+          style={{ backgroundColor: '#000' }}
         >
-          <div
-            className={cn(
-              'flex gap-4 transition-opacity duration-150',
-              pageTransition && 'opacity-80'
-            )}
-            style={
-              theme === 'dark'
-                ? { filter: 'invert(1) hue-rotate(180deg)' }
-                : undefined
-            }
-          >
-            {/* Main page */}
-            <div className="relative">
-              <canvas ref={canvasRef} className="block shadow-lg" />
-              <div ref={textLayerRef} className="pdf-text-layer" />
+          {defaultPageSize && containerWidth > 0 && (
+            <div
+              className="flex flex-col items-center py-4"
+              style={{ gap: PAGE_GAP }}
+            >
+              {Array.from({ length: totalPages }, (_, i) => {
+                const pageNum = i + 1;
+                return (
+                  <div
+                    key={pageNum}
+                    className="relative flex-shrink-0"
+                    style={{ width: scaledWidth, height: scaledHeight }}
+                  >
+                    <canvas
+                      ref={(el) => {
+                        if (el) canvasMapRef.current.set(pageNum, el);
+                        else canvasMapRef.current.delete(pageNum);
+                      }}
+                      className="block shadow-lg"
+                    />
+                    <div
+                      ref={(el) => {
+                        if (el) textLayerMapRef.current.set(pageNum, el);
+                        else textLayerMapRef.current.delete(pageNum);
+                      }}
+                      className="pdf-text-layer"
+                    />
+                  </div>
+                );
+              })}
             </div>
-
-            {/* Second page (spread mode) */}
-            {spreadMode === 'double' && (
-              <div className="relative">
-                <canvas
-                  ref={canvas2Ref}
-                  className="block shadow-lg"
-                  style={{ display: 'none' }}
-                />
-                <div
-                  ref={textLayer2Ref}
-                  className="pdf-text-layer"
-                  style={{ display: 'none' }}
-                />
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </ReaderControls>
 
       {/* Sidebars */}
       {isSettingsOpen && <PdfSettingsPanel onClose={closeSettings} />}
 
-      {isTocOpen && hasOutline && (
+      {isTocOpen && (
         <PdfTocSidebar
           outline={outline}
           currentPage={currentPage}

@@ -2,14 +2,12 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type PdfZoomMode = 'fit-width' | 'fit-page' | 'custom';
-export type PdfTheme = 'light' | 'dark';
 export type PdfSpreadMode = 'single' | 'double';
 
 interface PdfReaderState {
   // Persisted preferences
   zoomMode: PdfZoomMode;
   customZoom: number;
-  theme: PdfTheme;
   spreadMode: PdfSpreadMode;
 
   // Session UI state (not persisted)
@@ -20,7 +18,6 @@ interface PdfReaderState {
   // Actions
   setZoomMode: (mode: PdfZoomMode) => void;
   setCustomZoom: (zoom: number) => void;
-  setTheme: (theme: PdfTheme) => void;
   setSpreadMode: (mode: PdfSpreadMode) => void;
 
   toggleSettings: () => void;
@@ -41,7 +38,6 @@ export const usePdfReaderStore = create<PdfReaderState>()(
       // Persisted preferences
       zoomMode: 'fit-width',
       customZoom: 100,
-      theme: 'light',
       spreadMode: 'single',
 
       // Session UI state
@@ -52,7 +48,6 @@ export const usePdfReaderStore = create<PdfReaderState>()(
       // Actions
       setZoomMode: (zoomMode) => set({ zoomMode }),
       setCustomZoom: (customZoom) => set({ customZoom: Math.max(50, Math.min(300, customZoom)) }),
-      setTheme: (theme) => set({ theme }),
       setSpreadMode: (spreadMode) => set({ spreadMode }),
 
       toggleSettings: () => set((s) => ({
@@ -86,7 +81,6 @@ export const usePdfReaderStore = create<PdfReaderState>()(
       partialize: (state) => ({
         zoomMode: state.zoomMode,
         customZoom: state.customZoom,
-        theme: state.theme,
         spreadMode: state.spreadMode,
       }),
     }
@@ -96,5 +90,4 @@ export const usePdfReaderStore = create<PdfReaderState>()(
 // Selector hooks for performance
 export const usePdfZoomMode = () => usePdfReaderStore((s) => s.zoomMode);
 export const usePdfCustomZoom = () => usePdfReaderStore((s) => s.customZoom);
-export const usePdfTheme = () => usePdfReaderStore((s) => s.theme);
 export const usePdfSpreadMode = () => usePdfReaderStore((s) => s.spreadMode);

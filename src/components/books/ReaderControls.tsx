@@ -20,6 +20,7 @@ interface ReaderControlsProps {
   backHref: string;
   children: ReactNode;
   extraControls?: ReactNode;
+  hideBottomBar?: boolean;
 }
 
 export function ReaderControls({
@@ -35,6 +36,7 @@ export function ReaderControls({
   backHref,
   children,
   extraControls,
+  hideBottomBar,
 }: ReaderControlsProps) {
   const [isUIVisible, setIsUIVisible] = useState(true);
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -152,36 +154,38 @@ export function ReaderControls({
       <div className="flex-1 overflow-hidden relative">{children}</div>
 
       {/* Bottom bar */}
-      <div
-        className={cn(
-          'absolute bottom-0 left-0 right-0 z-50 transition-transform duration-300',
-          isUIVisible ? 'translate-y-0' : 'translate-y-full'
-        )}
-      >
-        <div className="bg-gradient-to-t from-black/80 to-transparent px-4 sm:px-6 py-3">
-          <div className="flex items-center gap-3">
-            <span className="text-white/70 text-xs min-w-[40px]">
-              {Math.round(progress)}%
-            </span>
-            {onProgressChange ? (
-              <Slider
-                value={[progress]}
-                onValueChange={([val]) => onProgressChange(val)}
-                max={100}
-                step={1}
-                className="flex-1"
-              />
-            ) : (
-              <div className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-full transition-all"
-                  style={{ width: `${progress}%` }}
+      {!hideBottomBar && (
+        <div
+          className={cn(
+            'absolute bottom-0 left-0 right-0 z-50 transition-transform duration-300',
+            isUIVisible ? 'translate-y-0' : 'translate-y-full'
+          )}
+        >
+          <div className="bg-gradient-to-t from-black/80 to-transparent px-4 sm:px-6 py-3">
+            <div className="flex items-center gap-3">
+              <span className="text-white/70 text-xs min-w-[40px]">
+                {Math.round(progress)}%
+              </span>
+              {onProgressChange ? (
+                <Slider
+                  value={[progress]}
+                  onValueChange={([val]) => onProgressChange(val)}
+                  max={100}
+                  step={1}
+                  className="flex-1"
                 />
-              </div>
-            )}
+              ) : (
+                <div className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

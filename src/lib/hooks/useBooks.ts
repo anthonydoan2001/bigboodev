@@ -11,6 +11,7 @@ import {
   fetchSeries,
   fetchShelves,
   fetchReadingProgress,
+  fetchRecentlyRead,
   saveReadingProgress,
   fetchAnnotations,
   createAnnotation,
@@ -197,6 +198,18 @@ export function useReadingProgress(bookId: string | null, format: string | null)
     error,
     refetch,
   };
+}
+
+export function useRecentlyRead(options?: { enabled?: boolean }) {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['calibre', 'progress', 'recent'],
+    queryFn: fetchRecentlyRead,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: false,
+    enabled: options?.enabled !== false,
+  });
+
+  return { recentProgress: data ?? [], isLoading, error };
 }
 
 export function useSaveReadingProgress() {

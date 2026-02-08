@@ -176,6 +176,17 @@ export async function fetchReadingProgress(
   return data.progress || null;
 }
 
+export async function fetchRecentlyRead(): Promise<BookReadingProgress[]> {
+  const res = await fetch(`${BASE_URL}/calibre/progress/recent`, {
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+
+  if (!res.ok) throw new Error('Failed to fetch recently read');
+  const data = await res.json();
+  return data.progress || [];
+}
+
 export async function saveReadingProgress(
   bookId: string,
   format: string,
