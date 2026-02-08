@@ -1,10 +1,8 @@
 'use client';
 
 import { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { useCalibreSettings, useCalibreBooks, useBookSearch, useRecentlyRead } from '@/lib/hooks/useBooks';
+import { useCalibreSettings, useCalibreBooks, useRecentlyRead } from '@/lib/hooks/useBooks';
 import { BookGrid } from '@/components/books/BookGrid';
-import { BookSearch } from '@/components/books/BookSearch';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -21,7 +19,7 @@ function RecentBookCard({ book, progress, format }: { book: CalibreBook; progres
   const percent = Math.round(progress * 100);
 
   return (
-    <Link href={href} className="group flex-shrink-0 w-28">
+    <Link href={href} className="group min-w-0">
       <div className="relative overflow-hidden rounded-lg bg-muted aspect-[2/3] transition-transform group-hover:scale-[1.02]">
         {!imageError ? (
           <img
@@ -44,31 +42,24 @@ function RecentBookCard({ book, progress, format }: { book: CalibreBook; progres
         </div>
       </div>
       <div className="mt-1.5">
-        <p className="text-xs font-medium line-clamp-2 group-hover:text-primary transition-colors">
+        <p className="text-sm font-medium line-clamp-2 group-hover:text-primary transition-colors">
           {book.title}
         </p>
-        <p className="text-[10px] text-muted-foreground">{percent}%</p>
+        <p className="text-xs text-muted-foreground">{percent}%</p>
       </div>
     </Link>
   );
 }
 
 function BooksLibraryContent() {
-  const searchParams = useSearchParams();
-  const search = searchParams.get('search') || '';
-
   const { configured, isLoading: settingsLoading } = useCalibreSettings();
 
   const { books, isLoading: booksLoading } = useCalibreBooks('new', {
-    enabled: configured && !search,
-  });
-
-  const { books: searchResults, isLoading: searchLoading } = useBookSearch(search, {
-    enabled: configured && search.length > 0,
+    enabled: configured,
   });
 
   const { recentProgress } = useRecentlyRead({
-    enabled: configured && !search,
+    enabled: configured,
   });
 
   if (settingsLoading) {
@@ -117,33 +108,24 @@ function BooksLibraryContent() {
     );
   }
 
-  const isLoading = search ? searchLoading : booksLoading;
-  const displayBooks = search ? searchResults : books;
-
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="space-y-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Library className="h-8 w-8 text-primary" />
             <h1 className="text-3xl font-bold">Books</h1>
           </div>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="flex-1 sm:w-80">
-              <BookSearch placeholder="Search books..." />
-            </div>
-            <Button variant="outline" size="icon" asChild>
-              <Link href="/books/settings">
-                <Settings className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
+          <Button variant="outline" size="icon" asChild>
+            <Link href="/books/settings">
+              <Settings className="h-4 w-4" />
+            </Link>
+          </Button>
         </div>
 
         {/* Continue Reading */}
-        {!search && recentProgress.length > 0 && books.length > 0 && (() => {
+        {recentProgress.length > 0 && books.length > 0 && (() => {
           const recentBooks = recentProgress
             .map((p) => {
               const book = books.find((b) => String(b.id) === p.bookId);
@@ -157,8 +139,8 @@ function BooksLibraryContent() {
           return (
             <section>
               <h2 className="text-lg font-semibold mb-3">Continue Reading</h2>
-              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin">
-                {recentBooks.map(({ book, progress, format }) => (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {recentBooks.slice(0, 6).map(({ book, progress, format }) => (
                   <RecentBookCard key={book.id} book={book} progress={progress} format={format} />
                 ))}
               </div>
@@ -166,34 +148,10 @@ function BooksLibraryContent() {
           );
         })()}
 
-        {/* Content */}
-        {search ? (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold">
-              {searchLoading ? 'Searching...' : `Results for "${search}"`}
-            </h2>
-            {isLoading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="space-y-2">
-                    <Skeleton className="aspect-[2/3] rounded-lg" />
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/2" />
-                  </div>
-                ))}
-              </div>
-            ) : displayBooks.length === 0 ? (
-              <Card>
-                <CardContent className="py-8 text-center">
-                  <p className="text-muted-foreground">No books found for &quot;{search}&quot;</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <BookGrid books={displayBooks} />
-            )}
-          </div>
-        ) : (
-          isLoading ? (
+        {/* All Books */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">All Books</h2>
+          {booksLoading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
               {Array.from({ length: 12 }).map((_, i) => (
                 <div key={i} className="space-y-2">
@@ -203,16 +161,16 @@ function BooksLibraryContent() {
                 </div>
               ))}
             </div>
-          ) : displayBooks.length === 0 ? (
+          ) : books.length === 0 ? (
             <Card>
               <CardContent className="py-8 text-center">
                 <p className="text-muted-foreground">No books found in your library</p>
               </CardContent>
             </Card>
           ) : (
-            <BookGrid books={displayBooks} />
-          )
-        )}
+            <BookGrid books={books} />
+          )}
+        </div>
       </div>
     </div>
   );
