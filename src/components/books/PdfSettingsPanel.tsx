@@ -1,9 +1,9 @@
 'use client';
 
-import { X, Maximize2, FileText, Minus, Plus } from 'lucide-react';
+import { X, Maximize2, FileText, Minus, Plus, GalleryVerticalEnd, RectangleVertical, Columns2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { usePdfReaderStore, type PdfZoomMode } from '@/lib/stores/pdf-reader-store';
+import { usePdfReaderStore, type PdfZoomMode, type PdfViewMode } from '@/lib/stores/pdf-reader-store';
 import { cn } from '@/lib/utils';
 
 interface PdfSettingsPanelProps {
@@ -14,6 +14,7 @@ export function PdfSettingsPanel({ onClose }: PdfSettingsPanelProps) {
   const {
     zoomMode, setZoomMode,
     customZoom, setCustomZoom,
+    viewMode, setViewMode,
   } = usePdfReaderStore();
 
   return (
@@ -28,6 +29,34 @@ export function PdfSettingsPanel({ onClose }: PdfSettingsPanelProps) {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {/* View Mode */}
+          <section>
+            <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+              View Mode
+            </h4>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { value: 'scroll' as PdfViewMode, icon: GalleryVerticalEnd, label: 'Scroll' },
+                { value: 'single' as PdfViewMode, icon: RectangleVertical, label: 'Single' },
+                { value: 'double' as PdfViewMode, icon: Columns2, label: 'Double' },
+              ]).map(({ value, icon: Icon, label }) => (
+                <button
+                  key={value}
+                  onClick={() => setViewMode(value)}
+                  className={cn(
+                    'flex flex-col items-center gap-1.5 p-3 rounded-lg border transition-colors',
+                    viewMode === value
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border hover:bg-muted'
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span className="text-xs">{label}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
           {/* Zoom Mode */}
           <section>
             <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">

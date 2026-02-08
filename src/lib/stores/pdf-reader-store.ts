@@ -2,13 +2,13 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type PdfZoomMode = 'fit-width' | 'fit-page' | 'custom';
-export type PdfSpreadMode = 'single' | 'double';
+export type PdfViewMode = 'scroll' | 'single' | 'double';
 
 interface PdfReaderState {
   // Persisted preferences
   zoomMode: PdfZoomMode;
   customZoom: number;
-  spreadMode: PdfSpreadMode;
+  viewMode: PdfViewMode;
 
   // Session UI state (not persisted)
   isSettingsOpen: boolean;
@@ -18,7 +18,7 @@ interface PdfReaderState {
   // Actions
   setZoomMode: (mode: PdfZoomMode) => void;
   setCustomZoom: (zoom: number) => void;
-  setSpreadMode: (mode: PdfSpreadMode) => void;
+  setViewMode: (mode: PdfViewMode) => void;
 
   toggleSettings: () => void;
   openSettings: () => void;
@@ -38,7 +38,7 @@ export const usePdfReaderStore = create<PdfReaderState>()(
       // Persisted preferences
       zoomMode: 'fit-width',
       customZoom: 100,
-      spreadMode: 'single',
+      viewMode: 'scroll',
 
       // Session UI state
       isSettingsOpen: false,
@@ -48,7 +48,7 @@ export const usePdfReaderStore = create<PdfReaderState>()(
       // Actions
       setZoomMode: (zoomMode) => set({ zoomMode }),
       setCustomZoom: (customZoom) => set({ customZoom: Math.max(50, Math.min(300, customZoom)) }),
-      setSpreadMode: (spreadMode) => set({ spreadMode }),
+      setViewMode: (viewMode) => set({ viewMode }),
 
       toggleSettings: () => set((s) => ({
         isSettingsOpen: !s.isSettingsOpen,
@@ -77,11 +77,11 @@ export const usePdfReaderStore = create<PdfReaderState>()(
       closeAllPanels: () => set({ isSettingsOpen: false, isTocOpen: false, isBookmarksOpen: false }),
     }),
     {
-      name: 'pdf-reader-settings',
+      name: 'pdf-reader-settings-v2',
       partialize: (state) => ({
         zoomMode: state.zoomMode,
         customZoom: state.customZoom,
-        spreadMode: state.spreadMode,
+        viewMode: state.viewMode,
       }),
     }
   )
@@ -90,4 +90,4 @@ export const usePdfReaderStore = create<PdfReaderState>()(
 // Selector hooks for performance
 export const usePdfZoomMode = () => usePdfReaderStore((s) => s.zoomMode);
 export const usePdfCustomZoom = () => usePdfReaderStore((s) => s.customZoom);
-export const usePdfSpreadMode = () => usePdfReaderStore((s) => s.spreadMode);
+export const usePdfViewMode = () => usePdfReaderStore((s) => s.viewMode);
