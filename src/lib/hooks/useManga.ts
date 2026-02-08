@@ -16,6 +16,7 @@ import {
   fetchNextBook,
   fetchPreviousBook,
   updateReadProgress,
+  deleteReadProgress,
   fetchReadLists,
   fetchReadListById,
   fetchReadListBooks,
@@ -439,6 +440,75 @@ export function useUpdateReadProgress() {
     updateProgress: mutation.mutate,
     updateProgressAsync: mutation.mutateAsync,
     isUpdating: mutation.isPending,
+    error: mutation.error,
+  };
+}
+
+// ============ Delete Progress Mutation ============
+
+export function useDeleteReadProgress() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (bookId: string) => deleteReadProgress(bookId),
+
+    onMutate: async (bookId) => {
+      await queryClient.cancelQueries({ queryKey: ['manga', 'book', bookId] });
+      await queryClient.cancelQueries({ queryKey: ['manga', 'books'] });
+      await queryClient.cancelQueries({ queryKey: ['manga', 'in-progress'] });
+      await queryClient.cancelQueries({ queryKey: ['manga', 'on-deck'] });
+
+      const previousBook = queryClient.getQueryData(['manga', 'book', bookId]);
+      const previousBooksQueries: Array<{ key: readonly unknown[]; data: unknown }> = [];
+
+      queryClient.getQueriesData({ queryKey: ['manga', 'books'] }).forEach(([key, data]) => {
+        previousBooksQueries.push({ key, data });
+      });
+
+      const clearProgress = (book: KomgaBook) => {
+        if (book?.id === bookId) {
+          return { ...book, readProgress: null };
+        }
+        return book;
+      };
+
+      queryClient.setQueryData(['manga', 'book', bookId], (old: KomgaBook | undefined) => {
+        if (!old) return old;
+        return clearProgress(old);
+      });
+
+      queryClient.setQueriesData({ queryKey: ['manga', 'books'] }, (old: { content?: KomgaBook[] } | undefined) => {
+        if (!old?.content) return old;
+        return { ...old, content: old.content.map(clearProgress) };
+      });
+
+      return { previousBook, previousBooksQueries };
+    },
+
+    onError: (err, bookId, context) => {
+      if (context?.previousBook) {
+        queryClient.setQueryData(['manga', 'book', bookId], context.previousBook);
+      }
+      if (context?.previousBooksQueries) {
+        context.previousBooksQueries.forEach(({ key, data }) => {
+          queryClient.setQueryData(key, data);
+        });
+      }
+    },
+
+    onSettled: (_, __, bookId) => {
+      queryClient.invalidateQueries({ queryKey: ['manga', 'book', bookId] });
+      queryClient.invalidateQueries({ queryKey: ['manga', 'books'] });
+      queryClient.invalidateQueries({ queryKey: ['manga', 'series'] });
+      queryClient.invalidateQueries({ queryKey: ['manga', 'in-progress'] });
+      queryClient.invalidateQueries({ queryKey: ['manga', 'on-deck'] });
+    },
+  });
+
+  return {
+    deleteProgress: mutation.mutate,
+    deleteProgressAsync: mutation.mutateAsync,
+    isDeleting: mutation.isPending,
     error: mutation.error,
   };
 }
