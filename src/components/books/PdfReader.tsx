@@ -48,10 +48,12 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const pdfDocRef = useRef<PDFDocumentProxy | null>(null);
   const canvasMapRef = useRef<Map<number, HTMLCanvasElement>>(new Map());
-  const textLayerMapRef = useRef<Map<number, HTMLDivElement>>(new Map());
   const renderedAtScaleRef = useRef<Map<number, string>>(new Map());
+  const renderingCountRef = useRef(0);
+  const updateVisibleRef = useRef<() => void>(() => {});
   const hasRestoredPositionRef = useRef(false);
   const prevScaleRef = useRef(0);
+  const MAX_CONCURRENT_RENDERS = 3;
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -121,14 +123,16 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
   const dpr = typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
   const scaleKey = `${scale.toFixed(4)}-${dpr}`;
 
-  // Render a single page
+  // Render a single page (concurrency-limited)
   const renderPage = useCallback(async (pageNum: number) => {
     if (renderedAtScaleRef.current.get(pageNum) === scaleKey) return;
+    if (renderingCountRef.current >= MAX_CONCURRENT_RENDERS) return;
 
     const canvas = canvasMapRef.current.get(pageNum);
     if (!canvas || !pdfDocRef.current) return;
 
     renderedAtScaleRef.current.set(pageNum, scaleKey);
+    renderingCountRef.current++;
 
     try {
       const page = await pdfDocRef.current.getPage(pageNum);
@@ -144,27 +148,14 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       await page.render({ canvas, viewport }).promise;
-
-      // Text layer
-      const textLayerDiv = textLayerMapRef.current.get(pageNum);
-      if (textLayerDiv) {
-        textLayerDiv.innerHTML = '';
-        textLayerDiv.style.width = canvas.style.width;
-        textLayerDiv.style.height = canvas.style.height;
-        const pdfjsLib = await import('pdfjs-dist');
-        const textContent = await page.getTextContent();
-        const tl = new pdfjsLib.TextLayer({
-          textContentSource: textContent,
-          container: textLayerDiv,
-          viewport,
-        });
-        await tl.render();
-      }
-    } catch (err) {
-      console.error(`Error rendering page ${pageNum}:`, err);
-      renderedAtScaleRef.current.delete(pageNum);
+    } catch {
+      // Don't clear renderedAtScaleRef — prevents retry storm
+    } finally {
+      renderingCountRef.current--;
+      // Process remaining pages that were skipped due to concurrency limit
+      requestAnimationFrame(() => updateVisibleRef.current());
     }
-  }, [scale, scaleKey, dpr]);
+  }, [scale, scaleKey, dpr, MAX_CONCURRENT_RENDERS]);
 
   // Compute visible range and render buffered pages
   const updateVisiblePages = useCallback(() => {
@@ -190,6 +181,9 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
       renderPage(i);
     }
   }, [totalPages, scaledHeight, containerWidth, renderPage]);
+
+  // Keep ref in sync for use inside renderPage's finally block
+  updateVisibleRef.current = updateVisiblePages;
 
   // Scroll to a specific page
   const scrollToPage = useCallback((pageNum: number, behavior: ScrollBehavior = 'smooth') => {
@@ -502,13 +496,6 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
                         else canvasMapRef.current.delete(pageNum);
                       }}
                       className="block shadow-lg"
-                    />
-                    <div
-                      ref={(el) => {
-                        if (el) textLayerMapRef.current.set(pageNum, el);
-                        else textLayerMapRef.current.delete(pageNum);
-                      }}
-                      className="pdf-text-layer"
                     />
                   </div>
                 );
