@@ -275,7 +275,7 @@ export default function SeriesPage({ params }: SeriesPageProps) {
 
                 return (
                   <ContextMenu key={book.id}>
-                    <ContextMenuTrigger asChild>
+                    <ContextMenuTrigger>
                       <Link
                         href={`/manga/read/${book.id}`}
                         className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
