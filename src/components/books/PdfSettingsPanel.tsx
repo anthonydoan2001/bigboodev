@@ -1,9 +1,9 @@
 'use client';
 
-import { X, Maximize2, FileText, Minus, Plus, Sun, Moon, BookOpen, Columns2 } from 'lucide-react';
+import { X, Maximize2, FileText, Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { usePdfReaderStore, type PdfZoomMode, type PdfTheme, type PdfSpreadMode } from '@/lib/stores/pdf-reader-store';
+import { usePdfReaderStore, type PdfZoomMode } from '@/lib/stores/pdf-reader-store';
 import { cn } from '@/lib/utils';
 
 interface PdfSettingsPanelProps {
@@ -14,8 +14,6 @@ export function PdfSettingsPanel({ onClose }: PdfSettingsPanelProps) {
   const {
     zoomMode, setZoomMode,
     customZoom, setCustomZoom,
-    theme, setTheme,
-    spreadMode, setSpreadMode,
   } = usePdfReaderStore();
 
   return (
@@ -95,59 +93,6 @@ export function PdfSettingsPanel({ onClose }: PdfSettingsPanelProps) {
             </section>
           )}
 
-          {/* Theme */}
-          <section>
-            <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-              Theme
-            </h4>
-            <div className="grid grid-cols-2 gap-2">
-              {([
-                { value: 'light' as PdfTheme, icon: Sun, label: 'Light' },
-                { value: 'dark' as PdfTheme, icon: Moon, label: 'Dark' },
-              ]).map(({ value, icon: Icon, label }) => (
-                <button
-                  key={value}
-                  onClick={() => setTheme(value)}
-                  className={cn(
-                    'flex flex-col items-center gap-1.5 p-3 rounded-lg border transition-colors',
-                    theme === value
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border hover:bg-muted'
-                  )}
-                >
-                  <Icon className="h-5 w-5" />
-                  <span className="text-xs">{label}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {/* Spread Mode */}
-          <section>
-            <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-              Page Layout
-            </h4>
-            <div className="grid grid-cols-2 gap-2">
-              {([
-                { value: 'single' as PdfSpreadMode, icon: BookOpen, label: 'Single' },
-                { value: 'double' as PdfSpreadMode, icon: Columns2, label: 'Double' },
-              ]).map(({ value, icon: Icon, label }) => (
-                <button
-                  key={value}
-                  onClick={() => setSpreadMode(value)}
-                  className={cn(
-                    'flex flex-col items-center gap-1.5 p-3 rounded-lg border transition-colors',
-                    spreadMode === value
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border hover:bg-muted'
-                  )}
-                >
-                  <Icon className="h-5 w-5" />
-                  <span className="text-xs">{label}</span>
-                </button>
-              ))}
-            </div>
-          </section>
         </div>
       </div>
     </>
