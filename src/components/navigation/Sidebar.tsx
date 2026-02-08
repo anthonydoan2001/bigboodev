@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { PrefetchLink } from '@/components/performance/PrefetchLink';
 import { useSidebar } from '@/lib/providers/SidebarProvider';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, Film, Gamepad2, Home, Settings, Trophy, CheckSquare, StickyNote, Video, BookOpen, Bookmark } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Film, Gamepad2, Home, Settings, Trophy, CheckSquare, StickyNote, Video, BookOpen, Bookmark, Library } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { ThemePicker } from './ThemePicker';
 
@@ -43,6 +43,11 @@ const navItems = [
     name: 'Manga',
     href: '/manga',
     icon: BookOpen,
+  },
+  {
+    name: 'Books',
+    href: '/books',
+    icon: Library,
   },
   {
     name: 'Games',
@@ -119,6 +124,8 @@ export function Sidebar() {
                 ? pathname.startsWith('/tiktok')
                 : item.href === '/manga'
                 ? pathname.startsWith('/manga')
+                : item.href === '/books'
+                ? pathname.startsWith('/books')
                 : pathname === item.href;
               const Icon = item.icon;
 

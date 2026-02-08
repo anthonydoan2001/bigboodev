@@ -600,3 +600,59 @@ model Bookmark {
   @@index([url])
   @@map("bookmarks")
 }
+
+model CalibreWebSettings {
+  id        String   @id @default(cuid())
+  userId    String   @unique @map("user_id")
+  serverUrl String   @map("server_url")
+  username  String
+  password  String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("calibre_web_settings")
+}
+
+model BookReadingProgress {
+  id        String   @id @default(cuid())
+  bookId    String   @map("book_id")
+  format    String
+  position  String
+  progress  Float
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([bookId, format])
+  @@map("book_reading_progress")
+}
+
+model BookAnnotation {
+  id        String   @id @default(cuid())
+  bookId    String   @map("book_id")
+  type      String   @default("highlight") // highlight | underline
+  cfiRange  String   @map("cfi_range")
+  text      String   @db.Text
+  note      String?  @db.Text
+  color     String   @default("yellow")
+  chapter   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([bookId])
+  @@index([bookId, type])
+  @@map("book_annotations")
+}
+
+model BookBookmark {
+  id        String   @id @default(cuid())
+  bookId    String   @map("book_id")
+  cfi       String
+  label     String?
+  chapter   String?
+  progress  Float    @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([bookId])
+  @@map("book_bookmarks")
+}
