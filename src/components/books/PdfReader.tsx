@@ -53,6 +53,7 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
   const updateVisibleRef = useRef<() => void>(() => {});
   const hasRestoredPositionRef = useRef(false);
   const prevScaleRef = useRef(0);
+  const prevViewModeRef = useRef<string>('');
   const pageCacheRef = useRef<Map<number, PDFPageProxy>>(new Map());
   const MAX_CONCURRENT_RENDERS = 3;
   const MAX_PAGE_CACHE = 20;
@@ -467,6 +468,23 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
       }
     });
   }, [isPageMode, isLoading, viewMode, currentPage, spreadStart, spreadEnd, totalPages, scaledHeight, renderPage]);
+
+  // Handle view mode transitions — clear render cache, restore scroll position
+  useEffect(() => {
+    if (prevViewModeRef.current && prevViewModeRef.current !== viewMode) {
+      // Canvases remount on mode switch, so clear render tracking
+      renderedAtScaleRef.current.clear();
+
+      // When switching to scroll mode, scroll to the current page
+      if (viewMode === 'scroll') {
+        requestAnimationFrame(() => {
+          scrollToPage(currentPage, 'instant');
+        });
+      }
+    }
+    prevViewModeRef.current = viewMode;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode]);
 
   // Maintain scroll position when scale changes (scroll mode only)
   useEffect(() => {
