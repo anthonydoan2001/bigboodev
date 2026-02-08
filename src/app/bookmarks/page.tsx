@@ -18,8 +18,8 @@ import { BookmarkList } from '@/components/bookmarks/BookmarkList';
 import { BookmarkForm } from '@/components/bookmarks/BookmarkForm';
 import { BookmarkSearchBar } from '@/components/bookmarks/BookmarkSearchBar';
 import { MoveToFolderDialog } from '@/components/bookmarks/MoveToFolderDialog';
-import { useBookmarks, useBookmarkFolders } from '@/lib/hooks/useBookmarks';
-import { useBookmarksMutations, useBookmarkFoldersMutations } from '@/lib/hooks/useBookmarksMutations';
+import { useBookmarks, useBookmarkFolders, useBookmarkSections, usePrefetchBookmarks } from '@/lib/hooks/useBookmarks';
+import { useBookmarksMutations, useBookmarkFoldersMutations, useBookmarkSectionsMutations } from '@/lib/hooks/useBookmarksMutations';
 import { BookmarkListItem, CreateBookmarkInput, UpdateBookmarkInput } from '@/types/bookmarks';
 import { PanelLeftClose, PanelLeft, Menu } from 'lucide-react';
 
@@ -47,18 +47,28 @@ function BookmarksContent() {
     editId?: string;
     name: string;
   }>({ open: false, name: '' });
+  const [sectionDialog, setSectionDialog] = useState<{
+    open: boolean;
+    editId?: string;
+    name: string;
+  }>({ open: false, name: '' });
 
   // Data hooks
-  const { bookmarks, counts, isLoading: bookmarksLoading } = useBookmarks({
+  const isAllBookmarks = !selectedFolderId && !searchQuery;
+  const { bookmarks, counts, grouped, isLoading: bookmarksLoading } = useBookmarks({
     folderId: selectedFolderId,
     search: searchQuery || undefined,
+    grouped: isAllBookmarks ? true : undefined,
   }, { includeCounts: true });
 
   const { tree: folderTree } = useBookmarkFolders();
+  const { sections } = useBookmarkSections();
+  const prefetchBookmarks = usePrefetchBookmarks();
 
   // Mutations
   const { createBookmark, updateBookmark, deleteBookmark } = useBookmarksMutations();
-  const { createFolder, updateFolder, deleteFolder } = useBookmarkFoldersMutations();
+  const { createFolder, updateFolder, deleteFolder, reorderFolders } = useBookmarkFoldersMutations();
+  const { createSection, updateSection, deleteSection } = useBookmarkSectionsMutations();
 
   // Update URL when selection changes
   const updateUrl = useCallback(
@@ -168,10 +178,49 @@ function BookmarksContent() {
     updateFolder.mutate({ id: folderId, input: { isPinned } });
   }, [updateFolder]);
 
+  // Section handlers
+  const handleCreateSection = useCallback(() => {
+    setSectionDialog({ open: true, name: '' });
+  }, []);
+
+  const handleRenameSection = useCallback((sectionId: string, currentName: string) => {
+    setSectionDialog({ open: true, editId: sectionId, name: currentName });
+  }, []);
+
+  const handleSectionDialogSubmit = useCallback(() => {
+    if (!sectionDialog.name.trim()) return;
+
+    if (sectionDialog.editId) {
+      updateSection.mutate(
+        { id: sectionDialog.editId, input: { name: sectionDialog.name } },
+        { onSuccess: () => setSectionDialog({ open: false, name: '' }) }
+      );
+    } else {
+      createSection.mutate(
+        { name: sectionDialog.name },
+        { onSuccess: () => setSectionDialog({ open: false, name: '' }) }
+      );
+    }
+  }, [sectionDialog, createSection, updateSection]);
+
+  const handleDeleteSection = useCallback((sectionId: string) => {
+    if (confirm('Delete this section? Folders will become unsectioned.')) {
+      deleteSection.mutate(sectionId);
+    }
+  }, [deleteSection]);
+
+  const handleReorderFolders = useCallback((folderIds: string[], sectionId: string | null) => {
+    reorderFolders.mutate({ folderIds, sectionId });
+  }, [reorderFolders]);
+
+  const handlePrefetch = useCallback((folderId: string) => {
+    prefetchBookmarks(folderId);
+  }, [prefetchBookmarks]);
+
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden overscroll-none">
       {/* Mobile Header */}
-      <div className="lg:hidden flex items-center gap-2 p-3 border-b border-border">
+      <div className="md:hidden flex items-center gap-2 p-3 border-b border-border">
         <Button
           variant="ghost"
           size="icon"
@@ -187,21 +236,27 @@ function BookmarksContent() {
         <div
           className={`
             ${mobileMenuOpen ? 'fixed inset-0 z-50 bg-background' : 'hidden'}
-            lg:relative lg:block lg:z-auto
-            ${sidebarOpen ? 'w-full lg:w-56' : 'lg:w-0'}
-            flex-shrink-0 border-r border-border transition-all duration-300
+            md:relative md:block md:z-auto
+            ${sidebarOpen ? 'w-full md:w-56 lg:w-72' : 'md:w-0'}
+            flex-shrink-0 border-r border-border transition-all duration-300 overflow-x-clip
           `}
         >
           {sidebarOpen && (
             <BookmarkFolderTree
               folders={folderTree}
+              sections={sections}
               selectedFolderId={selectedFolderId}
               onSelectFolder={handleSelectFolder}
               onCreateFolder={handleCreateFolder}
               onRenameFolder={handleRenameFolder}
               onDeleteFolder={handleDeleteFolder}
               onPinFolder={handlePinFolder}
+              onCreateSection={handleCreateSection}
+              onRenameSection={handleRenameSection}
+              onDeleteSection={handleDeleteSection}
+              onReorderFolders={handleReorderFolders}
               totalBookmarks={counts?.total || 0}
+              onPrefetch={handlePrefetch}
             />
           )}
         </div>
@@ -214,7 +269,7 @@ function BookmarksContent() {
               variant="ghost"
               size="icon-sm"
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="hidden lg:flex"
+              className="hidden md:flex"
             >
               {sidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeft className="h-4 w-4" />}
             </Button>
@@ -230,7 +285,9 @@ function BookmarksContent() {
           <div className="flex-1 overflow-auto">
             <BookmarkList
               bookmarks={bookmarks}
+              grouped={isAllBookmarks ? grouped : undefined}
               isLoading={bookmarksLoading}
+              currentFolderId={selectedFolderId}
               onEdit={handleEditBookmark}
               onDelete={handleDeleteBookmark}
               onTogglePin={handleTogglePin}
@@ -248,6 +305,7 @@ function BookmarksContent() {
         bookmark={editingBookmark}
         folders={folderTree}
         isSubmitting={createBookmark.isPending || updateBookmark.isPending}
+        defaultFolderId={selectedFolderId}
       />
 
       {/* Move to Folder Dialog */}
@@ -298,6 +356,46 @@ function BookmarksContent() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Section Dialog */}
+      <Dialog
+        open={sectionDialog.open}
+        onOpenChange={(open) => !open && setSectionDialog({ open: false, name: '' })}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {sectionDialog.editId ? 'Rename Section' : 'New Section'}
+            </DialogTitle>
+            <DialogDescription>
+              {sectionDialog.editId
+                ? 'Enter a new name for the section'
+                : 'Sections group your folders (e.g. "IT", "Personal")'}
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            value={sectionDialog.name}
+            onChange={(e) => setSectionDialog({ ...sectionDialog, name: e.target.value })}
+            placeholder="Section name..."
+            onKeyDown={(e) => e.key === 'Enter' && handleSectionDialogSubmit()}
+            autoFocus
+          />
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setSectionDialog({ open: false, name: '' })}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSectionDialogSubmit}
+              disabled={!sectionDialog.name.trim() || createSection.isPending || updateSection.isPending}
+            >
+              {sectionDialog.editId ? 'Rename' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -307,7 +405,7 @@ export default function BookmarksPage() {
     <Suspense
       fallback={
         <div className="h-screen flex">
-          <div className="w-56 border-r border-border p-2">
+          <div className="hidden md:block md:w-56 lg:w-72 border-r border-border p-2">
             <Skeleton className="h-7 w-full mb-2" />
             <Skeleton className="h-3 w-3/4 mb-1.5" />
             <Skeleton className="h-3 w-2/3 mb-1.5" />

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useMemo, useEffect, useState, Suspense, useRef } from 'react';
+import { useMemo, useEffect, Suspense, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { WatchlistNav } from '@/components/watchlist/WatchlistNav';
@@ -11,9 +11,6 @@ import { useWatchlistMutations } from '@/lib/hooks/useWatchlistMutations';
 import { useViewportGrid } from '@/lib/hooks/useViewportGrid';
 import { Loader2 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
-export const dynamicParams = true;
-
 function ShowContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -22,13 +19,10 @@ function ShowContent() {
   const { watchlistItems, isLoading } = useWatchlist();
   const { deleteMutation, markWatchedMutation, markWatchingMutation } = useWatchlistMutations();
 
-  const { containerRef, itemsPerPage, isReady } = useViewportGrid({
-    headerHeight: 140, // Nav + spacing (no filters)
-    footerHeight: 0, // No footer - pagination is in header
-    minCardWidth: 120, // 20% larger than before (was 100)
-    maxCardWidth: 204, // 20% larger than before (was 170)
-    gap: 8, // Tighter gap between cards
-    textHeightBelowCard: 45, // Compact text area
+  const { containerRef, itemsPerPage } = useViewportGrid({
+    headerHeight: 140,
+    gap: 8,
+    textHeightBelowCard: 45,
   });
 
   // Filter watchlist items to only show TV shows
@@ -44,39 +38,18 @@ function ShowContent() {
 
   const totalPages = Math.ceil(showItems.length / itemsPerPage);
 
-  // Track if this is the initial mount to prevent unnecessary redirects
-  const hasMountedRef = useRef(false);
-  const [isStable, setIsStable] = useState(false);
+  // Adjust page when itemsPerPage changes
+  const hasMounted = useRef(false);
+  useEffect(() => { hasMounted.current = true; }, []);
 
   useEffect(() => {
-    hasMountedRef.current = true;
-  }, []);
-
-  // Wait for grid to stabilize before showing content
-  useEffect(() => {
-    if (isReady && !isLoading) {
-      const timer = setTimeout(() => {
-        setIsStable(true);
-      }, 150);
-      return () => {
-        clearTimeout(timer);
-        setIsStable(false);
-      };
-    }
-    return undefined;
-  }, [isReady, isLoading]);
-
-  // Adjust page when itemsPerPage changes (e.g., on window resize)
-  useEffect(() => {
-    if (!hasMountedRef.current || !isReady) return;
-
+    if (!hasMounted.current) return;
     if (totalPages > 0 && page > totalPages) {
-      // Current page is invalid, redirect to last valid page
       const params = new URLSearchParams(searchParams.toString());
       params.set('page', totalPages.toString());
       router.replace(`/watchlist/show?${params.toString()}`);
     }
-  }, [itemsPerPage, totalPages, page, searchParams, router, isReady]);
+  }, [totalPages, page, searchParams, router]);
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -84,32 +57,28 @@ function ShowContent() {
     router.push(`/watchlist/show?${params.toString()}`);
   };
 
-  // Show loading overlay until grid is ready, stable, and data is loaded
-  const showLoading = isLoading || !isReady || !isStable;
-
-  return (
-    <div className="w-full h-screen flex flex-col py-4 sm:py-6 md:py-8 px-3 sm:px-4 md:px-6 lg:px-8 overflow-hidden relative">
-      {/* Loading Overlay */}
-      {showLoading && (
-        <div className="absolute inset-0 z-50 bg-background flex flex-col py-4 sm:py-6 md:py-8 px-3 sm:px-4 md:px-6 lg:px-8">
-          <div className="w-full flex flex-col h-full space-y-4 sm:space-y-6">
-            <Suspense fallback={<div className="h-10 w-full bg-muted animate-pulse rounded flex-shrink-0" />}>
-              <WatchlistNav />
-            </Suspense>
-            <div className="flex-1 min-h-0 w-full flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
+  if (isLoading) {
+    return (
+      <div className="w-full h-screen flex flex-col py-4 sm:py-6 md:py-8 px-3 sm:px-4 md:px-6 lg:px-8 overflow-hidden">
+        <div className="w-full flex flex-col h-full space-y-4 sm:space-y-6">
+          <WatchlistNav />
+          <div className="flex-1 min-h-0 w-full flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         </div>
-      )}
+      </div>
+    );
+  }
 
+  return (
+    <div className="w-full h-screen flex flex-col py-4 sm:py-6 md:py-8 px-3 sm:px-4 md:px-6 lg:px-8 overflow-hidden">
       <div className="w-full flex flex-col h-full space-y-4 sm:space-y-6">
         <Suspense fallback={<div className="h-10 w-full bg-muted animate-pulse rounded flex-shrink-0" />}>
           <WatchlistNav />
         </Suspense>
 
         <div className="flex flex-col flex-1 min-h-0 space-y-3 sm:space-y-4">
-          {/* Pagination Controls - Always show structure to prevent layout shift */}
+          {/* Pagination Controls */}
           <div className="flex items-center justify-between min-h-[32px] sm:min-h-[36px] flex-shrink-0">
             <div></div>
             {totalPages > 1 && (

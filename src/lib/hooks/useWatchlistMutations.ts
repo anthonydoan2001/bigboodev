@@ -70,7 +70,8 @@ export function useWatchlistMutations() {
         // Update existing item
         const res = await fetch('/api/watchlist', {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+          credentials: 'include',
           body: JSON.stringify({ id, status: 'WATCHED' }),
         });
         if (!res.ok) throw new Error('Failed to mark as watched');

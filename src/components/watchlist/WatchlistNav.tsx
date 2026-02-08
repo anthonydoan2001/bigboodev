@@ -5,7 +5,7 @@ import { PrefetchLink } from '@/components/performance/PrefetchLink';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { CheckCircle2, Eye, ListVideo, Trophy } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { useCallback } from 'react';
 import { SearchBar } from './SearchBar';
 
 export function WatchlistNav() {
@@ -14,27 +14,14 @@ export function WatchlistNav() {
   const router = useRouter();
   const searchQuery = searchParams.get('search') || '';
   const { watchlistItems, watchedItems, watchingItems } = useWatchlist();
-  const [isSearching, setIsSearching] = useState(false);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleSearch = (query: string) => {
-    // Clear existing debounce timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
+  const handleSearch = useCallback((query: string) => {
+    if (query) {
+      router.push(`/watchlist?search=${encodeURIComponent(query)}`);
+    } else {
+      router.push('/watchlist');
     }
-
-    setIsSearching(true);
-
-    // Debounce search to prevent rate limits (500ms delay)
-    debounceTimerRef.current = setTimeout(() => {
-      if (query.trim()) {
-        router.push(`/watchlist?search=${encodeURIComponent(query.trim())}`);
-      } else {
-        router.push('/watchlist');
-      }
-      setIsSearching(false);
-    }, 500);
-  };
+  }, [router]);
 
   const handleClearSearch = () => {
     router.push('/watchlist');
@@ -91,7 +78,6 @@ export function WatchlistNav() {
           onSearch={handleSearch}
           onClear={handleClearSearch}
           placeholder="Search anime, movies, and shows..."
-          isLoading={isSearching}
         />
       </div>
     </div>

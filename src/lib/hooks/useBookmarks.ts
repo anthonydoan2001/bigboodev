@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { fetchBookmarks, fetchBookmark, fetchBookmarkFolders, fetchPinnedBookmarks } from '@/lib/api/bookmarks';
-import { BookmarksFilters, BookmarkWithRelations, BookmarkFolderTreeNode } from '@/types/bookmarks';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchBookmarks, fetchBookmark, fetchBookmarkFolders, fetchPinnedBookmarks, fetchBookmarkSections } from '@/lib/api/bookmarks';
+import { BookmarksFilters, BookmarkWithRelations, BookmarkFolderTreeNode, BookmarkSection } from '@/types/bookmarks';
 
 export function useBookmarks(filters?: BookmarksFilters, options?: { includeCounts?: boolean; enabled?: boolean }) {
   const { data, isLoading, error, refetch } = useQuery({
@@ -14,6 +14,7 @@ export function useBookmarks(filters?: BookmarksFilters, options?: { includeCoun
   return {
     bookmarks: data?.items || [],
     counts: data?.counts,
+    grouped: data?.grouped,
     isLoading,
     error,
     refetch,
@@ -51,6 +52,34 @@ export function useBookmarkFolders() {
     isLoading,
     error,
     refetch,
+  };
+}
+
+export function useBookmarkSections() {
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['bookmarkSections'],
+    queryFn: fetchBookmarkSections,
+    staleTime: 120000,
+    refetchOnWindowFocus: false,
+  });
+
+  return {
+    sections: data?.items as BookmarkSection[] || [],
+    isLoading,
+    error,
+    refetch,
+  };
+}
+
+export function usePrefetchBookmarks() {
+  const queryClient = useQueryClient();
+
+  return (folderId: string) => {
+    queryClient.prefetchQuery({
+      queryKey: ['bookmarks', { folderId }, false],
+      queryFn: () => fetchBookmarks({ folderId }),
+      staleTime: 60000,
+    });
   };
 }
 

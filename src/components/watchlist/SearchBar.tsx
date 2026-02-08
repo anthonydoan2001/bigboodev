@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Search, X } from 'lucide-react';
+import { Search, X, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -17,20 +17,42 @@ export function SearchBar({ onSearch, onClear, placeholder = 'Search...', isLoad
   const searchParams = useSearchParams();
   const urlQuery = searchParams.get('search') || '';
   const [query, setQuery] = useState(urlQuery);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sync with URL query param
   useEffect(() => {
     setQuery(urlQuery);
   }, [urlQuery]);
 
+  const fireSearch = useCallback((value: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      onSearch(value.trim());
+    }, 300);
+  }, [onSearch]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setQuery(value);
+    fireSearch(value);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (query.trim()) {
-      onSearch(query.trim());
-    }
+    // Immediate search on Enter — cancel any pending debounce
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    onSearch(query.trim());
   };
 
   const handleClear = () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     setQuery('');
     if (onClear) {
       onClear();
@@ -40,14 +62,17 @@ export function SearchBar({ onSearch, onClear, placeholder = 'Search...', isLoad
   return (
     <form onSubmit={handleSubmit} className="relative w-full max-w-2xl">
       <div className="relative flex items-center">
-        <Search className="absolute left-3 h-5 w-5 text-muted-foreground pointer-events-none" />
+        {isLoading ? (
+          <Loader2 className="absolute left-3 h-5 w-5 text-muted-foreground pointer-events-none animate-spin" />
+        ) : (
+          <Search className="absolute left-3 h-5 w-5 text-muted-foreground pointer-events-none" />
+        )}
         <Input
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={handleChange}
           placeholder={placeholder}
-          className="pl-10 pr-24 h-12 text-base w-full"
-          disabled={isLoading}
+          className="pl-10 pr-12 h-12 text-base w-full"
         />
         <div className="absolute right-2 flex items-center gap-1">
           {query && (
@@ -62,17 +87,8 @@ export function SearchBar({ onSearch, onClear, placeholder = 'Search...', isLoad
               <X className="h-4 w-4 text-muted-foreground" />
             </Button>
           )}
-          <Button
-            type="submit"
-            disabled={!query.trim() || isLoading}
-            className="h-9 px-4 ml-1"
-            size="sm"
-          >
-            Search
-          </Button>
         </div>
       </div>
     </form>
   );
 }
-

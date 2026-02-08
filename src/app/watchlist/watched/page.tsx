@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useMemo, Suspense, useEffect, useState, useRef } from 'react';
+import { useMemo, Suspense, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { WatchlistNav } from '@/components/watchlist/WatchlistNav';
@@ -10,9 +10,6 @@ import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { useWatchlistMutations } from '@/lib/hooks/useWatchlistMutations';
 import { useViewportGrid } from '@/lib/hooks/useViewportGrid';
 import { Loader2 } from 'lucide-react';
-
-export const dynamic = 'force-dynamic';
-export const dynamicParams = true;
 
 function WatchedContent() {
   const router = useRouter();
@@ -23,13 +20,10 @@ function WatchedContent() {
   const { watchedItems, isLoading } = useWatchlist();
   const { deleteMutation } = useWatchlistMutations();
 
-  const { containerRef, itemsPerPage, isReady } = useViewportGrid({
-    headerHeight: 160, // Nav + filters + spacing
-    footerHeight: 0, // No footer - pagination is in header
-    minCardWidth: 120, // 20% larger than before (was 100)
-    maxCardWidth: 204, // 20% larger than before (was 170)
-    gap: 8, // Tighter gap between cards
-    textHeightBelowCard: 45, // Compact text area
+  const { containerRef, itemsPerPage } = useViewportGrid({
+    headerHeight: 160,
+    gap: 8,
+    textHeightBelowCard: 45,
   });
 
   // Filter watched items based on selected filter
@@ -47,41 +41,25 @@ function WatchedContent() {
 
   const totalPages = Math.ceil(filteredWatchedItems.length / itemsPerPage);
 
-  // Track if this is the initial mount to prevent unnecessary redirects
-  const hasMountedRef = useRef(false);
-  const [isStable, setIsStable] = useState(false);
+  // Memoized filter counts
+  const filterCounts = useMemo(() => ({
+    anime: watchedItems.filter(item => item.type === 'ANIME').length,
+    movie: watchedItems.filter(item => item.type === 'MOVIE').length,
+    show: watchedItems.filter(item => item.type === 'SHOW').length,
+  }), [watchedItems]);
+
+  // Adjust page when itemsPerPage changes
+  const hasMounted = useRef(false);
+  useEffect(() => { hasMounted.current = true; }, []);
 
   useEffect(() => {
-    hasMountedRef.current = true;
-  }, []);
-
-  // Wait for grid to stabilize before showing content
-  useEffect(() => {
-    if (isReady && !isLoading) {
-      // Small delay to ensure grid has fully calculated and stabilized
-      const timer = setTimeout(() => {
-        setIsStable(true);
-      }, 150);
-      return () => {
-        clearTimeout(timer);
-        setIsStable(false);
-      };
-    }
-    return undefined;
-  }, [isReady, isLoading]);
-
-  // Adjust page when itemsPerPage changes (e.g., on window resize)
-  // Only redirect if we've mounted AND grid is ready to prevent initial flash
-  useEffect(() => {
-    if (!hasMountedRef.current || !isReady) return;
-
+    if (!hasMounted.current) return;
     if (totalPages > 0 && page > totalPages) {
-      // Current page is invalid, redirect to last valid page
       const params = new URLSearchParams(searchParams.toString());
       params.set('page', totalPages.toString());
       router.replace(`/watchlist/watched?${params.toString()}`);
     }
-  }, [itemsPerPage, totalPages, page, searchParams, router, isReady]);
+  }, [totalPages, page, searchParams, router]);
 
   const handleFilterChange = (newFilter: 'all' | 'anime' | 'movie' | 'show') => {
     const params = new URLSearchParams();
@@ -96,25 +74,21 @@ function WatchedContent() {
     router.push(`/watchlist/watched?${params.toString()}`);
   };
 
-  // Show loading overlay until grid is ready, stable, and data is loaded
-  const showLoading = isLoading || !isReady || !isStable;
-
-  return (
-    <div className="w-full h-screen flex flex-col py-2 sm:py-3 md:py-4 px-2 sm:px-3 md:px-4 lg:px-6 overflow-hidden relative">
-      {/* Loading Overlay */}
-      {showLoading && (
-        <div className="absolute inset-0 z-50 bg-background flex flex-col py-2 sm:py-3 md:py-4 px-2 sm:px-3 md:px-4 lg:px-6">
-          <div className="w-full flex flex-col h-full space-y-2 sm:space-y-3 md:space-y-4">
-            <Suspense fallback={<div className="h-10 w-full bg-muted animate-pulse rounded flex-shrink-0" />}>
-              <WatchlistNav />
-            </Suspense>
-            <div className="flex-1 min-h-0 w-full flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
+  if (isLoading) {
+    return (
+      <div className="w-full h-screen flex flex-col py-2 sm:py-3 md:py-4 px-2 sm:px-3 md:px-4 lg:px-6 overflow-hidden">
+        <div className="w-full flex flex-col h-full space-y-2 sm:space-y-3 md:space-y-4">
+          <WatchlistNav />
+          <div className="flex-1 min-h-0 w-full flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         </div>
-      )}
+      </div>
+    );
+  }
 
+  return (
+    <div className="w-full h-screen flex flex-col py-2 sm:py-3 md:py-4 px-2 sm:px-3 md:px-4 lg:px-6 overflow-hidden">
       <div className="w-full flex flex-col h-full space-y-2 sm:space-y-3 md:space-y-4">
         <Suspense fallback={<div className="h-10 w-full bg-muted animate-pulse rounded flex-shrink-0" />}>
           <WatchlistNav />
@@ -139,7 +113,7 @@ function WatchedContent() {
                   onClick={() => handleFilterChange('anime')}
                   className="text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
                 >
-                  Anime ({watchedItems.filter(item => item.type === 'ANIME').length})
+                  Anime ({filterCounts.anime})
                 </Button>
                 <Button
                   variant={filter === 'movie' ? 'default' : 'outline'}
@@ -147,7 +121,7 @@ function WatchedContent() {
                   onClick={() => handleFilterChange('movie')}
                   className="text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
                 >
-                  Movie ({watchedItems.filter(item => item.type === 'MOVIE').length})
+                  Movie ({filterCounts.movie})
                 </Button>
                 <Button
                   variant={filter === 'show' ? 'default' : 'outline'}
@@ -155,7 +129,7 @@ function WatchedContent() {
                   onClick={() => handleFilterChange('show')}
                   className="text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
                 >
-                  TV Show ({watchedItems.filter(item => item.type === 'SHOW').length})
+                  TV Show ({filterCounts.show})
                 </Button>
               </div>
             ) : (
@@ -195,9 +169,7 @@ function WatchedContent() {
               <div
                 ref={containerRef}
                 className="watchlist-grid w-full h-full overflow-hidden"
-                style={{
-                  gridAutoRows: 'min-content'
-                }}
+                style={{ gridAutoRows: 'min-content' }}
               >
                 {paginatedWatchedItems.map((item) => (
                   <div key={item.id} style={{ width: '100%', minWidth: 0 }}>

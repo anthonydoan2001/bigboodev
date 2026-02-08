@@ -12,12 +12,19 @@ import {
   deleteAttachment,
   linkTaskToNote,
   unlinkTaskFromNote,
+  createNoteSection,
+  updateNoteSection,
+  deleteNoteSection,
+  reorderFolders,
 } from '@/lib/api/notes';
 import {
   CreateNoteInput,
   UpdateNoteInput,
   CreateFolderInput,
   UpdateFolderInput,
+  CreateNoteSectionInput,
+  UpdateNoteSectionInput,
+  FoldersResponse,
 } from '@/types/notes';
 
 export function useNotesMutations() {
@@ -175,10 +182,51 @@ export function useFoldersMutations() {
     },
   });
 
+  const reorderFoldersMutation = useMutation({
+    mutationFn: ({ folderIds, sectionId }: { folderIds: string[]; sectionId: string | null }) =>
+      reorderFolders(folderIds, sectionId),
+    onMutate: async ({ folderIds, sectionId }) => {
+      await queryClient.cancelQueries({ queryKey: ['folders'] });
+
+      const previousData = queryClient.getQueryData<FoldersResponse>(['folders']);
+
+      queryClient.setQueryData<FoldersResponse>(['folders'], (old) => {
+        if (!old) return old;
+
+        const folderIdSet = new Set(folderIds);
+
+        const updatedTree = old.tree.map((node) => {
+          if (!folderIdSet.has(node.id)) return node;
+          return { ...node, sectionId, position: folderIds.indexOf(node.id) };
+        });
+        updatedTree.sort((a, b) => a.position - b.position);
+
+        const updatedItems = old.items.map((item) => {
+          if (!folderIdSet.has(item.id)) return item;
+          return { ...item, sectionId, position: folderIds.indexOf(item.id) };
+        });
+
+        return { items: updatedItems, tree: updatedTree };
+      });
+
+      return { previousData };
+    },
+    onError: (error: Error, _variables, context) => {
+      console.error('Reorder folders error:', error);
+      if (context?.previousData) {
+        queryClient.setQueryData(['folders'], context.previousData);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['folders'] });
+    },
+  });
+
   return {
     createFolder: createFolderMutation,
     updateFolder: updateFolderMutation,
     deleteFolder: deleteFolderMutation,
+    reorderFolders: reorderFoldersMutation,
   };
 }
 
@@ -213,6 +261,48 @@ export function useAttachmentsMutations() {
   return {
     uploadAttachment: uploadAttachmentMutation,
     deleteAttachment: deleteAttachmentMutation,
+  };
+}
+
+export function useNoteSectionsMutations() {
+  const queryClient = useQueryClient();
+
+  const invalidateSections = () => {
+    queryClient.invalidateQueries({ queryKey: ['noteSections'] });
+    queryClient.invalidateQueries({ queryKey: ['folders'] });
+  };
+
+  const createSectionMutation = useMutation({
+    mutationFn: (input: CreateNoteSectionInput) => createNoteSection(input),
+    onSuccess: () => invalidateSections(),
+    onError: (error: Error) => {
+      console.error('Create note section error:', error);
+      alert(`Failed to create section: ${error.message}`);
+    },
+  });
+
+  const updateSectionMutation = useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdateNoteSectionInput }) => updateNoteSection(id, input),
+    onSuccess: () => invalidateSections(),
+    onError: (error: Error) => {
+      console.error('Update note section error:', error);
+      alert(`Failed to update section: ${error.message}`);
+    },
+  });
+
+  const deleteSectionMutation = useMutation({
+    mutationFn: (id: string) => deleteNoteSection(id),
+    onSuccess: () => invalidateSections(),
+    onError: (error: Error) => {
+      console.error('Delete note section error:', error);
+      alert(`Failed to delete section: ${error.message}`);
+    },
+  });
+
+  return {
+    createSection: createSectionMutation,
+    updateSection: updateSectionMutation,
+    deleteSection: deleteSectionMutation,
   };
 }
 

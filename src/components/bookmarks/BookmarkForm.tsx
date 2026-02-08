@@ -31,6 +31,7 @@ interface BookmarkFormProps {
   bookmark?: BookmarkListItem | null;
   folders: BookmarkFolderTreeNode[];
   isSubmitting?: boolean;
+  defaultFolderId?: string | null;
 }
 
 // Flatten folder tree for select options
@@ -52,6 +53,7 @@ export function BookmarkForm({
   bookmark,
   folders,
   isSubmitting,
+  defaultFolderId,
 }: BookmarkFormProps) {
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
@@ -77,10 +79,10 @@ export function BookmarkForm({
       setTitle('');
       setDescription('');
       setFaviconUrl('');
-      setFolderId(null);
+      setFolderId(defaultFolderId || null);
       setIsPinned(false);
     }
-  }, [bookmark, open]);
+  }, [bookmark, open, defaultFolderId]);
 
   const handleFetchMetadata = async () => {
     if (!url.trim()) return;

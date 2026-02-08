@@ -106,7 +106,7 @@ export function MoveToFolderDialog({
           <DialogTitle>Move to Folder</DialogTitle>
         </DialogHeader>
 
-        <div className="max-h-[300px] overflow-auto py-2">
+        <div className="max-h-[50vh] overflow-auto py-2">
           {/* No folder option */}
           <div
             className={cn(

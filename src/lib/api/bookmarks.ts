@@ -4,11 +4,15 @@ import {
   BookmarkResponse,
   BookmarkFoldersResponse,
   BookmarkFolderResponse,
+  BookmarkSectionsResponse,
+  BookmarkSectionResponse,
   BookmarksFilters,
   CreateBookmarkInput,
   UpdateBookmarkInput,
   CreateBookmarkFolderInput,
   UpdateBookmarkFolderInput,
+  CreateBookmarkSectionInput,
+  UpdateBookmarkSectionInput,
   UrlMetadata,
 } from '@/types/bookmarks';
 
@@ -24,6 +28,7 @@ function buildQueryString(filters?: BookmarksFilters, includeCounts?: boolean): 
     }
     if (filters.isPinned !== undefined) params.set('isPinned', String(filters.isPinned));
     if (filters.search) params.set('search', filters.search);
+    if (filters.grouped) params.set('grouped', 'true');
   }
 
   if (includeCounts) {
@@ -139,6 +144,70 @@ export async function deleteBookmarkFolder(id: string): Promise<void> {
   if (!res.ok) {
     const error = await res.json();
     throw new Error(error.error || 'Failed to delete bookmark folder');
+  }
+}
+
+export async function reorderBookmarkFolders(folderIds: string[], sectionId: string | null): Promise<void> {
+  const res = await fetch(`${BASE_URL}/bookmark-folders/reorder`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    credentials: 'include',
+    body: JSON.stringify({ folderIds, sectionId }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to reorder bookmark folders');
+  }
+}
+
+// ============ Bookmark Sections API ============
+
+export async function fetchBookmarkSections(): Promise<BookmarkSectionsResponse> {
+  const res = await fetch(`${BASE_URL}/bookmark-sections`, {
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+  if (!res.ok) throw new Error('Failed to fetch bookmark sections');
+  return res.json();
+}
+
+export async function createBookmarkSection(input: CreateBookmarkSectionInput): Promise<BookmarkSectionResponse> {
+  const res = await fetch(`${BASE_URL}/bookmark-sections`, {
+    method: 'POST',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    credentials: 'include',
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to create bookmark section');
+  }
+  return res.json();
+}
+
+export async function updateBookmarkSection(id: string, input: UpdateBookmarkSectionInput): Promise<BookmarkSectionResponse> {
+  const res = await fetch(`${BASE_URL}/bookmark-sections/${id}`, {
+    method: 'PATCH',
+    headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+    credentials: 'include',
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to update bookmark section');
+  }
+  return res.json();
+}
+
+export async function deleteBookmarkSection(id: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/bookmark-sections/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to delete bookmark section');
   }
 }
 

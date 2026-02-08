@@ -798,37 +798,14 @@ html {
   .stagger-7 { animation-delay: 350ms; }
   .stagger-8 { animation-delay: 400ms; }
 
-  /* Responsive grid for watchlist cards - JavaScript controls columns dynamically */
+  /* Responsive grid for watchlist cards - CSS auto-fill handles columns */
   .watchlist-grid {
     display: grid;
-    /* grid-template-columns is set dynamically via JavaScript in useViewportGrid */
+    grid-template-columns: repeat(auto-fill, minmax(var(--grid-min-w, 130px), var(--grid-max-w, 200px)));
+    gap: var(--grid-gap, 8px);
     overflow-x: hidden;
     justify-content: center;
     align-content: start;
-    /* Smooth gap transition to match sidebar animation */
-    transition: gap 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  /* Smooth card transitions when grid changes - match sidebar 500ms timing */
-  .watchlist-grid > * {
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  /* Disable transitions on initial load to prevent visual jump */
-  .watchlist-grid.no-transition,
-  .watchlist-grid.no-transition > * {
-    transition: none !important;
-  }
-
-  /* GPU acceleration for better performance during transitions */
-  @media (prefers-reduced-motion: no-preference) {
-    .watchlist-grid {
-      will-change: gap;
-    }
-
-    .watchlist-grid > * {
-      will-change: transform;
-    }
   }
 
   /* Smooth scroll optimization */

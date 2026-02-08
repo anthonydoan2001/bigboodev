@@ -18,13 +18,14 @@ import { NotesList } from '@/components/notes/NotesList';
 import { NoteEditor } from '@/components/notes/NoteEditor';
 import { TrashView } from '@/components/notes/TrashView';
 import { TaskLinkModal } from '@/components/notes/TaskLinkModal';
-import { useNotes, useFolders, useNote } from '@/lib/hooks/useNotes';
+import { useNotes, useFolders, useNote, useNoteSections } from '@/lib/hooks/useNotes';
 import { useTasks } from '@/lib/hooks/useTasks';
 import {
   useNotesMutations,
   useFoldersMutations,
   useAttachmentsMutations,
   useTaskNoteMutations,
+  useNoteSectionsMutations,
 } from '@/lib/hooks/useNotesMutations';
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, PanelLeftClose, PanelLeft, Menu, Loader2 } from 'lucide-react';
@@ -55,6 +56,11 @@ function NotesContent() {
     editId?: string;
     name: string;
   }>({ open: false, name: '' });
+  const [sectionDialog, setSectionDialog] = useState<{
+    open: boolean;
+    editId?: string;
+    name: string;
+  }>({ open: false, name: '' });
 
   // Editing state for note
   const [editTitle, setEditTitle] = useState('');
@@ -81,11 +87,13 @@ function NotesContent() {
 
   const { note: selectedNote, isLoading: noteLoading, refetch: refetchNote } = useNote(selectedNoteId);
   const { folders, tree: folderTree } = useFolders();
+  const { sections } = useNoteSections();
   const { tasks } = useTasks();
 
   // Mutations
   const { createNote, updateNote, deleteNote, restoreNote, permanentDeleteNote } = useNotesMutations();
-  const { createFolder, updateFolder, deleteFolder } = useFoldersMutations();
+  const { createFolder, updateFolder, deleteFolder, reorderFolders } = useFoldersMutations();
+  const { createSection, updateSection, deleteSection } = useNoteSectionsMutations();
   const { uploadAttachment, deleteAttachment } = useAttachmentsMutations();
   const { linkTask, unlinkTask } = useTaskNoteMutations();
 
@@ -317,6 +325,41 @@ function NotesContent() {
     updateFolder.mutate({ id: folderId, input: { isPinned } });
   }, [updateFolder]);
 
+  // Section handlers
+  const handleCreateSection = useCallback(() => {
+    setSectionDialog({ open: true, name: '' });
+  }, []);
+
+  const handleRenameSection = useCallback((sectionId: string, currentName: string) => {
+    setSectionDialog({ open: true, editId: sectionId, name: currentName });
+  }, []);
+
+  const handleSectionDialogSubmit = useCallback(() => {
+    if (!sectionDialog.name.trim()) return;
+
+    if (sectionDialog.editId) {
+      updateSection.mutate(
+        { id: sectionDialog.editId, input: { name: sectionDialog.name } },
+        { onSuccess: () => setSectionDialog({ open: false, name: '' }) }
+      );
+    } else {
+      createSection.mutate(
+        { name: sectionDialog.name },
+        { onSuccess: () => setSectionDialog({ open: false, name: '' }) }
+      );
+    }
+  }, [sectionDialog, createSection, updateSection]);
+
+  const handleDeleteSection = useCallback((sectionId: string) => {
+    if (confirm('Delete this section? Folders will become unsectioned.')) {
+      deleteSection.mutate(sectionId);
+    }
+  }, [deleteSection]);
+
+  const handleReorderFolders = useCallback((folderIds: string[], sectionId: string | null) => {
+    reorderFolders.mutate({ folderIds, sectionId });
+  }, [reorderFolders]);
+
   // Attachment handlers
   const handleUploadAttachment = useCallback((file: File) => {
     if (selectedNoteId) {
@@ -373,13 +416,14 @@ function NotesContent() {
           className={`
             ${mobileMenuOpen ? 'fixed inset-0 z-50 bg-background' : 'hidden'}
             lg:relative lg:block lg:z-auto
-            ${sidebarOpen ? 'w-full lg:w-56' : 'lg:w-0'}
+            ${sidebarOpen ? 'w-full lg:w-56 xl:w-72' : 'lg:w-0'}
             flex-shrink-0 border-r border-border transition-all duration-300
           `}
         >
           {sidebarOpen && (
             <FolderTree
               folders={folderTree}
+              sections={sections}
               selectedFolderId={selectedFolderId}
               showTrash={showTrash}
               onSelectFolder={handleSelectFolder}
@@ -388,6 +432,10 @@ function NotesContent() {
               onRenameFolder={handleRenameFolder}
               onDeleteFolder={handleDeleteFolder}
               onPinFolder={handlePinFolder}
+              onCreateSection={handleCreateSection}
+              onRenameSection={handleRenameSection}
+              onDeleteSection={handleDeleteSection}
+              onReorderFolders={handleReorderFolders}
               totalNotes={counts?.total || 0}
               trashedNotes={counts?.trashed || 0}
             />
@@ -531,6 +579,46 @@ function NotesContent() {
         </DialogContent>
       </Dialog>
 
+      {/* Section Dialog */}
+      <Dialog
+        open={sectionDialog.open}
+        onOpenChange={(open) => !open && setSectionDialog({ open: false, name: '' })}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {sectionDialog.editId ? 'Rename Section' : 'New Section'}
+            </DialogTitle>
+            <DialogDescription>
+              {sectionDialog.editId
+                ? 'Enter a new name for the section'
+                : 'Sections group your folders (e.g. "IT", "Personal")'}
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            value={sectionDialog.name}
+            onChange={(e) => setSectionDialog({ ...sectionDialog, name: e.target.value })}
+            placeholder="Section name..."
+            onKeyDown={(e) => e.key === 'Enter' && handleSectionDialogSubmit()}
+            autoFocus
+          />
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setSectionDialog({ open: false, name: '' })}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSectionDialogSubmit}
+              disabled={!sectionDialog.name.trim() || createSection.isPending || updateSection.isPending}
+            >
+              {sectionDialog.editId ? 'Rename' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Task Link Modal */}
       <TaskLinkModal
         open={showTaskLinkModal}
@@ -550,7 +638,7 @@ export default function NotesPage() {
     <Suspense
       fallback={
         <div className="h-screen flex">
-          <div className="w-56 border-r border-border p-2">
+          <div className="w-56 xl:w-72 border-r border-border p-2">
             <Skeleton className="h-7 w-full mb-2" />
             <Skeleton className="h-3 w-3/4 mb-1.5" />
             <Skeleton className="h-3 w-2/3 mb-1.5" />

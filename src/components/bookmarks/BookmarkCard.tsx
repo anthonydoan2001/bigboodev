@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 
 interface BookmarkCardProps {
   bookmark: BookmarkListItem;
+  currentFolderId?: string | null;
   onEdit: (bookmark: BookmarkListItem) => void;
   onDelete: (id: string) => void;
   onTogglePin: (id: string, isPinned: boolean) => void;
@@ -33,6 +34,7 @@ interface BookmarkCardProps {
 
 export const BookmarkCard = memo(function BookmarkCard({
   bookmark,
+  currentFolderId,
   onEdit,
   onDelete,
   onTogglePin,
@@ -57,18 +59,18 @@ export const BookmarkCard = memo(function BookmarkCard({
   return (
     <div
       className={cn(
-        'group flex items-start gap-3 p-3 rounded-lg border border-border bg-card hover:bg-accent/30 transition-colors cursor-pointer',
+        'group flex items-start gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-lg border border-border bg-card hover:bg-accent/30 transition-colors cursor-pointer',
         bookmark.isPinned && 'border-favorite/30 bg-favorite/5'
       )}
       onClick={handleOpenUrl}
     >
       {/* Favicon */}
-      <div className="flex-shrink-0 w-8 h-8 rounded-md bg-muted flex items-center justify-center overflow-hidden">
+      <div className="flex-shrink-0 w-10 h-10 sm:w-8 sm:h-8 rounded-md bg-muted flex items-center justify-center overflow-hidden">
         {bookmark.faviconUrl ? (
           <img
             src={bookmark.faviconUrl}
             alt=""
-            className="w-5 h-5 object-contain"
+            className="w-6 h-6 sm:w-5 sm:h-5 object-contain"
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = 'none';
               (e.target as HTMLImageElement).parentElement!.innerHTML = '<svg class="w-4 h-4 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>';
@@ -93,16 +95,16 @@ export const BookmarkCard = memo(function BookmarkCard({
             {bookmark.description}
           </p>
         )}
-        {bookmark.folder && (
+        {bookmark.folder && bookmark.folderId !== currentFolderId && (
           <div className="flex items-center gap-1 mt-1.5">
             <FolderInput className="h-3 w-3 text-muted-foreground" />
-            <span className="text-[11px] text-muted-foreground">{bookmark.folder.name}</span>
+            <span className="text-xs text-muted-foreground">{bookmark.folder.name}</span>
           </div>
         )}
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
         <Button
           variant="ghost"
           size="icon-sm"
