@@ -29,7 +29,7 @@ const PDFJS_CDN = `https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.624`;
 const PDFJS_CDN_WORKER = `${PDFJS_CDN}/build/pdf.worker.min.mjs`;
 
 const PAGE_GAP = 8;
-const PADDING_X_SM = 8;   // horizontal padding on small screens (<640px)
+const PADDING_X_SM = 16;  // horizontal padding on small screens (<640px)
 const PADDING_X_LG = 32;  // horizontal padding on larger screens
 const PADDING_Y = 16;
 
@@ -193,10 +193,13 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
       if (!page) return;
       const viewport = page.getViewport({ scale });
 
-      canvas.width = Math.floor(viewport.width * dpr);
-      canvas.height = Math.floor(viewport.height * dpr);
-      canvas.style.width = `${Math.floor(viewport.width)}px`;
-      canvas.style.height = `${Math.floor(viewport.height)}px`;
+      // Use scaledWidth/scaledHeight for canvas CSS dimensions to match the container div exactly.
+      // The container div uses Math.floor(defaultPageSize.width * scale), so use the same values
+      // to prevent sub-pixel overflow/clipping.
+      canvas.style.width = `${scaledWidth}px`;
+      canvas.style.height = `${scaledHeight}px`;
+      canvas.width = scaledWidth * dpr;
+      canvas.height = scaledHeight * dpr;
 
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
@@ -210,7 +213,7 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
       // Process remaining pages that were skipped due to concurrency limit
       requestAnimationFrame(() => updateVisibleRef.current());
     }
-  }, [scale, scaleKey, dpr, MAX_CONCURRENT_RENDERS, getCachedPage]);
+  }, [scale, scaleKey, dpr, scaledWidth, scaledHeight, MAX_CONCURRENT_RENDERS, getCachedPage]);
 
   // Compute visible range and render buffered pages (scroll mode only)
   const updateVisiblePages = useCallback(() => {
@@ -662,7 +665,7 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
                     return (
                       <div
                         key={pageNum}
-                        className="absolute left-1/2 -translate-x-1/2 flex-shrink-0"
+                        className="absolute left-1/2 -translate-x-1/2 flex-shrink-0 overflow-hidden"
                         style={{ width: scaledWidth, height: scaledHeight, top }}
                       >
                         <canvas ref={canvasRef(pageNum)} className="block shadow-lg" />
@@ -675,7 +678,7 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
               {/* Single page mode */}
               {effectiveViewMode === 'single' && (
                 <div className="w-full h-full flex items-center justify-center">
-                  <div style={{ width: scaledWidth, height: scaledHeight }}>
+                  <div className="overflow-hidden" style={{ width: scaledWidth, height: scaledHeight }}>
                     <canvas
                       key={currentPage}
                       ref={canvasRef(currentPage)}
@@ -689,7 +692,7 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
               {effectiveViewMode === 'double' && (
                 <div className="w-full h-full flex items-center justify-center">
                   <div className="flex" style={{ gap: PAGE_GAP }}>
-                    <div style={{ width: scaledWidth, height: scaledHeight }}>
+                    <div className="overflow-hidden" style={{ width: scaledWidth, height: scaledHeight }}>
                       <canvas
                         key={spreadStart}
                         ref={canvasRef(spreadStart)}
@@ -697,7 +700,7 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
                       />
                     </div>
                     {spreadEnd > spreadStart && (
-                      <div style={{ width: scaledWidth, height: scaledHeight }}>
+                      <div className="overflow-hidden" style={{ width: scaledWidth, height: scaledHeight }}>
                         <canvas
                           key={spreadEnd}
                           ref={canvasRef(spreadEnd)}
