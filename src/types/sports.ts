@@ -13,8 +13,6 @@ export type { PrismaGameScore, PrismaTopPerformer };
 export type SportType = `${PrismaSportType}`;
 export type GameScoreStatus = `${PrismaGameScoreStatus}`;
 
-export type PlayoffRound = 'Wild Card' | 'Divisional' | 'Conference Championship' | 'Super Bowl';
-
 // API/Component interface (simpler than database model)
 export interface GameScore {
   id: string;
@@ -31,7 +29,6 @@ export interface GameScore {
   quarter?: string;
   timeRemaining?: string;
   startTime: Date;
-  playoffRound?: PlayoffRound;
   odds?: {
     spread?: string;
     overUnder?: string;

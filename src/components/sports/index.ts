@@ -1,5 +1,4 @@
 export { DateNavigator } from './DateNavigator';
-export { PlayoffBracket } from './PlayoffBracket';
 export { ScheduleView } from './ScheduleView';
 export { ScoreCard } from './ScoreCard';
 export { ScoreCardSkeleton } from './ScoreCardSkeleton';

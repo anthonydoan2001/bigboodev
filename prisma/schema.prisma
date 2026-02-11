@@ -309,7 +309,6 @@ model GameScore {
   quarter       String?
   timeRemaining String?         @map("time_remaining")
   startTime     DateTime        @map("start_time")
-  playoffRound  String?         @map("playoff_round")
   odds          Json?
   topScorer     Json?           @map("top_scorer")
   expiresAt     DateTime?       @map("expires_at")

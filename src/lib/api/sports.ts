@@ -1,6 +1,6 @@
 import { trackApiUsage } from '@/lib/api-usage';
 import { db } from '@/lib/db';
-import { GameScore, PlayoffRound, SportType, TeamStanding, TopPerformer } from '@/types/sports';
+import { GameScore, SportType, TeamStanding, TopPerformer } from '@/types/sports';
 
 const ESPN_BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports';
 
@@ -305,11 +305,6 @@ export async function fetchSchedule(sport: SportType, days: number = 7): Promise
   } catch (error) {
         throw error;
   }
-}
-
-export async function fetchUpcomingPlayoffGames(_sport: SportType): Promise<GameScore[]> {
-  // Playoff games feature is not currently available for NBA
-  return [];
 }
 
 type ESPNPlayerStat = {
@@ -743,7 +738,6 @@ export async function getCachedGameScores(sport: SportType, date: Date): Promise
       quarter: game.quarter || undefined,
       timeRemaining: game.timeRemaining || undefined,
       startTime: game.startTime,
-      playoffRound: (game.playoffRound as PlayoffRound) || undefined,
       odds: game.odds ? (game.odds as GameScore['odds']) : undefined,
       topScorer: game.topScorer ? (game.topScorer as GameScore['topScorer']) : undefined,
     }));
@@ -792,7 +786,6 @@ export async function cacheGameScores(sport: SportType, date: Date, games: GameS
           quarter: game.quarter,
           timeRemaining: game.timeRemaining,
           startTime: game.startTime,
-          playoffRound: game.playoffRound,
           odds: game.odds ? JSON.parse(JSON.stringify(game.odds)) : null,
           topScorer: game.topScorer ? JSON.parse(JSON.stringify(game.topScorer)) : null,
           expiresAt,
@@ -803,7 +796,6 @@ export async function cacheGameScores(sport: SportType, date: Date, games: GameS
           status: game.status,
           quarter: game.quarter,
           timeRemaining: game.timeRemaining,
-          playoffRound: game.playoffRound,
           odds: game.odds ? JSON.parse(JSON.stringify(game.odds)) : null,
           topScorer: game.topScorer ? JSON.parse(JSON.stringify(game.topScorer)) : null,
           expiresAt,
