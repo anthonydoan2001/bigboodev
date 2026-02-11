@@ -204,7 +204,7 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      await page.render({ canvasContext: ctx, viewport }).promise;
+      await page.render({ canvas, canvasContext: ctx, viewport }).promise;
     } catch {
       // Don't clear renderedAtScaleRef — prevents retry storm
     } finally {
