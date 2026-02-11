@@ -119,12 +119,24 @@ export function CryptoWidget() {
     );
   }
 
-  if (error || !data || data.quotes.length === 0) {
+  if (error) {
     return (
       <Card className="col-span-1 !py-0">
         <CardContent className="!px-3 !py-3">
           <p className="text-sm text-muted-foreground text-center py-4">
-            {error ? 'Failed to load crypto quotes' : 'No crypto data available'}
+            Failed to load crypto quotes
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!data || data.quotes.length === 0) {
+    return (
+      <Card className="col-span-1 !py-0">
+        <CardContent className="!px-3 !py-3">
+          <p className="text-sm text-muted-foreground text-center py-4">
+            No crypto data available
           </p>
         </CardContent>
       </Card>

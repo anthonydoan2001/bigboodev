@@ -41,7 +41,18 @@ export function ContinueReadingWidget() {
     );
   }
 
-  if (error || !book) {
+  if (error) {
+    return (
+      <Card className="w-full h-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0">
+        <CardContent className="!px-3 !py-2 md:!px-[var(--dash-px)] md:!py-[var(--dash-py)] flex items-center justify-center gap-2 md:gap-[var(--dash-gap-sm)]">
+          <BookOpen className="h-4 w-4 md:h-[var(--dash-icon-md)] md:w-[var(--dash-icon-md)] text-muted-foreground" />
+          <span className="text-xs md:text-[length:var(--dash-text-sm)] text-muted-foreground">Failed to load reading progress</span>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!book) {
     return (
       <Card className="w-full h-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0">
         <CardContent className="!px-3 !py-2 md:!px-[var(--dash-px)] md:!py-[var(--dash-py)] flex items-center justify-center gap-2 md:gap-[var(--dash-gap-sm)]">

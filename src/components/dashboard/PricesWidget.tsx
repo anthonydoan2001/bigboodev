@@ -289,13 +289,27 @@ export function PricesWidget() {
     );
   }
 
-  if (hasError || !hasData) {
+  if (hasError) {
     return (
       <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0">
         <CardContent className="p-0">
           <div className="py-8 px-4">
             <p className="text-xs text-muted-foreground text-center">
-              {hasError ? 'Failed to load market data' : 'No market data available'}
+              Failed to load market data
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!hasData) {
+    return (
+      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-sm py-0 gap-0">
+        <CardContent className="p-0">
+          <div className="py-8 px-4">
+            <p className="text-xs text-muted-foreground text-center">
+              No market data available
             </p>
           </div>
         </CardContent>

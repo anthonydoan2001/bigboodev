@@ -112,12 +112,24 @@ export function StocksWidget() {
     );
   }
 
-  if (error || !data || data.quotes.length === 0) {
+  if (error) {
     return (
       <Card className="col-span-1 !py-0">
         <CardContent className="!px-3 !py-3">
           <p className="text-sm text-muted-foreground text-center py-4">
-            {error ? 'Failed to load stock quotes' : 'No stock data available'}
+            Failed to load stock quotes
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!data || data.quotes.length === 0) {
+    return (
+      <Card className="col-span-1 !py-0">
+        <CardContent className="!px-3 !py-3">
+          <p className="text-sm text-muted-foreground text-center py-4">
+            No stock data available
           </p>
         </CardContent>
       </Card>

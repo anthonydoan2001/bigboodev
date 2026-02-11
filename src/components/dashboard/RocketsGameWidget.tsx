@@ -157,10 +157,18 @@ export function RocketsGameWidget() {
     );
   }
 
-  if (error || !data) {
+  if (error) {
     return (
       <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-none flex items-center justify-center py-0 gap-0">
         <p className="text-sm text-muted-foreground">Failed to load Rockets game</p>
+      </Card>
+    );
+  }
+
+  if (!data) {
+    return (
+      <Card className="w-full bg-background/40 backdrop-blur-md border-white/10 shadow-none flex items-center justify-center py-0 gap-0">
+        <p className="text-sm text-muted-foreground">No game data available</p>
       </Card>
     );
   }

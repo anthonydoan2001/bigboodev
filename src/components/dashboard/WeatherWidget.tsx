@@ -31,10 +31,18 @@ export function WeatherWidget() {
     );
   }
 
-  if (error || !weather) {
+  if (error) {
     return (
       <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm flex items-center justify-center py-0 gap-0">
         <p className="text-body-sm text-muted-foreground">Failed to load weather</p>
+      </Card>
+    );
+  }
+
+  if (!weather) {
+    return (
+      <Card className="w-full h-[180px] bg-background/40 backdrop-blur-md border-white/10 shadow-sm flex items-center justify-center py-0 gap-0">
+        <p className="text-body-sm text-muted-foreground">No weather data available</p>
       </Card>
     );
   }
