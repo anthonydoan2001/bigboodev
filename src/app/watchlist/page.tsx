@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useMemo, useEffect, useRef, Suspense, useCallback } from 'react';
+import { type ReactNode, useMemo, useEffect, useRef, Suspense, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,49 +13,56 @@ import { UniversalSearchResult } from '@/app/api/watchlist/search/universal/rout
 import { Clock, ListVideo, Loader2 } from 'lucide-react';
 import { useWatchlist } from '@/lib/hooks/useWatchlist';
 import { useWatchlistMutations } from '@/lib/hooks/useWatchlistMutations';
+import type { WatchlistItem } from '@prisma/client';
 import { useViewportGrid } from '@/lib/hooks/useViewportGrid';
 import { getAuthHeaders } from '@/lib/api-client';
 
-// Stable randomization class - maintains order across renders
 const RECENTLY_ADDED_DAYS = 30;
+const CAROUSEL_ITEM_LIMIT = 21;
 
-class StableRandomOrder {
-  private orderMap = new Map<string, number>();
-  private isInitialized = false;
+interface CarouselSection {
+  key: string;
+  title: string;
+  icon: ReactNode;
+  items: WatchlistItem[];
+  showCount?: boolean;
+  totalCount?: number;
+  showMoreLink?: string;
+}
 
-  getOrdered<T extends { id: string }>(items: T[], limit: number = 21): T[] {
-    // Initialize order map on first call with items
-    if (!this.isInitialized && items.length > 0) {
-      const indices = items.map((_, i) => i);
-      // Fisher-Yates shuffle
-      for (let i = indices.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [indices[i], indices[j]] = [indices[j], indices[i]];
-      }
-      items.forEach((item, i) => this.orderMap.set(item.id, indices[i]));
-      this.isInitialized = true;
+// Stable randomization - maintains order across renders
+
+function getStableShuffled<T extends { id: string }>(
+  items: T[],
+  orderMap: Map<string, number>,
+  limit: number = CAROUSEL_ITEM_LIMIT
+): T[] {
+  if (items.length === 0) return [];
+
+  // Initialize order map on first non-empty call
+  if (orderMap.size === 0) {
+    const indices = items.map((_, i) => i);
+    // Fisher-Yates shuffle
+    for (let i = indices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [indices[i], indices[j]] = [indices[j], indices[i]];
     }
-
-    if (!this.isInitialized) return items.slice(0, limit);
-
-    // Get max existing order for new items
-    const existingOrders = Array.from(this.orderMap.values()).filter(v => v < 10000);
-    const maxOrder = existingOrders.length > 0 ? Math.max(...existingOrders) : -1;
-
-    // Sort by stored order, assign new order to new items
-    return items
-      .map(item => {
-        let order = this.orderMap.get(item.id);
-        if (order === undefined) {
-          order = Math.random() * 1000 + maxOrder + 1000;
-          this.orderMap.set(item.id, order);
-        }
-        return { item, order };
-      })
-      .sort((a, b) => a.order - b.order)
-      .slice(0, limit)
-      .map(({ item }) => item);
+    items.forEach((item, i) => orderMap.set(item.id, indices[i]));
   }
+
+  const maxOrder = Math.max(0, ...Array.from(orderMap.values()));
+  return items
+    .map(item => {
+      let order = orderMap.get(item.id);
+      if (order === undefined) {
+        order = maxOrder + 1000 + Math.random() * 1000;
+        orderMap.set(item.id, order);
+      }
+      return { item, order };
+    })
+    .sort((a, b) => a.order - b.order)
+    .slice(0, limit)
+    .map(({ item }) => item);
 }
 
 function WatchlistContent() {
@@ -68,11 +75,11 @@ function WatchlistContent() {
   const { watchlistItems, watchedItems, watchingItems, allItems, isLoading: listLoading } = useWatchlist();
   const { addMutation, deleteMutation, markWatchedMutation, markWatchingMutation } = useWatchlistMutations();
 
-  // Stable randomized order instances - created once per page load
-  const watchlistOrderRef = useRef(new StableRandomOrder());
-  const animeOrderRef = useRef(new StableRandomOrder());
-  const moviesOrderRef = useRef(new StableRandomOrder());
-  const showsOrderRef = useRef(new StableRandomOrder());
+  // Stable randomized order maps - created once per page load
+  const watchlistOrderMap = useRef(new Map<string, number>());
+  const animeOrderMap = useRef(new Map<string, number>());
+  const moviesOrderMap = useRef(new Map<string, number>());
+  const showsOrderMap = useRef(new Map<string, number>());
 
   // Search query - static import instead of dynamic
   const { data: searchData, isLoading: searchLoading } = useQuery<{ results: UniversalSearchResult[] }>({
@@ -104,32 +111,87 @@ function WatchlistContent() {
     return watchlistItems
       .filter(item => new Date(item.createdAt) >= cutoffDate)
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 21);
+      .slice(0, CAROUSEL_ITEM_LIMIT);
   }, [watchlistItems]);
 
-  // Randomized lists using stable order instances
-  // Note: Accessing ref.current here is safe because StableRandomOrder instances are stable
+  // Randomized lists using stable order maps
+  // Note: Accessing ref.current here is safe because Map instances are stable
   /* eslint-disable react-hooks/refs */
   const randomizedWatchlist = useMemo(() =>
-    watchlistOrderRef.current.getOrdered(watchlistItems),
+    getStableShuffled(watchlistItems, watchlistOrderMap.current),
     [watchlistItems]
   );
 
   const animeList = useMemo(() =>
-    animeOrderRef.current.getOrdered(allAnime),
+    getStableShuffled(allAnime, animeOrderMap.current),
     [allAnime]
   );
 
   const moviesList = useMemo(() =>
-    moviesOrderRef.current.getOrdered(allMovies),
+    getStableShuffled(allMovies, moviesOrderMap.current),
     [allMovies]
   );
 
   const showsList = useMemo(() =>
-    showsOrderRef.current.getOrdered(allShows),
+    getStableShuffled(allShows, showsOrderMap.current),
     [allShows]
   );
   /* eslint-enable react-hooks/refs */
+
+  // Build carousel sections config
+  const carouselSections = useMemo<CarouselSection[]>(() => {
+    const sections: CarouselSection[] = [];
+
+    if (recentlyAddedItems.length > 0) {
+      sections.push({
+        key: 'recent',
+        title: 'Recently Added',
+        icon: <Clock className="h-4 w-4" />,
+        items: recentlyAddedItems,
+        showCount: false,
+      });
+    }
+    if (randomizedWatchlist.length > 0) {
+      sections.push({
+        key: 'watchlist',
+        title: 'Watchlist',
+        icon: <ListVideo className="h-4 w-4" />,
+        items: randomizedWatchlist,
+      });
+    }
+    if (animeList.length > 0) {
+      sections.push({
+        key: 'anime',
+        title: 'Anime',
+        icon: <ListVideo className="h-4 w-4" />,
+        items: animeList,
+        totalCount: allAnime.length,
+        showMoreLink: allAnime.length > CAROUSEL_ITEM_LIMIT ? '/watchlist/anime' : undefined,
+      });
+    }
+    if (moviesList.length > 0) {
+      sections.push({
+        key: 'movies',
+        title: 'Movies',
+        icon: <ListVideo className="h-4 w-4" />,
+        items: moviesList,
+        totalCount: allMovies.length,
+        showMoreLink: allMovies.length > CAROUSEL_ITEM_LIMIT ? '/watchlist/movie' : undefined,
+      });
+    }
+    if (showsList.length > 0) {
+      sections.push({
+        key: 'shows',
+        title: 'TV Shows',
+        icon: <ListVideo className="h-4 w-4" />,
+        items: showsList,
+        totalCount: allShows.length,
+        showMoreLink: allShows.length > CAROUSEL_ITEM_LIMIT ? '/watchlist/show' : undefined,
+      });
+    }
+
+    return sections;
+  }, [recentlyAddedItems, randomizedWatchlist, animeList, moviesList, showsList, allAnime, allMovies, allShows]);
 
   // Filter search results - memoized
   const searchResults = useMemo(() =>
@@ -374,14 +436,17 @@ function WatchlistContent() {
               </div>
             ) : watchlistItems.length > 0 ? (
               <>
-                {/* Recently Added Section */}
-                {recentlyAddedItems.length > 0 && (
+                {carouselSections.map((section) => (
                   <Carousel
-                    title="Recently Added"
-                    icon={<Clock className="h-4 w-4" />}
-                    showCount={false}
+                    key={section.key}
+                    title={section.title}
+                    icon={section.icon}
+                    count={section.items.length}
+                    totalCount={section.totalCount}
+                    showMoreLink={section.showMoreLink}
+                    showCount={section.showCount}
                   >
-                    {recentlyAddedItems.map((item) => (
+                    {section.items.map((item) => (
                       <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 160px)' }}>
                         <WatchlistCard
                           item={item}
@@ -392,89 +457,7 @@ function WatchlistContent() {
                       </div>
                     ))}
                   </Carousel>
-                )}
-
-                {/* Main Watchlist Section */}
-                {randomizedWatchlist.length > 0 && (
-                  <Carousel title="Watchlist" icon={<ListVideo className="h-4 w-4" />}>
-                    {randomizedWatchlist.map((item) => (
-                      <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 160px)' }}>
-                        <WatchlistCard
-                          item={item}
-                          onDelete={() => deleteMutation.mutate(item.id)}
-                          onMarkWatched={() => markWatchedMutation.mutate({ id: item.id })}
-                          onMarkWatching={() => markWatchingMutation.mutate({ id: item.id })}
-                        />
-                      </div>
-                    ))}
-                  </Carousel>
-                )}
-
-                {/* Anime Section */}
-                {animeList.length > 0 && (
-                  <Carousel
-                    title="Anime"
-                    count={animeList.length}
-                    totalCount={allAnime.length}
-                    icon={<ListVideo className="h-4 w-4" />}
-                    showMoreLink={allAnime.length > 21 ? '/watchlist/anime' : undefined}
-                  >
-                    {animeList.map((item) => (
-                      <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 160px)' }}>
-                        <WatchlistCard
-                          item={item}
-                          onDelete={() => deleteMutation.mutate(item.id)}
-                          onMarkWatched={() => markWatchedMutation.mutate({ id: item.id })}
-                          onMarkWatching={() => markWatchingMutation.mutate({ id: item.id })}
-                        />
-                      </div>
-                    ))}
-                  </Carousel>
-                )}
-
-                {/* Movies Section */}
-                {moviesList.length > 0 && (
-                  <Carousel
-                    title="Movies"
-                    count={moviesList.length}
-                    totalCount={allMovies.length}
-                    icon={<ListVideo className="h-4 w-4" />}
-                    showMoreLink={allMovies.length > 21 ? '/watchlist/movie' : undefined}
-                  >
-                    {moviesList.map((item) => (
-                      <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 160px)' }}>
-                        <WatchlistCard
-                          item={item}
-                          onDelete={() => deleteMutation.mutate(item.id)}
-                          onMarkWatched={() => markWatchedMutation.mutate({ id: item.id })}
-                          onMarkWatching={() => markWatchingMutation.mutate({ id: item.id })}
-                        />
-                      </div>
-                    ))}
-                  </Carousel>
-                )}
-
-                {/* TV Shows Section */}
-                {showsList.length > 0 && (
-                  <Carousel
-                    title="TV Shows"
-                    count={showsList.length}
-                    totalCount={allShows.length}
-                    icon={<ListVideo className="h-4 w-4" />}
-                    showMoreLink={allShows.length > 21 ? '/watchlist/show' : undefined}
-                  >
-                    {showsList.map((item) => (
-                      <div key={item.id} className="flex-shrink-0 snap-start" style={{ width: 'var(--item-width, 160px)' }}>
-                        <WatchlistCard
-                          item={item}
-                          onDelete={() => deleteMutation.mutate(item.id)}
-                          onMarkWatched={() => markWatchedMutation.mutate({ id: item.id })}
-                          onMarkWatching={() => markWatchingMutation.mutate({ id: item.id })}
-                        />
-                      </div>
-                    ))}
-                  </Carousel>
-                )}
+                ))}
               </>
             ) : (
               <Card>
