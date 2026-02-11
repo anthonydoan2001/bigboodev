@@ -11,7 +11,7 @@ export const GET = async (request: Request) => {
     const cronSecret = process.env.CRON_SECRET;
     const allHeaders = Object.fromEntries(request.headers.entries());
     
-    const auth = requireAuthOrCron(request);
+    const auth = await requireAuthOrCron(request);
     
     return NextResponse.json({
       success: true,

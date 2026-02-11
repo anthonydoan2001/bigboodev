@@ -1,16 +1,7 @@
 import { GmailResponse } from '@/types/gmail';
-import { getSession } from '@/lib/auth';
 
 export async function fetchGmailEmails(): Promise<GmailResponse> {
-  const sessionToken = getSession();
-
-  const headers: HeadersInit = {};
-  if (sessionToken) {
-    headers['x-session-token'] = sessionToken;
-  }
-
   const response = await fetch('/api/gmail', {
-    headers,
     credentials: 'include',
   });
 
@@ -35,16 +26,8 @@ export function connectGmail(): void {
 }
 
 export async function disconnectGmail(): Promise<void> {
-  const sessionToken = getSession();
-
-  const headers: HeadersInit = {};
-  if (sessionToken) {
-    headers['x-session-token'] = sessionToken;
-  }
-
   const response = await fetch('/api/gmail/disconnect', {
     method: 'DELETE',
-    headers,
     credentials: 'include',
   });
 

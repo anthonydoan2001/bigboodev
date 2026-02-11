@@ -1,39 +1,27 @@
 'use client';
 
-import { useState, useCallback, useEffect, Suspense, useRef } from 'react';
+import { useState, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FolderTree } from '@/components/notes/FolderTree';
 import { NotesList } from '@/components/notes/NotesList';
 import { NoteEditor } from '@/components/notes/NoteEditor';
 import { TrashView } from '@/components/notes/TrashView';
 import { TaskLinkModal } from '@/components/notes/TaskLinkModal';
+import { FolderSectionDialogs } from '@/components/notes/FolderSectionDialogs';
 import { useNotes, useFolders, useNote, useNoteSections } from '@/lib/hooks/useNotes';
 import { useTasks } from '@/lib/hooks/useTasks';
-import {
-  useNotesMutations,
-  useFoldersMutations,
-  useAttachmentsMutations,
-  useTaskNoteMutations,
-  useNoteSectionsMutations,
-} from '@/lib/hooks/useNotesMutations';
-import { useQueryClient } from '@tanstack/react-query';
+import { useNoteAutoSave } from '@/lib/hooks/useNoteAutoSave';
+import { useFolderSectionDialogs } from '@/lib/hooks/useFolderSectionDialogs';
+import { useNoteCrud } from '@/lib/hooks/useNoteCrud';
+import { useNoteAttachmentsAndTasks } from '@/lib/hooks/useNoteAttachmentsAndTasks';
 import { Plus, Search, PanelLeftClose, PanelLeft, Menu, Loader2 } from 'lucide-react';
 
 function NotesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const queryClient = useQueryClient();
 
   // URL state
   const noteIdParam = searchParams.get('note');
@@ -48,38 +36,13 @@ function NotesContent() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Dialogs
-  const [showTaskLinkModal, setShowTaskLinkModal] = useState(false);
-  const [folderDialog, setFolderDialog] = useState<{
-    open: boolean;
-    parentId?: string;
-    editId?: string;
-    name: string;
-  }>({ open: false, name: '' });
-  const [sectionDialog, setSectionDialog] = useState<{
-    open: boolean;
-    editId?: string;
-    name: string;
-  }>({ open: false, name: '' });
-
-  // Editing state for note
-  const [editTitle, setEditTitle] = useState('');
-  const [, setEditContent] = useState('');
-  const [editFolderId, setEditFolderId] = useState<string | null>(null);
-  const [editIsPinned, setEditIsPinned] = useState(false);
-
-  // Debounce refs for auto-save
-  const titleDebounceRef = useRef<NodeJS.Timeout | null>(null);
-  const contentDebounceRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Data hooks - use includeCounts to get total/trashed counts in one request
+  // Data hooks
   const { notes, counts, isLoading: notesLoading } = useNotes({
     folderId: selectedFolderId,
     isDeleted: showTrash,
     search: searchQuery || undefined,
   }, { includeCounts: true });
 
-  // Get trashed notes list only when viewing trash (don't fetch unless needed)
   const { notes: trashedNotes } = useNotes(
     { isDeleted: true },
     { includeCounts: false, enabled: showTrash }
@@ -90,29 +53,7 @@ function NotesContent() {
   const { sections } = useNoteSections();
   const { tasks } = useTasks();
 
-  // Mutations
-  const { createNote, updateNote, deleteNote, restoreNote, permanentDeleteNote } = useNotesMutations();
-  const { createFolder, updateFolder, deleteFolder, reorderFolders } = useFoldersMutations();
-  const { createSection, updateSection, deleteSection } = useNoteSectionsMutations();
-  const { uploadAttachment, deleteAttachment } = useAttachmentsMutations();
-  const { linkTask, unlinkTask } = useTaskNoteMutations();
-
-  // Sync note data to edit state when note changes
-  const prevNoteIdRef = useRef<string | null>(null);
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    // Only update when the note itself changes, not on every render
-    if (selectedNote && selectedNote.id !== prevNoteIdRef.current) {
-      prevNoteIdRef.current = selectedNote.id;
-      setEditTitle(selectedNote.title);
-      setEditContent(selectedNote.content);
-      setEditFolderId(selectedNote.folderId);
-      setEditIsPinned(selectedNote.isPinned);
-    }
-  }, [selectedNote]);
-  /* eslint-enable react-hooks/set-state-in-effect */
-
-  // Update URL when selection changes
+  // URL update
   const updateUrl = useCallback(
     (noteId: string | null, folderId: string | null, trash: boolean) => {
       const params = new URLSearchParams();
@@ -124,7 +65,71 @@ function NotesContent() {
     [router]
   );
 
-  // Handlers
+  // Custom hooks
+  const {
+    editTitle,
+    editFolderId,
+    editIsPinned,
+    handleTitleChange,
+    handleContentChange,
+    handlePinToggle,
+    handleFolderChange,
+  } = useNoteAutoSave({ selectedNoteId, selectedNote });
+
+  const {
+    folderDialog,
+    setFolderDialog,
+    sectionDialog,
+    setSectionDialog,
+    handleCreateFolder,
+    handleRenameFolder,
+    handleFolderDialogSubmit,
+    handleDeleteFolder,
+    handlePinFolder,
+    handleReorderFolders,
+    handleCreateSection,
+    handleRenameSection,
+    handleSectionDialogSubmit,
+    handleDeleteSection,
+    isCreatingFolder,
+    isUpdatingFolder,
+    isCreatingSection,
+    isUpdatingSection,
+  } = useFolderSectionDialogs({ selectedFolderId, setSelectedFolderId });
+
+  const {
+    handleCreateNote,
+    handleDeleteNote,
+    handleRestoreNote,
+    handlePermanentDelete,
+    handleEmptyTrash,
+    handlePinNoteFromList,
+    handleMoveNoteToFolder,
+    handleDuplicateNote,
+    isRestoring,
+    isDeleting,
+  } = useNoteCrud({
+    selectedNoteId,
+    setSelectedNoteId,
+    selectedFolderId,
+    showTrash,
+    updateUrl,
+    notes,
+    trashedNotes,
+  });
+
+  const {
+    showTaskLinkModal,
+    setShowTaskLinkModal,
+    handleUploadAttachment,
+    handleDeleteAttachment,
+    handleLinkTask,
+    handleUnlinkTask,
+    linkedTaskIds,
+    isUploading,
+  } = useNoteAttachmentsAndTasks({ selectedNoteId, selectedNote, refetchNote });
+
+  // Navigation handlers
   const handleSelectNote = useCallback((noteId: string) => {
     setSelectedNoteId(noteId);
     updateUrl(noteId, selectedFolderId, showTrash);
@@ -144,257 +149,6 @@ function NotesContent() {
     setSelectedNoteId(null);
     updateUrl(null, null, newTrash);
   }, [showTrash, updateUrl]);
-
-  const handleCreateNote = useCallback(async () => {
-    const result = await createNote.mutateAsync({
-      title: 'Untitled Note',
-      content: '',
-      folderId: selectedFolderId,
-    });
-    if (result.item) {
-      setSelectedNoteId(result.item.id);
-      updateUrl(result.item.id, selectedFolderId, showTrash);
-    }
-  }, [createNote, selectedFolderId, showTrash, updateUrl]);
-
-  const handleTitleChange = useCallback((title: string) => {
-    setEditTitle(title);
-
-    // Optimistically update the cache immediately so switching notes preserves changes
-    if (selectedNoteId) {
-      queryClient.setQueryData(['note', selectedNoteId], (oldData: { item?: { title?: string } } | undefined) => {
-        if (!oldData?.item) return oldData;
-        return { ...oldData, item: { ...oldData.item, title } };
-      });
-      // Also update in notes list
-      queryClient.setQueriesData({ queryKey: ['notes'] }, (oldData: { items?: Array<{ id: string; title?: string }> } | undefined) => {
-        if (!oldData?.items) return oldData;
-        return {
-          ...oldData,
-          items: oldData.items.map((note) =>
-            note.id === selectedNoteId ? { ...note, title } : note
-          ),
-        };
-      });
-    }
-
-    // Debounce title saves to avoid hammering the API
-    if (titleDebounceRef.current) {
-      clearTimeout(titleDebounceRef.current);
-    }
-    if (selectedNoteId) {
-      titleDebounceRef.current = setTimeout(() => {
-        updateNote.mutate({ id: selectedNoteId, input: { title } });
-      }, 1000); // 1 second debounce
-    }
-  }, [selectedNoteId, updateNote, queryClient]);
-
-  const handleContentChange = useCallback((content: string) => {
-    setEditContent(content);
-
-    // Optimistically update the cache immediately so switching notes preserves changes
-    if (selectedNoteId) {
-      queryClient.setQueryData(['note', selectedNoteId], (oldData: { item?: { content?: string } } | undefined) => {
-        if (!oldData?.item) return oldData;
-        return { ...oldData, item: { ...oldData.item, content } };
-      });
-    }
-
-    // Debounce content saves (NoteEditor already debounces, but this is a backup)
-    if (contentDebounceRef.current) {
-      clearTimeout(contentDebounceRef.current);
-    }
-    if (selectedNoteId) {
-      contentDebounceRef.current = setTimeout(() => {
-        updateNote.mutate({ id: selectedNoteId, input: { content } });
-      }, 1500); // 1.5 second debounce
-    }
-  }, [selectedNoteId, updateNote, queryClient]);
-
-  const handlePinToggle = useCallback(() => {
-    const newPinned = !editIsPinned;
-    setEditIsPinned(newPinned);
-    if (selectedNoteId) {
-      updateNote.mutate({ id: selectedNoteId, input: { isPinned: newPinned } });
-    }
-  }, [selectedNoteId, editIsPinned, updateNote]);
-
-  const handleFolderChange = useCallback((folderId: string | null) => {
-    setEditFolderId(folderId);
-    if (selectedNoteId) {
-      updateNote.mutate({ id: selectedNoteId, input: { folderId } });
-    }
-  }, [selectedNoteId, updateNote]);
-
-  const handleDeleteNote = useCallback((noteId: string) => {
-    deleteNote.mutate(noteId, {
-      onSuccess: () => {
-        if (selectedNoteId === noteId) {
-          setSelectedNoteId(null);
-        }
-      },
-    });
-  }, [deleteNote, selectedNoteId]);
-
-  const handleRestoreNote = useCallback((noteId: string) => {
-    restoreNote.mutate(noteId);
-  }, [restoreNote]);
-
-  const handlePermanentDelete = useCallback((noteId: string) => {
-    permanentDeleteNote.mutate(noteId, {
-      onSuccess: () => {
-        if (selectedNoteId === noteId) {
-          setSelectedNoteId(null);
-        }
-      },
-    });
-  }, [permanentDeleteNote, selectedNoteId]);
-
-  const handleEmptyTrash = useCallback(() => {
-    trashedNotes.forEach((note) => {
-      permanentDeleteNote.mutate(note.id);
-    });
-  }, [trashedNotes, permanentDeleteNote]);
-
-  // Context menu handlers for notes list
-  const handlePinNoteFromList = useCallback((noteId: string, isPinned: boolean) => {
-    updateNote.mutate({ id: noteId, input: { isPinned } });
-  }, [updateNote]);
-
-  const handleMoveNoteToFolder = useCallback((noteId: string, folderId: string | null) => {
-    updateNote.mutate({ id: noteId, input: { folderId } });
-  }, [updateNote]);
-
-  const handleDuplicateNote = useCallback(async (noteId: string) => {
-    // Find the note to duplicate
-    const noteToDuplicate = notes.find(n => n.id === noteId);
-    if (!noteToDuplicate) return;
-
-    // Create a new note with the same content
-    const result = await createNote.mutateAsync({
-      title: `${noteToDuplicate.title || 'Untitled'} (copy)`,
-      content: '', // Content will be empty initially - we'll need to fetch full note for content
-      folderId: noteToDuplicate.folderId,
-      isPinned: false,
-    });
-
-    if (result.item) {
-      setSelectedNoteId(result.item.id);
-      updateUrl(result.item.id, selectedFolderId, showTrash);
-    }
-  }, [notes, createNote, selectedFolderId, showTrash, updateUrl]);
-
-  // Folder handlers
-  const handleCreateFolder = useCallback((parentId?: string) => {
-    setFolderDialog({ open: true, parentId, name: '' });
-  }, []);
-
-  const handleRenameFolder = useCallback((folderId: string, currentName: string) => {
-    setFolderDialog({ open: true, editId: folderId, name: currentName });
-  }, []);
-
-  const handleFolderDialogSubmit = useCallback(() => {
-    if (!folderDialog.name.trim()) return;
-
-    if (folderDialog.editId) {
-      updateFolder.mutate(
-        { id: folderDialog.editId, input: { name: folderDialog.name } },
-        { onSuccess: () => setFolderDialog({ open: false, name: '' }) }
-      );
-    } else {
-      createFolder.mutate(
-        { name: folderDialog.name, parentId: folderDialog.parentId },
-        { onSuccess: () => setFolderDialog({ open: false, name: '' }) }
-      );
-    }
-  }, [folderDialog, createFolder, updateFolder]);
-
-  const handleDeleteFolder = useCallback((folderId: string) => {
-    if (confirm('Delete this folder? Notes will be moved to the parent folder.')) {
-      deleteFolder.mutate(folderId, {
-        onSuccess: () => {
-          if (selectedFolderId === folderId) {
-            setSelectedFolderId(null);
-          }
-        },
-      });
-    }
-  }, [deleteFolder, selectedFolderId]);
-
-  const handlePinFolder = useCallback((folderId: string, isPinned: boolean) => {
-    updateFolder.mutate({ id: folderId, input: { isPinned } });
-  }, [updateFolder]);
-
-  // Section handlers
-  const handleCreateSection = useCallback(() => {
-    setSectionDialog({ open: true, name: '' });
-  }, []);
-
-  const handleRenameSection = useCallback((sectionId: string, currentName: string) => {
-    setSectionDialog({ open: true, editId: sectionId, name: currentName });
-  }, []);
-
-  const handleSectionDialogSubmit = useCallback(() => {
-    if (!sectionDialog.name.trim()) return;
-
-    if (sectionDialog.editId) {
-      updateSection.mutate(
-        { id: sectionDialog.editId, input: { name: sectionDialog.name } },
-        { onSuccess: () => setSectionDialog({ open: false, name: '' }) }
-      );
-    } else {
-      createSection.mutate(
-        { name: sectionDialog.name },
-        { onSuccess: () => setSectionDialog({ open: false, name: '' }) }
-      );
-    }
-  }, [sectionDialog, createSection, updateSection]);
-
-  const handleDeleteSection = useCallback((sectionId: string) => {
-    if (confirm('Delete this section? Folders will become unsectioned.')) {
-      deleteSection.mutate(sectionId);
-    }
-  }, [deleteSection]);
-
-  const handleReorderFolders = useCallback((folderIds: string[], sectionId: string | null) => {
-    reorderFolders.mutate({ folderIds, sectionId });
-  }, [reorderFolders]);
-
-  // Attachment handlers
-  const handleUploadAttachment = useCallback((file: File) => {
-    if (selectedNoteId) {
-      uploadAttachment.mutate({ noteId: selectedNoteId, file }, {
-        onSuccess: () => refetchNote(),
-      });
-    }
-  }, [selectedNoteId, uploadAttachment, refetchNote]);
-
-  const handleDeleteAttachment = useCallback((attachmentId: string) => {
-    if (selectedNoteId) {
-      deleteAttachment.mutate({ noteId: selectedNoteId, attachmentId }, {
-        onSuccess: () => refetchNote(),
-      });
-    }
-  }, [selectedNoteId, deleteAttachment, refetchNote]);
-
-  // Task link handlers
-  const handleLinkTask = useCallback((taskId: string) => {
-    if (selectedNoteId) {
-      linkTask.mutate({ noteId: selectedNoteId, taskId }, {
-        onSuccess: () => refetchNote(),
-      });
-    }
-  }, [selectedNoteId, linkTask, refetchNote]);
-
-  const handleUnlinkTask = useCallback((taskId: string) => {
-    if (selectedNoteId) {
-      unlinkTask.mutate({ noteId: selectedNoteId, taskId }, {
-        onSuccess: () => refetchNote(),
-      });
-    }
-  }, [selectedNoteId, unlinkTask, refetchNote]);
-
-  const linkedTaskIds = selectedNote?.taskNotes.map((tn) => tn.task.id) || [];
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
@@ -492,8 +246,8 @@ function NotesContent() {
               onRestore={handleRestoreNote}
               onPermanentDelete={handlePermanentDelete}
               onEmptyTrash={handleEmptyTrash}
-              isRestoring={restoreNote.isPending}
-              isDeleting={permanentDeleteNote.isPending}
+              isRestoring={isRestoring}
+              isDeleting={isDeleting}
             />
           ) : selectedNoteId && noteLoading ? (
             <div className="flex-1 flex items-center justify-center">
@@ -516,7 +270,7 @@ function NotesContent() {
               linkedTasks={selectedNote.taskNotes.map((tn) => tn.task)}
               onLinkTask={() => setShowTaskLinkModal(true)}
               onUnlinkTask={handleUnlinkTask}
-              isUploading={uploadAttachment.isPending}
+              isUploading={isUploading}
             />
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
@@ -539,85 +293,19 @@ function NotesContent() {
         </div>
       </div>
 
-      {/* Folder Dialog */}
-      <Dialog
-        open={folderDialog.open}
-        onOpenChange={(open) => !open && setFolderDialog({ open: false, name: '' })}
-      >
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>
-              {folderDialog.editId ? 'Rename Folder' : 'New Folder'}
-            </DialogTitle>
-            <DialogDescription>
-              {folderDialog.editId
-                ? 'Enter a new name for the folder'
-                : 'Enter a name for the new folder'}
-            </DialogDescription>
-          </DialogHeader>
-          <Input
-            value={folderDialog.name}
-            onChange={(e) => setFolderDialog({ ...folderDialog, name: e.target.value })}
-            placeholder="Folder name..."
-            onKeyDown={(e) => e.key === 'Enter' && handleFolderDialogSubmit()}
-            autoFocus
-          />
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setFolderDialog({ open: false, name: '' })}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleFolderDialogSubmit}
-              disabled={!folderDialog.name.trim() || createFolder.isPending || updateFolder.isPending}
-            >
-              {folderDialog.editId ? 'Rename' : 'Create'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Section Dialog */}
-      <Dialog
-        open={sectionDialog.open}
-        onOpenChange={(open) => !open && setSectionDialog({ open: false, name: '' })}
-      >
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>
-              {sectionDialog.editId ? 'Rename Section' : 'New Section'}
-            </DialogTitle>
-            <DialogDescription>
-              {sectionDialog.editId
-                ? 'Enter a new name for the section'
-                : 'Sections group your folders (e.g. "IT", "Personal")'}
-            </DialogDescription>
-          </DialogHeader>
-          <Input
-            value={sectionDialog.name}
-            onChange={(e) => setSectionDialog({ ...sectionDialog, name: e.target.value })}
-            placeholder="Section name..."
-            onKeyDown={(e) => e.key === 'Enter' && handleSectionDialogSubmit()}
-            autoFocus
-          />
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setSectionDialog({ open: false, name: '' })}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSectionDialogSubmit}
-              disabled={!sectionDialog.name.trim() || createSection.isPending || updateSection.isPending}
-            >
-              {sectionDialog.editId ? 'Rename' : 'Create'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Dialogs */}
+      <FolderSectionDialogs
+        folderDialog={folderDialog}
+        setFolderDialog={setFolderDialog}
+        onFolderDialogSubmit={handleFolderDialogSubmit}
+        isCreatingFolder={isCreatingFolder}
+        isUpdatingFolder={isUpdatingFolder}
+        sectionDialog={sectionDialog}
+        setSectionDialog={setSectionDialog}
+        onSectionDialogSubmit={handleSectionDialogSubmit}
+        isCreatingSection={isCreatingSection}
+        isUpdatingSection={isUpdatingSection}
+      />
 
       {/* Task Link Modal */}
       <TaskLinkModal

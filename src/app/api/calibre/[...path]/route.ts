@@ -182,7 +182,7 @@ export async function GET(request: NextRequest) {
   // Binary paths (covers, downloads) skip session auth
   if (!isBinaryPath(path)) {
     try {
-      requireAuth(request);
+      await requireAuth(request);
     } catch {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

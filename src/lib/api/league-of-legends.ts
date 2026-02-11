@@ -1,21 +1,10 @@
 import { LeagueStatsResponse, AramChallengeResponse } from '@/types/league-of-legends';
-import { getSession } from '@/lib/auth';
-
-function getAuthHeaders(): HeadersInit {
-  const sessionToken = getSession();
-  const headers: HeadersInit = {};
-  if (sessionToken) {
-    headers['x-session-token'] = sessionToken;
-  }
-  return headers;
-}
 
 /**
  * Fetches League of Legends stats from the API route
  */
 export async function fetchLeagueStats(): Promise<LeagueStatsResponse> {
   const response = await fetch('/api/lol', {
-    headers: getAuthHeaders(),
     credentials: 'include',
   });
 
@@ -32,7 +21,6 @@ export async function fetchLeagueStats(): Promise<LeagueStatsResponse> {
  */
 export async function fetchAramChallenge(): Promise<AramChallengeResponse> {
   const response = await fetch('/api/lol/aram', {
-    headers: getAuthHeaders(),
     credentials: 'include',
   });
 

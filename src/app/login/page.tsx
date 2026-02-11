@@ -37,11 +37,7 @@ function LoginForm() {
         return;
       }
 
-      // Store session token in localStorage
-      if (data.token && typeof window !== 'undefined') {
-        localStorage.setItem('dashboard_session_token', data.token);
-      }
-
+      // Cookie is set by the server's Set-Cookie header automatically
       // Redirect to the originally requested page or home
       router.push(redirectTo);
       router.refresh();

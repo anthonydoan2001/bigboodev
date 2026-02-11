@@ -5,37 +5,52 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Shield, LogOut } from 'lucide-react';
-import { getSession, clearSession } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 
 export function SessionInfo() {
   const [sessionActive, setSessionActive] = useState(false);
   const [sessionCreated, setSessionCreated] = useState<string | null>(null);
+  const [sessionExpires, setSessionExpires] = useState<string | null>(null);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    const token = getSession();
-    if (token && token.startsWith('session_')) {
-      setSessionActive(true);
-      // Parse timestamp from token format: session_{timestamp}_{random}
-      const parts = token.split('_');
-      if (parts.length >= 2) {
-        const timestamp = parseInt(parts[1], 10);
-        if (!isNaN(timestamp)) {
-          setSessionCreated(new Date(timestamp).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          }));
+    fetch('/api/auth/session', { credentials: 'include' })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.active) {
+          setSessionActive(true);
+          setSessionCreated(
+            new Date(data.createdAt).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+          );
+          setSessionExpires(
+            new Date(data.expiresAt).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })
+          );
         }
-      }
-    }
+      })
+      .catch(() => {});
   }, []);
 
-  const handleSignOut = () => {
-    clearSession();
+  const handleSignOut = async () => {
+    setIsSigningOut(true);
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch {
+      // Continue to redirect even if the request fails
+    }
     router.push('/login');
   };
 
@@ -69,11 +84,16 @@ export function SessionInfo() {
                 Signed in on {sessionCreated}
               </p>
             )}
+            {sessionExpires && (
+              <p className="text-xs text-muted-foreground pl-4">
+                Expires {sessionExpires}
+              </p>
+            )}
           </div>
           {sessionActive && (
-            <Button variant="outline" size="sm" onClick={handleSignOut}>
+            <Button variant="outline" size="sm" onClick={handleSignOut} disabled={isSigningOut}>
               <LogOut className="h-4 w-4 mr-1.5" />
-              Sign out
+              {isSigningOut ? 'Signing out...' : 'Sign out'}
             </Button>
           )}
         </div>

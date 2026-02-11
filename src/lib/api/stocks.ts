@@ -111,21 +111,11 @@ export async function fetchStockQuote(symbol: string): Promise<FinnhubQuoteRespo
   }
 }
 
-import { getSession } from '@/lib/auth';
-
 /**
  * Fetches stock quotes from the database (via API route)
  */
 export async function fetchStockQuotes(): Promise<StockQuotesResponse> {
-  const sessionToken = getSession();
-  
-  const headers: HeadersInit = {};
-  if (sessionToken) {
-    headers['x-session-token'] = sessionToken;
-  }
-  
   const response = await fetch('/api/stocks', {
-    headers,
     credentials: 'include',
   });
   if (!response.ok) {

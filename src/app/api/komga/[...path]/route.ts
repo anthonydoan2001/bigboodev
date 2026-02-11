@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
   // Image requests don't require session auth (still use Komga's stored credentials)
   if (!isImagePath(path)) {
     try {
-      requireAuth(request);
+      await requireAuth(request);
     } catch {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

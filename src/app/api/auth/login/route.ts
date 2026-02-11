@@ -1,15 +1,12 @@
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
+import { createSession, cleanupExpiredSessions } from '@/lib/session';
 
-/**
- * Generate a session token on the server
- */
-function generateSessionToken(): string {
-  return `session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-}
+const SESSION_MAX_AGE = 30 * 24 * 60 * 60; // 30 days in seconds
 
 /**
  * POST /api/auth/login
- * Authenticates user with password and returns session token
+ * Authenticates user with password, creates DB-backed session, sets HttpOnly cookie
  */
 export async function POST(request: Request) {
   try {
@@ -26,39 +23,61 @@ export async function POST(request: Request) {
     const expectedPassword = process.env.DASHBOARD_PASSWORD;
 
     if (!expectedPassword) {
-      console.error('DASHBOARD_PASSWORD environment variable is not set');
       return NextResponse.json(
         { error: 'Server configuration error' },
         { status: 500 }
       );
     }
 
-    if (password !== expectedPassword) {
+    // Timing-safe password comparison using SHA-256 to avoid length oracle
+    const passwordHash = crypto.createHash('sha256').update(password).digest();
+    const expectedHash = crypto
+      .createHash('sha256')
+      .update(expectedPassword)
+      .digest();
+
+    if (!crypto.timingSafeEqual(passwordHash, expectedHash)) {
       return NextResponse.json(
         { error: 'Invalid password' },
         { status: 401 }
       );
     }
 
-    // Generate session token
-    const sessionToken = generateSessionToken();
+    // Extract request metadata
+    const ipAddress =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+      request.headers.get('x-real-ip') ??
+      undefined;
+    const userAgent = request.headers.get('user-agent') ?? undefined;
 
-    // Return session token
-    // Client will store it in localStorage
+    // Create DB-backed session
+    const { token, expiresAt } = await createSession({ ipAddress, userAgent });
+
+    // Fire-and-forget cleanup of expired sessions
+    cleanupExpiredSessions().catch(() => {});
+
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieFlags = [
+      `dashboard_session_token=${token}`,
+      'Path=/',
+      'HttpOnly',
+      'SameSite=Lax',
+      `Max-Age=${SESSION_MAX_AGE}`,
+      ...(isProduction ? ['Secure'] : []),
+    ].join('; ');
+
     return NextResponse.json(
-      { 
-        success: true,
-        token: sessionToken 
-      },
+      { success: true, expiresAt: expiresAt.toISOString() },
       {
         status: 200,
-        headers: {
-          'Set-Cookie': `dashboard_session_token=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000`, // 1 year
-        },
+        headers: { 'Set-Cookie': cookieFlags },
       }
     );
   } catch (error) {
-    console.error('Login error:', error);
+    console.error(
+      'Login error:',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

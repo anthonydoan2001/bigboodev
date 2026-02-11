@@ -1,7 +1,6 @@
 import { MetalpriceApiResponse, CommodityQuotesResponse } from '@/types/commodities';
 import { trackApiUsage } from '@/lib/api-usage';
 import { db } from '@/lib/db';
-import { getSession } from '@/lib/auth';
 
 const METALPRICEAPI_KEY = process.env.METALPRICEAPI_KEY || '';
 const METALPRICEAPI_BASE_URL = 'https://api.metalpriceapi.com/v1';
@@ -198,15 +197,7 @@ export function extractUsdPrice(rates: Record<string, number>, symbol: string): 
  * Client-side: fetch commodity quotes from the database via API route.
  */
 export async function fetchCommodityQuotesFromDB(): Promise<CommodityQuotesResponse> {
-  const sessionToken = getSession();
-
-  const headers: HeadersInit = {};
-  if (sessionToken) {
-    headers['x-session-token'] = sessionToken;
-  }
-
   const response = await fetch('/api/commodities', {
-    headers,
     credentials: 'include',
   });
   if (!response.ok) {

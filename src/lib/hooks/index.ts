@@ -9,6 +9,12 @@ export { useTasksMutations } from './useTasksMutations';
 export { useWatchlist } from './useWatchlist';
 export { useWatchlistMutations } from './useWatchlistMutations';
 
+// Notes page hooks
+export { useNoteAutoSave } from './useNoteAutoSave';
+export { useFolderSectionDialogs } from './useFolderSectionDialogs';
+export { useNoteCrud } from './useNoteCrud';
+export { useNoteAttachmentsAndTasks } from './useNoteAttachmentsAndTasks';
+
 // Utility hooks
 export { useDebouncedCallback } from './useDebouncedCallback';
 export { useGridCardWidth } from './useGridCardWidth';
