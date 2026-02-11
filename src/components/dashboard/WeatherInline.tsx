@@ -10,8 +10,7 @@ export function WeatherInline() {
   const { data: weather, isLoading, error } = useQuery({
     queryKey: ['weather'],
     queryFn: fetchWeather,
-    staleTime: 0,
-    refetchOnMount: true,
+    staleTime: 15 * 60 * 1000, // 15 minutes — weather doesn't change fast
     refetchOnWindowFocus: false,
   });
 

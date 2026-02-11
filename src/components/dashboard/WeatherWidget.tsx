@@ -9,8 +9,7 @@ export function WeatherWidget() {
   const { data: weather, isLoading, error } = useQuery({
     queryKey: ['weather'],
     queryFn: fetchWeather,
-    staleTime: 0, // Always consider stale to refetch on mount
-    refetchOnMount: true, // Refetch when component mounts (visiting home page)
+    staleTime: 15 * 60 * 1000, // 15 minutes — weather doesn't change fast
     refetchOnWindowFocus: false,
   });
 
