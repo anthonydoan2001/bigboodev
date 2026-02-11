@@ -85,11 +85,40 @@ export function ReaderControls({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onPrevious, onNext, resetHideTimer]);
 
+  // Touch swipe navigation
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - touchStartRef.current.x;
+    const dy = touch.clientY - touchStartRef.current.y;
+    const dt = Date.now() - touchStartRef.current.time;
+    touchStartRef.current = null;
+
+    // Require horizontal swipe: min 50px, more horizontal than vertical, under 500ms
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5 && dt < 500) {
+      if (dx > 0) {
+        onPrevious();
+      } else {
+        onNext();
+      }
+      resetHideTimer();
+    }
+  }, [onPrevious, onNext, resetHideTimer]);
+
   return (
     <div
       className="fixed inset-0 bg-black flex flex-col"
       onMouseMove={resetHideTimer}
       onClick={resetHideTimer}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
       {/* Top bar */}
       <div
@@ -122,23 +151,23 @@ export function ReaderControls({
               )}
             </div>
 
-            <div className="flex items-center gap-1 sm:gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-white hover:bg-white/20 h-8 w-8"
+                className="text-white hover:bg-white/20 h-8 w-8 hidden sm:inline-flex"
                 onClick={onPrevious}
                 disabled={!hasPrevious}
               >
                 <ChevronLeft className="h-5 w-5" />
               </Button>
-              <span className="text-white text-xs sm:text-sm font-medium min-w-[60px] text-center">
+              <span className="text-white text-[10px] sm:text-sm font-medium min-w-[40px] sm:min-w-[60px] text-center">
                 {currentLocation}
               </span>
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-white hover:bg-white/20 h-8 w-8"
+                className="text-white hover:bg-white/20 h-8 w-8 hidden sm:inline-flex"
                 onClick={onNext}
                 disabled={!hasNext}
               >

@@ -29,6 +29,8 @@ const PDFJS_CDN = `https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.624`;
 const PDFJS_CDN_WORKER = `${PDFJS_CDN}/build/pdf.worker.min.mjs`;
 
 const PAGE_GAP = 8;
+const PADDING_X_SM = 8;   // horizontal padding on small screens (<640px)
+const PADDING_X_LG = 32;  // horizontal padding on larger screens
 const PADDING_Y = 16;
 
 interface PdfReaderProps {
@@ -75,19 +77,6 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
     toggleSettings, toggleToc, toggleBookmarks,
   } = usePdfReaderStore();
 
-  const isPageMode = viewMode === 'single' || viewMode === 'double';
-
-  // Double-page spread helpers
-  const spreadStart = useMemo(() => {
-    if (viewMode !== 'double') return currentPage;
-    return Math.floor((currentPage - 1) / 2) * 2 + 1;
-  }, [viewMode, currentPage]);
-
-  const spreadEnd = useMemo(() => {
-    if (viewMode !== 'double') return currentPage;
-    return Math.min(spreadStart + 1, totalPages);
-  }, [viewMode, spreadStart, totalPages]);
-
   // Progress & bookmarks
   const bookIdStr = String(bookId);
   const { progress: savedProgress } = useReadingProgress(bookIdStr, 'pdf');
@@ -114,11 +103,33 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
     { flushOnUnmount: true }
   );
 
+  // Auto-downgrade double to single on narrow screens
+  const effectiveViewMode = useMemo(() => {
+    if (viewMode === 'double' && containerWidth > 0 && containerWidth < 600) {
+      return 'single';
+    }
+    return viewMode;
+  }, [viewMode, containerWidth]);
+
+  const effectiveIsPageMode = effectiveViewMode === 'single' || effectiveViewMode === 'double';
+
+  // Double-page spread helpers
+  const spreadStart = useMemo(() => {
+    if (effectiveViewMode !== 'double') return currentPage;
+    return Math.floor((currentPage - 1) / 2) * 2 + 1;
+  }, [effectiveViewMode, currentPage]);
+
+  const spreadEnd = useMemo(() => {
+    if (effectiveViewMode !== 'double') return currentPage;
+    return Math.min(spreadStart + 1, totalPages);
+  }, [effectiveViewMode, spreadStart, totalPages]);
+
   // Computed scale — accounts for double-page needing 2 pages side by side
   const scale = useMemo(() => {
     if (!defaultPageSize || containerWidth === 0) return 1;
-    const availWidth = containerWidth - 32;
-    const pageWidthDivisor = viewMode === 'double'
+    const paddingX = containerWidth < 640 ? PADDING_X_SM : PADDING_X_LG;
+    const availWidth = containerWidth - paddingX;
+    const pageWidthDivisor = effectiveViewMode === 'double'
       ? defaultPageSize.width * 2 + PAGE_GAP
       : defaultPageSize.width;
 
@@ -126,10 +137,11 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
       case 'fit-width':
         return availWidth / pageWidthDivisor;
       case 'fit-page': {
-        const containerH = scrollContainerRef.current?.clientHeight || 800;
+        const containerH = scrollContainerRef.current?.clientHeight || window.innerHeight;
+        const paddingV = containerWidth < 640 ? 16 : 32;
         return Math.min(
           availWidth / pageWidthDivisor,
-          (containerH - 32) / defaultPageSize.height
+          (containerH - paddingV) / defaultPageSize.height
         );
       }
       case 'custom':
@@ -137,7 +149,7 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
       default:
         return availWidth / pageWidthDivisor;
     }
-  }, [zoomMode, customZoom, containerWidth, defaultPageSize, viewMode]);
+  }, [zoomMode, customZoom, containerWidth, defaultPageSize, effectiveViewMode]);
 
   const scaledWidth = defaultPageSize ? Math.floor(defaultPageSize.width * scale) : 0;
   const scaledHeight = defaultPageSize ? Math.floor(defaultPageSize.height * scale) : 0;
@@ -202,7 +214,7 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
 
   // Compute visible range and render buffered pages (scroll mode only)
   const updateVisiblePages = useCallback(() => {
-    if (isPageMode) return;
+    if (effectiveIsPageMode) return;
 
     const container = scrollContainerRef.current;
     if (!container || totalPages === 0 || scaledHeight === 0 || containerWidth === 0) return;
@@ -240,7 +252,7 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
     for (let i = start; i <= end; i++) {
       renderPage(i);
     }
-  }, [totalPages, scaledHeight, containerWidth, renderPage, isPageMode]);
+  }, [totalPages, scaledHeight, containerWidth, renderPage, effectiveIsPageMode]);
 
   // Keep ref in sync for use inside renderPage's finally block
   updateVisibleRef.current = updateVisiblePages;
@@ -257,37 +269,37 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
   const goToPage = useCallback(
     (page: number) => {
       if (page < 1 || page > totalPages) return;
-      if (isPageMode) {
+      if (effectiveIsPageMode) {
         setCurrentPage(page);
       } else {
         scrollToPage(page);
       }
     },
-    [totalPages, scrollToPage, isPageMode]
+    [totalPages, scrollToPage, effectiveIsPageMode]
   );
 
   // Navigation
   const handlePrevious = useCallback(() => {
-    if (viewMode === 'double') {
+    if (effectiveViewMode === 'double') {
       const newStart = Math.max(1, spreadStart - 2);
       setCurrentPage(newStart);
-    } else if (viewMode === 'single') {
+    } else if (effectiveViewMode === 'single') {
       setCurrentPage(p => Math.max(1, p - 1));
     } else {
       scrollToPage(Math.max(1, currentPage - 1));
     }
-  }, [viewMode, currentPage, scrollToPage, spreadStart]);
+  }, [effectiveViewMode, currentPage, scrollToPage, spreadStart]);
 
   const handleNext = useCallback(() => {
-    if (viewMode === 'double') {
+    if (effectiveViewMode === 'double') {
       const newStart = Math.min(totalPages, spreadStart + 2);
       setCurrentPage(newStart);
-    } else if (viewMode === 'single') {
+    } else if (effectiveViewMode === 'single') {
       setCurrentPage(p => Math.min(totalPages, p + 1));
     } else {
       scrollToPage(Math.min(totalPages, currentPage + 1));
     }
-  }, [viewMode, currentPage, totalPages, scrollToPage, spreadStart]);
+  }, [effectiveViewMode, currentPage, totalPages, scrollToPage, spreadStart]);
 
   const handleProgressChange = useCallback(
     (value: number) => {
@@ -418,7 +430,7 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
 
   // Scroll listener for visible page tracking + lazy rendering (scroll mode only)
   useEffect(() => {
-    if (isPageMode) return;
+    if (effectiveIsPageMode) return;
 
     const container = scrollContainerRef.current;
     if (!container || isLoading) return;
@@ -436,13 +448,13 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
       container.removeEventListener('scroll', handleScroll);
       cancelAnimationFrame(raf);
     };
-  }, [updateVisiblePages, isLoading, isPageMode]);
+  }, [updateVisiblePages, isLoading, effectiveIsPageMode]);
 
   // Page-mode render effect — render current page(s) when currentPage or scale changes
   useEffect(() => {
-    if (!isPageMode || isLoading || totalPages === 0 || scaledHeight === 0) return;
+    if (!effectiveIsPageMode || isLoading || totalPages === 0 || scaledHeight === 0) return;
 
-    const pagesToRender = viewMode === 'double'
+    const pagesToRender = effectiveViewMode === 'double'
       ? [spreadStart, ...(spreadEnd > spreadStart ? [spreadEnd] : [])]
       : [currentPage];
 
@@ -467,28 +479,28 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
         renderPage(p);
       }
     });
-  }, [isPageMode, isLoading, viewMode, currentPage, spreadStart, spreadEnd, totalPages, scaledHeight, renderPage]);
+  }, [effectiveIsPageMode, isLoading, effectiveViewMode, currentPage, spreadStart, spreadEnd, totalPages, scaledHeight, renderPage]);
 
   // Handle view mode transitions — clear render cache, restore scroll position
   useEffect(() => {
-    if (prevViewModeRef.current && prevViewModeRef.current !== viewMode) {
+    if (prevViewModeRef.current && prevViewModeRef.current !== effectiveViewMode) {
       // Canvases remount on mode switch, so clear render tracking
       renderedAtScaleRef.current.clear();
 
       // When switching to scroll mode, scroll to the current page
-      if (viewMode === 'scroll') {
+      if (effectiveViewMode === 'scroll') {
         requestAnimationFrame(() => {
           scrollToPage(currentPage, 'instant');
         });
       }
     }
-    prevViewModeRef.current = viewMode;
+    prevViewModeRef.current = effectiveViewMode;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewMode]);
+  }, [effectiveViewMode]);
 
   // Maintain scroll position when scale changes (scroll mode only)
   useEffect(() => {
-    if (isPageMode) {
+    if (effectiveIsPageMode) {
       prevScaleRef.current = scale;
       return;
     }
@@ -499,7 +511,7 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
     }
     prevScaleRef.current = scale;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scale, isPageMode]);
+  }, [scale, effectiveIsPageMode]);
 
   // Restore saved position
   useEffect(() => {
@@ -514,7 +526,7 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
       if (savedProgress?.position) {
         const savedPage = parseInt(savedProgress.position, 10);
         if (!isNaN(savedPage) && savedPage > 1 && savedPage <= totalPages) {
-          if (isPageMode) {
+          if (effectiveIsPageMode) {
             setCurrentPage(savedPage);
           } else {
             requestAnimationFrame(() => {
@@ -524,7 +536,7 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
         }
       }
     }
-  }, [isLoading, containerWidth, totalPages, scaledHeight, savedProgress, scrollToPage, isPageMode]);
+  }, [isLoading, containerWidth, totalPages, scaledHeight, savedProgress, scrollToPage, effectiveIsPageMode]);
 
   // Save progress on page change
   useEffect(() => {
@@ -535,15 +547,15 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
 
   // Location display
   const currentLocation = useMemo(() => {
-    if (viewMode === 'double' && spreadEnd > spreadStart) {
+    if (effectiveViewMode === 'double' && spreadEnd > spreadStart) {
       return `${spreadStart}-${spreadEnd} / ${totalPages}`;
     }
     return `${currentPage} / ${totalPages}`;
-  }, [viewMode, currentPage, spreadStart, spreadEnd, totalPages]);
+  }, [effectiveViewMode, currentPage, spreadStart, spreadEnd, totalPages]);
 
   // hasPrevious / hasNext
-  const hasPrevious = viewMode === 'double' ? spreadStart > 1 : currentPage > 1;
-  const hasNext = viewMode === 'double' ? spreadEnd < totalPages : currentPage < totalPages;
+  const hasPrevious = effectiveViewMode === 'double' ? spreadStart > 1 : currentPage > 1;
+  const hasNext = effectiveViewMode === 'double' ? spreadEnd < totalPages : currentPage < totalPages;
 
   if (error) {
     return (
@@ -633,13 +645,13 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
       >
         <div
           ref={scrollContainerRef}
-          className={`w-full h-full ${isPageMode ? 'overflow-hidden' : 'overflow-y-auto'}`}
+          className={`w-full h-full ${effectiveIsPageMode ? 'overflow-hidden' : 'overflow-y-auto'}`}
           style={{ backgroundColor: '#000' }}
         >
           {defaultPageSize && containerWidth > 0 && (
             <>
               {/* Scroll mode: virtualized vertical layout */}
-              {viewMode === 'scroll' && (
+              {effectiveViewMode === 'scroll' && (
                 <div
                   className="relative"
                   style={{ height: totalContentHeight }}
@@ -661,7 +673,7 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
               )}
 
               {/* Single page mode */}
-              {viewMode === 'single' && (
+              {effectiveViewMode === 'single' && (
                 <div className="w-full h-full flex items-center justify-center">
                   <div style={{ width: scaledWidth, height: scaledHeight }}>
                     <canvas
@@ -674,7 +686,7 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
               )}
 
               {/* Double page mode */}
-              {viewMode === 'double' && (
+              {effectiveViewMode === 'double' && (
                 <div className="w-full h-full flex items-center justify-center">
                   <div className="flex" style={{ gap: PAGE_GAP }}>
                     <div style={{ width: scaledWidth, height: scaledHeight }}>
