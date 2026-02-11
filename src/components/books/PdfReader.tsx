@@ -204,10 +204,6 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // Fill white to prevent dark background bleed-through on transparent areas
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
       await page.render({ canvasContext: ctx, viewport }).promise;
     } catch {
       // Don't clear renderedAtScaleRef — prevents retry storm
