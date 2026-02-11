@@ -28,6 +28,8 @@ export function BookCard({ book }: BookCardProps) {
           <img
             src={coverUrl}
             alt={book.title}
+            loading="lazy"
+            decoding="async"
             className="absolute inset-0 w-full h-full object-cover transition-opacity group-hover:opacity-90"
             onError={() => setImageError(true)}
           />

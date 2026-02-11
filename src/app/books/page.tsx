@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import { useCalibreSettings, useCalibreBooks, useRecentlyRead } from '@/lib/hooks/useBooks';
+import { useCalibreBooks, useRecentlyRead } from '@/lib/hooks/useBooks';
 import { BookGrid } from '@/components/books/BookGrid';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,8 @@ function RecentBookCard({ book, progress, format }: { book: CalibreBook; progres
           <img
             src={coverUrl}
             alt={book.title}
+            loading="lazy"
+            decoding="async"
             className="absolute inset-0 w-full h-full object-cover transition-opacity group-hover:opacity-90"
             onError={() => setImageError(true)}
           />
@@ -52,17 +54,11 @@ function RecentBookCard({ book, progress, format }: { book: CalibreBook; progres
 }
 
 function BooksLibraryContent() {
-  const { configured, isLoading: settingsLoading } = useCalibreSettings();
+  const { configured, books, isLoading: booksLoading } = useCalibreBooks('new');
 
-  const { books, isLoading: booksLoading } = useCalibreBooks('new', {
-    enabled: configured,
-  });
+  const { recentProgress } = useRecentlyRead();
 
-  const { recentProgress } = useRecentlyRead({
-    enabled: configured,
-  });
-
-  if (settingsLoading) {
+  if (booksLoading) {
     return (
       <div className="container mx-auto py-8 px-4">
         <div className="flex items-center justify-center min-h-[400px]">

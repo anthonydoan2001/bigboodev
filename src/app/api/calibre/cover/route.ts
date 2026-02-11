@@ -1,8 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { CalibreWebClient } from '@/lib/calibre-web';
+import { getCachedClient, getCoverPaths, setCoverPathWorked } from '@/lib/calibre-web';
 
-const DEFAULT_USER_ID = 'default';
+// ============ In-memory cover cache ============
+
+const coverCache = new Map<string, { data: Buffer; contentType: string; cachedAt: number }>();
+const COVER_CACHE_TTL = 24 * 60 * 60 * 1000; // 24h
+const MAX_COVER_CACHE = 200;
+
+function evictStaleCovers() {
+  if (coverCache.size <= MAX_COVER_CACHE) return;
+  // Evict oldest entries
+  let oldest: { key: string; time: number } | null = null;
+  for (const [key, entry] of coverCache) {
+    if (!oldest || entry.cachedAt < oldest.time) {
+      oldest = { key, time: entry.cachedAt };
+    }
+  }
+  if (oldest) coverCache.delete(oldest.key);
+}
 
 /**
  * Dedicated cover image proxy.
@@ -15,29 +30,32 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'id parameter required' }, { status: 400 });
   }
 
-  console.log(`[calibre] Cover route hit for book ${bookId}`);
+  // Check in-memory cache first
+  const cached = coverCache.get(bookId);
+  if (cached && Date.now() - cached.cachedAt < COVER_CACHE_TTL) {
+    return new NextResponse(new Uint8Array(cached.data), {
+      headers: {
+        'Content-Type': cached.contentType,
+        'Content-Length': String(cached.data.length),
+        'Cache-Control': 'public, max-age=86400',
+      },
+    });
+  }
 
-  const settings = await db.calibreWebSettings.findUnique({
-    where: { userId: DEFAULT_USER_ID },
-  });
-
-  if (!settings) {
+  const client = await getCachedClient();
+  if (!client) {
     return NextResponse.json({ error: 'Not configured' }, { status: 400 });
   }
 
-  const client = new CalibreWebClient(
-    settings.serverUrl,
-    settings.username,
-    settings.password
-  );
-
   try {
-    const { data, contentType } = await client.tryFetchBinary([
-      `/opds/cover/${bookId}`,
-      `/cover/${bookId}`,
-    ]);
+    const paths = getCoverPaths(bookId);
+    const { data, contentType, resolvedPath } = await client.tryFetchBinary(paths);
 
-    console.log(`[calibre] Cover ${bookId}: ${contentType}, ${data.length} bytes`);
+    setCoverPathWorked(resolvedPath);
+
+    // Store in cache
+    coverCache.set(bookId, { data, contentType, cachedAt: Date.now() });
+    evictStaleCovers();
 
     return new NextResponse(new Uint8Array(data), {
       headers: {
@@ -46,8 +64,7 @@ export async function GET(request: NextRequest) {
         'Cache-Control': 'public, max-age=86400',
       },
     });
-  } catch (err) {
-    console.error(`[calibre] Cover ${bookId} FAILED:`, err);
+  } catch {
     return NextResponse.json({ error: 'Cover not found' }, { status: 404 });
   }
 }

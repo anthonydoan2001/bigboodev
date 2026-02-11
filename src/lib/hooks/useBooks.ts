@@ -97,6 +97,7 @@ export function useCalibreBooks(feed: string = 'new', options?: { enabled?: bool
   });
 
   return {
+    configured: data?.configured ?? false,
     books: data?.books ?? [],
     total: data?.total ?? 0,
     isLoading,

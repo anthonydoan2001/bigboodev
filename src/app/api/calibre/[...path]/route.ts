@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
 import { withAuth, requireAuth } from '@/lib/api-auth';
-import { CalibreWebClient } from '@/lib/calibre-web';
-
-const DEFAULT_USER_ID = 'default';
+import { getCachedClient, getCoverPaths, setCoverPathWorked } from '@/lib/calibre-web';
 
 // Paths that don't require session auth (images accessed directly by browser)
 function isBinaryPath(path: string[]): boolean {
@@ -15,59 +12,48 @@ function isBinaryPath(path: string[]): boolean {
   return false;
 }
 
-async function getCalibreCredentials() {
-  const settings = await db.calibreWebSettings.findUnique({
-    where: { userId: DEFAULT_USER_ID },
-  });
-
-  if (!settings) return null;
-
-  return {
-    serverUrl: settings.serverUrl,
-    username: settings.username,
-    password: settings.password,
-  };
-}
-
 async function handleRequest(request: NextRequest, path: string[]) {
-  const credentials = await getCalibreCredentials();
-  if (!credentials) {
+  const route = path[0];
+
+  // For the books list route, return configured:false instead of a 400 error
+  if (route === 'books' && path.length === 1) {
+    const client = await getCachedClient();
+    if (!client) {
+      return NextResponse.json({ configured: false, books: [], total: 0 });
+    }
+    const url = new URL(request.url);
+    const feed = url.searchParams.get('feed') || 'new';
+    try {
+      const books = await client.getBooks(`/opds/${feed}`);
+      return NextResponse.json({ configured: true, books, total: books.length });
+    } catch (error) {
+      console.error('Calibre-Web proxy error:', error);
+      return NextResponse.json(
+        { error: 'Failed to connect to Calibre-Web server' },
+        { status: 502 }
+      );
+    }
+  }
+
+  const client = await getCachedClient();
+  if (!client) {
     return NextResponse.json(
       { error: 'Calibre-Web not configured. Please add your credentials in Settings.' },
       { status: 400 }
     );
   }
 
-  const client = new CalibreWebClient(
-    credentials.serverUrl,
-    credentials.username,
-    credentials.password
-  );
-
-  const route = path[0];
-
   try {
     switch (route) {
       case 'books': {
-        if (path.length === 1) {
-          // GET /api/calibre/books?feed=new|hot|letter|...
-          const url = new URL(request.url);
-          const feed = url.searchParams.get('feed') || 'new';
-          const books = await client.getBooks(`/opds/${feed}`);
-          return NextResponse.json({ books, total: books.length });
-        }
-
         const bookId = parseInt(path[1], 10);
 
         if (path[2] === 'cover') {
           // GET /api/calibre/books/{id}/cover — proxy cover image
-          console.log(`[calibre] Cover request for book ${bookId}`);
           try {
-            const { data, contentType } = await client.tryFetchBinary([
-              `/opds/cover/${bookId}`,
-              `/cover/${bookId}`,
-            ]);
-            console.log(`[calibre] Cover ${bookId}: ${contentType}, ${data.length} bytes`);
+            const paths = getCoverPaths(bookId);
+            const { data, contentType, resolvedPath } = await client.tryFetchBinary(paths);
+            setCoverPathWorked(resolvedPath);
             return new NextResponse(new Uint8Array(data), {
               headers: {
                 'Content-Type': contentType,
@@ -76,7 +62,6 @@ async function handleRequest(request: NextRequest, path: string[]) {
               },
             });
           } catch (coverErr) {
-            console.error(`[calibre] Cover ${bookId} FAILED:`, coverErr);
             throw coverErr;
           }
         }

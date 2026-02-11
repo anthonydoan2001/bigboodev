@@ -9,7 +9,8 @@ interface BookGridProps {
 
 export function BookGrid({ books }: BookGridProps) {
   // Deduplicate by ID (OPDS feeds can produce collisions)
-  const unique = books.filter((b, i, arr) => arr.findIndex((x) => x.id === b.id) === i);
+  const seen = new Set<number>();
+  const unique = books.filter(b => seen.has(b.id) ? false : (seen.add(b.id), true));
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">

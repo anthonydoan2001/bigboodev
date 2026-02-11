@@ -13,6 +13,61 @@ import {
   OPDSEntry,
   OPDSLink,
 } from '@/types/calibre-web';
+import { db } from '@/lib/db';
+
+// ============ Credential Cache ============
+
+const DEFAULT_USER_ID = 'default';
+const CREDENTIALS_TTL = 60_000; // 60s
+
+let cachedCredentials: { serverUrl: string; username: string; password: string } | null = null;
+let credentialsCachedAt = 0;
+let cachedClient: CalibreWebClient | null = null;
+
+export async function getCachedCredentials() {
+  if (cachedCredentials && Date.now() - credentialsCachedAt < CREDENTIALS_TTL) {
+    return cachedCredentials;
+  }
+  const settings = await db.calibreWebSettings.findUnique({ where: { userId: DEFAULT_USER_ID } });
+  if (!settings) {
+    cachedCredentials = null;
+    cachedClient = null;
+    return null;
+  }
+  cachedCredentials = { serverUrl: settings.serverUrl, username: settings.username, password: settings.password };
+  credentialsCachedAt = Date.now();
+  cachedClient = null; // invalidate client when credentials refresh
+  return cachedCredentials;
+}
+
+export async function getCachedClient(): Promise<CalibreWebClient | null> {
+  const creds = await getCachedCredentials();
+  if (!creds) return null;
+  if (!cachedClient) {
+    cachedClient = new CalibreWebClient(creds.serverUrl, creds.username, creds.password);
+  }
+  return cachedClient;
+}
+
+// ============ Cover Path Cache ============
+
+let knownCoverPath: '/opds/cover/' | '/cover/' | null = null;
+
+export function getCoverPaths(bookId: string | number): string[] {
+  if (knownCoverPath) {
+    const other = knownCoverPath === '/opds/cover/' ? '/cover/' : '/opds/cover/';
+    return [`${knownCoverPath}${bookId}`, `${other}${bookId}`];
+  }
+  return [`/opds/cover/${bookId}`, `/cover/${bookId}`];
+}
+
+export function setCoverPathWorked(path: string) {
+  if (path.startsWith('/opds/cover/')) {
+    knownCoverPath = '/opds/cover/';
+  } else if (path.startsWith('/cover/')) {
+    knownCoverPath = '/cover/';
+  }
+}
 
 // ============ Auth Helper ============
 
@@ -311,11 +366,12 @@ export class CalibreWebClient {
    */
   async tryFetchBinary(
     paths: string[]
-  ): Promise<{ data: Buffer; contentType: string }> {
+  ): Promise<{ data: Buffer; contentType: string; resolvedPath: string }> {
     const errors: string[] = [];
     for (const path of paths) {
       try {
-        return await this.fetchBinary(path);
+        const result = await this.fetchBinary(path);
+        return { ...result, resolvedPath: path };
       } catch (err) {
         errors.push(`${path}: ${err instanceof Error ? err.message : String(err)}`);
       }

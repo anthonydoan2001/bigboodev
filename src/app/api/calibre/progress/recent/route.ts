@@ -6,7 +6,7 @@ export const GET = withAuth(async () => {
   try {
     const recentProgress = await db.bookReadingProgress.findMany({
       orderBy: { updatedAt: 'desc' },
-      take: 20,
+      take: 6,
     });
 
     return NextResponse.json({ progress: recentProgress });

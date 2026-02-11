@@ -36,6 +36,7 @@ export interface CalibreShelf {
 }
 
 export interface CalibreBooksResponse {
+  configured?: boolean;
   books: CalibreBook[];
   total: number;
 }
