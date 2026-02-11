@@ -565,11 +565,19 @@ html {
     image-rendering: -webkit-optimize-contrast;
   }
 
-  /* GPU acceleration for transforms */
-  [style*="transform"] {
+  /* GPU acceleration for transforms (excluded from .pdf-reader-root) */
+  [style*="transform"]:not(.pdf-reader-root [style*="transform"]) {
     transform: translateZ(0);
     backface-visibility: hidden;
     perspective: 1000px;
+  }
+
+  /* Disable theme transitions inside PDF reader to prevent canvas artifacts */
+  .pdf-reader-root,
+  .pdf-reader-root *,
+  .pdf-reader-root *::before,
+  .pdf-reader-root *::after {
+    transition: none !important;
   }
 
   /* Typography Scale - Consistent sizing across app */

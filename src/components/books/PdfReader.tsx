@@ -578,7 +578,7 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
   };
 
   return (
-    <>
+    <div className="pdf-reader-root">
       {isLoading && (
         <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
           <div className="text-center space-y-4">
@@ -789,6 +789,6 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
           </div>
         </>
       )}
-    </>
+    </div>
   );
 }
