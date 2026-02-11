@@ -4,8 +4,14 @@ import { GameScore, SportType, TeamStanding, TopPerformer } from '@/types/sports
 
 const ESPN_BASE_URL = 'https://site.api.espn.com/apis/site/v2/sports';
 
-// Sport league mappings for ESPN API
-// Currently only NBA is supported, but the enum includes other sports for future expansion
+// Sport league mappings for ESPN API.
+// Only NBA is wired up. To add a new sport (NFL, MLB, NHL, MLS):
+//  1. Add its entry here (e.g. NFL: { league: 'nfl', path: 'football/nfl' })
+//  2. Update TeamStanding.conference to handle the sport's divisions
+//  3. Add stat categories to TopPerformersView and fetchTopPerformers parsing
+//  4. Handle sport-specific ScoreCard display (periods, overtime, etc.)
+//  5. Add the sport to validSports in each API route validator
+//  6. Add the sport option to SportFilter
 const SPORT_LEAGUES: Partial<Record<SportType, { league: string; path: string }>> = {
   NBA: { league: 'nba', path: 'basketball/nba' },
 };
@@ -256,56 +262,6 @@ export async function fetchScores(sport: SportType, date?: Date): Promise<GameSc
   }
 }
 
-export async function fetchSchedule(sport: SportType, days: number = 7): Promise<GameScore[]> {
-  try {
-    const sportConfig = SPORT_LEAGUES[sport];
-    if (!sportConfig) {
-      // Sport not supported
-      return [];
-    }
-    const { path } = sportConfig;
-    const response = await fetch(`${ESPN_BASE_URL}/${path}/scoreboard`, {
-      next: { revalidate: 3600 }, // Cache for 1 hour
-    });
-
-    if (!response.ok) {
-      throw new Error(`ESPN API error: ${response.statusText}`);
-    }
-
-    const data: ESPNScoreboardResponse = await response.json();
-
-    // Filter for upcoming games within the specified days
-    const now = new Date();
-    const futureDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
-
-    return data.events
-      .filter((event) => {
-        const gameDate = new Date(event.competitions[0].date);
-        return gameDate >= now && gameDate <= futureDate && event.status.type.state === 'pre';
-      })
-      .map((event) => {
-        const competition = event.competitions[0];
-        const homeTeam = competition.competitors.find((c) => c.homeAway === 'home');
-        const awayTeam = competition.competitors.find((c) => c.homeAway === 'away');
-
-        return {
-          id: event.id,
-          sport,
-          homeTeam: homeTeam?.team.displayName || 'TBD',
-          awayTeam: awayTeam?.team.displayName || 'TBD',
-          homeTeamAbbr: homeTeam?.team.abbreviation,
-          awayTeamAbbr: awayTeam?.team.abbreviation,
-          homeScore: 0,
-          awayScore: 0,
-          status: 'scheduled' as const,
-          startTime: new Date(competition.date),
-        };
-      })
-      .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
-  } catch (error) {
-        throw error;
-  }
-}
 
 type ESPNPlayerStat = {
   athlete: {
@@ -964,7 +920,7 @@ export async function fetchStandings(sport: SportType): Promise<TeamStanding[]> 
     const url = `${standingsBaseUrl}/${path}/standings`;
 
     const response = await fetch(url, {
-      cache: 'no-store',
+      next: { revalidate: 300 }, // 5-minute ISR — standings change infrequently
       headers: {
         'Accept': 'application/json',
       },

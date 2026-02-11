@@ -1,8 +1,7 @@
 'use client';
 
 import { DateNavigator } from '@/components/sports/DateNavigator';
-import { ScoreCard } from '@/components/sports/ScoreCard';
-import { ScoreCardSkeleton } from '@/components/sports/ScoreCardSkeleton';
+import { GameGrid } from '@/components/sports/GameGrid';
 import { SportFilter } from '@/components/sports/SportFilter';
 import { TopPerformersView } from '@/components/sports/TopPerformersView';
 import { TopPerformersSkeleton } from '@/components/sports/TopPerformersSkeleton';
@@ -10,7 +9,7 @@ import { Standings } from '@/components/sports/Standings';
 import { StandingsSkeleton } from '@/components/sports/StandingsSkeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { autoFavoriteHoustonGames, getFavorites, isHoustonGame, toggleFavorite as toggleFavoriteInStorage } from '@/lib/favorites';
+import { autoFavoriteHoustonGames, getFavorites, toggleFavorite as toggleFavoriteInStorage } from '@/lib/favorites';
 import { GameScore, SportType, TeamStanding, TopPerformer } from '@/types/sports';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, useRef, Suspense, useMemo, useCallback } from 'react';
@@ -318,7 +317,7 @@ function SportsPageContent() {
       }
       return fetchStandings(selectedSport);
     },
-    staleTime: 0, // Always consider data stale so refetchInterval works properly
+    staleTime: 5 * 60 * 1000, // 5 minutes — invalidateQueries still bypasses this when games finish
     refetchOnWindowFocus: false,
     enabled: selectedSport === 'NBA' && isMounted, // Only for NBA and after mount
     refetchInterval: () => {
@@ -415,45 +414,15 @@ function SportsPageContent() {
         {isFavoritesView ? (
           // No tabs for favorites view, just show the games
           <div className="mt-6">
-            {currentLoading ? (
-              <div className="px-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {Array.from({ length: 8 }).map((_, i) => (
-                    <ScoreCardSkeleton key={i} />
-                  ))}
-                </div>
-              </div>
-            ) : currentError ? (
-              <Card>
-                <CardContent className="p-6">
-                  <div className="text-center text-body-sm text-destructive">
-                    Error loading favorites. Please try again.
-                  </div>
-                </CardContent>
-              </Card>
-            ) : !gamesToShow || gamesToShow.length === 0 ? (
-              <Card>
-                <CardContent className="p-6">
-                  <div className="text-center text-body-sm text-muted-foreground">
-                    No favorite games. Star games to add them here!
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="px-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {gamesToShow.map((game) => (
-                    <ScoreCard
-                      key={game.id}
-                      game={game}
-                      isFavorite={favorites.includes(game.id)}
-                      onToggleFavorite={handleToggleFavorite}
-                      isHoustonGame={isHoustonGame(game.homeTeam, game.awayTeam)}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
+            <GameGrid
+              games={gamesToShow}
+              isLoading={currentLoading}
+              error={currentError}
+              favorites={favorites}
+              onToggleFavorite={handleToggleFavorite}
+              emptyMessage="No favorite games. Star games to add them here!"
+              errorMessage="Error loading favorites. Please try again."
+            />
           </div>
         ) : (
           <Tabs value={selectedTab} onValueChange={handleTabChange} className="w-full">
@@ -470,45 +439,15 @@ function SportsPageContent() {
             </TabsList>
 
             <TabsContent value="games" className="mt-6">
-              {currentLoading ? (
-                  <div className="px-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {Array.from({ length: 8 }).map((_, i) => (
-                        <ScoreCardSkeleton key={i} />
-                      ))}
-                    </div>
-                  </div>
-                ) : currentError ? (
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="text-center text-body-sm text-destructive">
-                        Error loading scores. Please try again.
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : !gamesToShow || gamesToShow.length === 0 ? (
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="text-center text-body-sm text-muted-foreground">
-                        No games today for {selectedSport}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="px-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {gamesToShow.map((game) => (
-                        <ScoreCard
-                          key={game.id}
-                          game={game}
-                          isFavorite={favorites.includes(game.id)}
-                          onToggleFavorite={handleToggleFavorite}
-                          isHoustonGame={isHoustonGame(game.homeTeam, game.awayTeam)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
+              <GameGrid
+                games={gamesToShow}
+                isLoading={currentLoading}
+                error={currentError}
+                favorites={favorites}
+                onToggleFavorite={handleToggleFavorite}
+                emptyMessage={`No games today for ${selectedSport}`}
+                errorMessage="Error loading scores. Please try again."
+              />
             </TabsContent>
 
             <TabsContent value="performers" className="mt-6">

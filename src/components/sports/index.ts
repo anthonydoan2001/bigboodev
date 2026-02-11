@@ -1,5 +1,5 @@
 export { DateNavigator } from './DateNavigator';
-export { ScheduleView } from './ScheduleView';
+export { GameGrid } from './GameGrid';
 export { ScoreCard } from './ScoreCard';
 export { ScoreCardSkeleton } from './ScoreCardSkeleton';
 export { SportFilter } from './SportFilter';

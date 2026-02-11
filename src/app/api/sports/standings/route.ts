@@ -3,10 +3,6 @@ import { fetchStandings } from '@/lib/api/sports';
 import { SportType } from '@/types/sports';
 import { withAuth } from '@/lib/api-auth';
 
-// Force dynamic rendering - don't cache this route
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
 export const GET = withAuth(async (request: NextRequest) => {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -36,10 +32,7 @@ export const GET = withAuth(async (request: NextRequest) => {
       timestamp: new Date().toISOString(),
     });
 
-    // Add cache control headers to prevent browser/CDN caching
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    response.headers.set('Pragma', 'no-cache');
-    response.headers.set('Expires', '0');
+    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=60');
 
     return response;
   } catch (error) {
