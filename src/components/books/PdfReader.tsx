@@ -191,21 +191,24 @@ export function PdfReader({ bookId, title }: PdfReaderProps) {
     try {
       const page = await getCachedPage(pageNum);
       if (!page) return;
-      const viewport = page.getViewport({ scale });
 
-      // Use scaledWidth/scaledHeight for canvas CSS dimensions to match the container div exactly.
-      // The container div uses Math.floor(defaultPageSize.width * scale), so use the same values
-      // to prevent sub-pixel overflow/clipping.
+      // Bake DPR into the viewport scale so pdfjs renders at full device resolution
+      // without needing a separate context transform (avoids compositing artifacts).
+      const viewport = page.getViewport({ scale: scale * dpr });
+
       canvas.style.width = `${scaledWidth}px`;
       canvas.style.height = `${scaledHeight}px`;
-      canvas.width = scaledWidth * dpr;
-      canvas.height = scaledHeight * dpr;
+      canvas.width = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
 
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      await page.render({ canvas, viewport }).promise;
+      // Fill white to prevent dark background bleed-through on transparent areas
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      await page.render({ canvasContext: ctx, viewport }).promise;
     } catch {
       // Don't clear renderedAtScaleRef — prevents retry storm
     } finally {

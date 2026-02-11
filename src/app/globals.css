@@ -572,12 +572,19 @@ html {
     perspective: 1000px;
   }
 
-  /* Disable theme transitions inside PDF reader to prevent canvas artifacts */
+  /* Isolate PDF reader from theme effects that cause canvas rendering artifacts */
+  .pdf-reader-root {
+    color-scheme: normal !important;
+    isolation: isolate;
+  }
   .pdf-reader-root,
   .pdf-reader-root *,
   .pdf-reader-root *::before,
   .pdf-reader-root *::after {
     transition: none !important;
+  }
+  .pdf-reader-root canvas {
+    background: #ffffff;
   }
 
   /* Typography Scale - Consistent sizing across app */
