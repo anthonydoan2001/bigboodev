@@ -1,0 +1,64 @@
+@layer utilities {
+  /* PDF.js text layer for text selection */
+  .pdf-text-layer {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    opacity: 0.25;
+    line-height: 1;
+  }
+  .pdf-text-layer span {
+    color: transparent;
+    position: absolute;
+    white-space: pre;
+    cursor: text;
+  }
+  .pdf-text-layer ::selection {
+    background: rgba(0, 0, 255, 0.3);
+  }
+
+  /* Select dropdown styling for dark mode */
+  select option {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+
+  /* Comprehensive reduced motion handling for accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-shimmer,
+    .animate-reveal-up,
+    .animate-success-check,
+    .animate-error-shake,
+    .animate-page-enter,
+    .animate-pulse-glow,
+    .animate-in,
+    .animate-out,
+    .animate-pulse,
+    .animate-spin,
+    .animate-weather-fall,
+    .animate-weather-rain-drop {
+      animation: none !important;
+      transition: none !important;
+    }
+
+    /* Ensure elements that animate into view are visible */
+    .animate-reveal-up {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* Preserve essential state changes without animation */
+    [data-state] {
+      transition: opacity 0.01ms !important;
+    }
+
+    /* Reduce all transitions to minimal */
+    *,
+    *::before,
+    *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+    }
+  }
+}

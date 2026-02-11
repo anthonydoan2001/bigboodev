@@ -1,0 +1,57 @@
+.dark {
+  /* Dark Mode - Deep Void & Neon Accents */
+  --background: oklch(0.1 0.01 260); /* Deep Blue-Black */
+  --foreground: oklch(0.95 0.005 260);
+  --card: oklch(0.13 0.015 260);
+  --card-foreground: oklch(0.95 0.005 260);
+  --popover: oklch(0.15 0.02 260);
+  --popover-foreground: oklch(0.95 0.005 260);
+  --primary: oklch(0.65 0.22 280); /* Bright Neon Violet */
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.22 0.03 270); /* Subtle indigo undertone */
+  --secondary-foreground: oklch(0.90 0.01 260);
+  --muted: oklch(0.18 0.01 260); /* Darker, more neutral */
+  --muted-foreground: oklch(0.65 0.02 260);
+  --accent: oklch(0.45 0.12 200); /* Cyan accent for highlights */
+  --accent-foreground: oklch(0.98 0 0);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  /* Semantic colors */
+  --success: oklch(0.65 0.18 145); /* Vibrant Green */
+  --success-foreground: oklch(0.98 0 0);
+  --warning: oklch(0.75 0.16 85); /* Warm Amber/Gold */
+  --warning-foreground: oklch(0.15 0.02 85);
+  --info: oklch(0.60 0.15 230); /* Blue info */
+  --info-foreground: oklch(0.98 0 0);
+  /* Favorites/Stars */
+  --favorite: oklch(0.80 0.18 85);
+  --favorite-foreground: oklch(0.15 0.02 85);
+  /* Live indicator */
+  --live: oklch(0.60 0.22 25);
+  --live-foreground: oklch(0.98 0 0);
+  /* In-progress state */
+  --in-progress: oklch(0.60 0.15 230);
+  --in-progress-foreground: oklch(0.98 0 0);
+  /* UI elements */
+  --border: oklch(0.25 0.02 260);
+  --input: oklch(0.20 0.015 260);
+  --ring: oklch(0.65 0.22 280);
+  /* Chart colors - Vibrant, distinct hues */
+  --chart-1: oklch(0.65 0.22 280); /* Primary Violet */
+  --chart-2: oklch(0.65 0.18 145); /* Success Green */
+  --chart-3: oklch(0.60 0.15 230); /* Info Blue */
+  --chart-4: oklch(0.75 0.16 85);  /* Warning Amber */
+  --chart-5: oklch(0.55 0.22 25);  /* Destructive Red */
+  --chart-6: oklch(0.60 0.20 320); /* Magenta */
+  --chart-7: oklch(0.55 0.15 200); /* Cyan */
+  --chart-8: oklch(0.70 0.18 60);  /* Orange */
+  /* Sidebar */
+  --sidebar: oklch(0.08 0.01 260); /* Even darker for sidebar */
+  --sidebar-foreground: oklch(0.95 0.005 260);
+  --sidebar-primary: oklch(0.65 0.22 280);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.18 0.02 260);
+  --sidebar-accent-foreground: oklch(0.95 0.005 260);
+  --sidebar-border: oklch(0.20 0.015 260);
+  --sidebar-ring: oklch(0.65 0.22 280);
+}

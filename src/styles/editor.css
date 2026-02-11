@@ -1,0 +1,260 @@
+@layer utilities {
+  /* TipTap Editor Styles - Lists */
+  .ProseMirror ul,
+  .ProseMirror ol {
+    padding-left: 1.5rem;
+    margin: 0.75rem 0;
+  }
+
+  .ProseMirror ul {
+    list-style-type: disc;
+  }
+
+  .ProseMirror ol {
+    list-style-type: decimal;
+  }
+
+  .ProseMirror ul ul {
+    list-style-type: circle;
+  }
+
+  .ProseMirror ol ol {
+    list-style-type: lower-alpha;
+  }
+
+  .ProseMirror li {
+    margin: 0.25rem 0;
+    padding-left: 0.25rem;
+  }
+
+  .ProseMirror li > p {
+    margin: 0;
+  }
+
+  /* Nested lists */
+  .ProseMirror li > ul,
+  .ProseMirror li > ol {
+    margin: 0.25rem 0;
+  }
+
+  /* Code blocks */
+  .ProseMirror pre {
+    background: var(--muted);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin: 0.75rem 0;
+    overflow-x: auto;
+  }
+
+  .ProseMirror pre code {
+    background: transparent;
+    padding: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  /* Blockquotes */
+  .ProseMirror blockquote {
+    border-left: 3px solid var(--primary);
+    padding-left: 1rem;
+    margin: 0.75rem 0;
+    color: var(--muted-foreground);
+  }
+
+  /* Headings */
+  .ProseMirror h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 1rem 0 0.5rem;
+    line-height: 1.2;
+  }
+
+  .ProseMirror h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0.875rem 0 0.5rem;
+    line-height: 1.3;
+  }
+
+  .ProseMirror h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0.75rem 0 0.5rem;
+    line-height: 1.4;
+  }
+
+  /* Links */
+  .ProseMirror a {
+    color: var(--primary);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .ProseMirror a:hover {
+    opacity: 0.8;
+  }
+
+  /* Highlight active list item when editing */
+  .ProseMirror ul li:focus-within,
+  .ProseMirror ol li:focus-within {
+    background-color: hsl(var(--primary) / 0.05);
+    border-radius: 0.25rem;
+    transition: background-color 0.15s ease;
+  }
+
+  /* Placeholder */
+  .ProseMirror p.is-editor-empty:first-child::before {
+    color: var(--muted-foreground);
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
+
+  /* Focus outline */
+  .ProseMirror:focus {
+    outline: none;
+  }
+
+  /* Markdown Block Styles */
+  .markdown-block {
+    user-select: none;
+    background-color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+  }
+
+  .markdown-block:hover {
+    border-color: var(--primary);
+    background-color: var(--secondary);
+  }
+
+  .markdown-block-content {
+    /* Override prose defaults for better spacing */
+    color: var(--foreground);
+  }
+
+  .markdown-block-content * {
+    color: inherit;
+  }
+
+  .markdown-block-content a {
+    color: var(--primary);
+  }
+
+  .markdown-block-content strong {
+    font-weight: 600;
+  }
+
+  .markdown-block-content h1,
+  .markdown-block-content h2,
+  .markdown-block-content h3,
+  .markdown-block-content h4,
+  .markdown-block-content h5,
+  .markdown-block-content h6 {
+    margin-top: 0.5em;
+    margin-bottom: 0.25em;
+  }
+
+  .markdown-block-content h1:first-child,
+  .markdown-block-content h2:first-child,
+  .markdown-block-content h3:first-child {
+    margin-top: 0;
+  }
+
+  .markdown-block-content p {
+    margin: 0.5em 0;
+  }
+
+  .markdown-block-content p:first-child {
+    margin-top: 0;
+  }
+
+  .markdown-block-content p:last-child {
+    margin-bottom: 0;
+  }
+
+  .markdown-block-content ul,
+  .markdown-block-content ol {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+  }
+
+  .markdown-block-content li {
+    margin: 0.25em 0;
+  }
+
+  /* GFM Task Lists */
+  .markdown-block-content input[type="checkbox"] {
+    margin-right: 0.5em;
+    accent-color: var(--primary);
+  }
+
+  /* GFM Tables */
+  .markdown-block-content table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0.75em 0;
+    font-size: 0.875rem;
+  }
+
+  .markdown-block-content th,
+  .markdown-block-content td {
+    border: 1px solid var(--border);
+    padding: 0.5em 0.75em;
+    text-align: left;
+  }
+
+  .markdown-block-content th {
+    background-color: var(--muted);
+    font-weight: 600;
+  }
+
+  .markdown-block-content tr:nth-child(even) {
+    background-color: var(--muted);
+    opacity: 0.5;
+  }
+
+  /* Code in markdown blocks */
+  .markdown-block-content code {
+    background-color: var(--muted);
+    padding: 0.125em 0.375em;
+    border-radius: 0.25em;
+    font-size: 0.875em;
+  }
+
+  .markdown-block-content pre {
+    background-color: var(--muted);
+    padding: 0.75em 1em;
+    border-radius: 0.5em;
+    overflow-x: auto;
+    margin: 0.75em 0;
+  }
+
+  .markdown-block-content pre code {
+    background: none;
+    padding: 0;
+    font-size: 0.875rem;
+  }
+
+  /* GFM Strikethrough */
+  .markdown-block-content del {
+    text-decoration: line-through;
+    opacity: 0.7;
+  }
+
+  /* Horizontal rule */
+  .markdown-block-content hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1em 0;
+  }
+
+  /* Blockquote */
+  .markdown-block-content blockquote {
+    border-left: 3px solid var(--primary);
+    padding-left: 1em;
+    margin: 0.75em 0;
+    color: var(--muted-foreground);
+  }
+}
