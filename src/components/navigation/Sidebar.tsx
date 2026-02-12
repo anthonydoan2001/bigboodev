@@ -105,7 +105,7 @@ export function Sidebar() {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-2 p-3 overflow-y-auto">
+          <nav className="flex-1 space-y-2 p-3 overflow-y-auto overflow-x-hidden">
             {navItems.map((item, index) => {
               // Special handling for watchlist, sports, games, tasks, notes, and manga to match sub-routes
               const isActive = item.href === '/watchlist'
@@ -204,18 +204,18 @@ export function Sidebar() {
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs text-muted-foreground/60 hover:text-muted-foreground font-mono transition-colors"
+                  className="text-xs text-muted-foreground hover:text-foreground font-mono transition-colors"
                 >
                   {short}
                 </a>
               ) : (
-                <span className="text-xs text-muted-foreground/60 font-mono">{short}</span>
+                <span className="text-xs text-muted-foreground font-mono">{short}</span>
               );
               return (
                 <div className="truncate">
                   {commitEl}
                   {formatted && (
-                    <span className="text-[10px] text-muted-foreground/40 font-mono ml-1.5">
+                    <span className="text-[10px] text-muted-foreground font-mono ml-1.5">
                       {formatted}
                     </span>
                   )}
