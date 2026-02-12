@@ -105,7 +105,7 @@ export function Sidebar() {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-2 p-3">
+          <nav className="flex-1 space-y-2 p-3 overflow-y-auto">
             {navItems.map((item, index) => {
               // Special handling for watchlist, sports, games, tasks, notes, and manga to match sub-routes
               const isActive = item.href === '/watchlist'
@@ -176,6 +176,32 @@ export function Sidebar() {
               );
             })}
           </nav>
+
+          {/* Deploy commit */}
+          <div className={cn(
+            "border-t border-border/40 px-3 py-2 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
+            isCollapsed ? "opacity-0" : "opacity-100"
+          )}>
+            {(() => {
+              const sha = process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA;
+              const short = sha ? sha.slice(0, 7) : 'dev';
+              const href = sha
+                ? `https://github.com/anthonydoan2001/bigboodev/commit/${sha}`
+                : undefined;
+              return href ? (
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-muted-foreground/60 hover:text-muted-foreground font-mono transition-colors"
+                >
+                  {short}
+                </a>
+              ) : (
+                <span className="text-xs text-muted-foreground/60 font-mono">{short}</span>
+              );
+            })()}
+          </div>
         </div>
       </aside>
 
