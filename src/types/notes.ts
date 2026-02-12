@@ -1,4 +1,5 @@
 import { Folder, Note, NoteAttachment } from '@prisma/client';
+import type { TreeNode, TreeSection } from './tree';
 
 // Lightweight task for note editor
 export interface TaskSummary {
@@ -46,24 +47,12 @@ export interface FolderWithChildren extends Folder {
 }
 
 // Section type
-export interface NoteSection {
-  id: string;
-  name: string;
-  position: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export interface NoteSection extends TreeSection {}
 
 // Folder tree structure for rendering
-export interface FolderTreeNode {
-  id: string;
-  name: string;
-  parentId: string | null;
-  sectionId: string | null;
+export interface FolderTreeNode extends TreeNode {
   children: FolderTreeNode[];
   noteCount: number;
-  isPinned: boolean;
-  position: number;
 }
 
 // Input types for creating/updating

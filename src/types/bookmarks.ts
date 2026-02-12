@@ -1,3 +1,5 @@
+import type { TreeNode, TreeSection } from './tree';
+
 // Bookmark for list views
 export interface BookmarkListItem {
   id: string;
@@ -27,13 +29,7 @@ export interface BookmarkWithRelations {
 }
 
 // Section type
-export interface BookmarkSection {
-  id: string;
-  name: string;
-  position: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export interface BookmarkSection extends TreeSection {}
 
 // Folder with nested children
 export interface BookmarkFolderWithChildren {
@@ -51,15 +47,9 @@ export interface BookmarkFolderWithChildren {
 }
 
 // Folder tree structure for rendering
-export interface BookmarkFolderTreeNode {
-  id: string;
-  name: string;
-  parentId: string | null;
-  sectionId: string | null;
+export interface BookmarkFolderTreeNode extends TreeNode {
   children: BookmarkFolderTreeNode[];
   bookmarkCount: number;
-  isPinned: boolean;
-  position: number;
 }
 
 // Section with folders for sidebar rendering
