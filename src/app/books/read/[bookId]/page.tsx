@@ -11,21 +11,10 @@ function ReaderContent({ bookId }: { bookId: number }) {
   const searchParams = useSearchParams();
   const format = searchParams.get('format') || 'epub';
   const urlTitle = searchParams.get('title') || '';
-  const { book, isLoading } = useCalibreBook(bookId);
+  const { book } = useCalibreBook(bookId);
 
   // Use book data if available, otherwise fall back to URL params
   const title = book?.title || urlTitle || `Book #${bookId}`;
-
-  if (isLoading) {
-    return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-white mx-auto" />
-          <p className="text-white/70">Loading book...</p>
-        </div>
-      </div>
-    );
-  }
 
   const actualFormat = format.toLowerCase();
 
