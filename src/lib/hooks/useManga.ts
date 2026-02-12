@@ -1,3 +1,4 @@
+import { CACHE_FAST, CACHE_MODERATE, CACHE_STATIC } from '@/lib/cache-config';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { KomgaBook, KomgaSeries } from '@/types/komga';
 import {
@@ -32,8 +33,7 @@ export function useKomgaSettings() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['komga-settings'],
     queryFn: fetchKomgaSettings,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false,
+    ...CACHE_STATIC,
   });
 
   return {
@@ -92,7 +92,7 @@ export function useDashboard(options?: { enabled?: boolean }) {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['manga', 'dashboard'],
     queryFn: fetchDashboard,
-    staleTime: 60 * 1000, // 1 minute
+    ...CACHE_MODERATE,
     refetchOnWindowFocus: true,
     enabled: options?.enabled !== false,
   });
@@ -132,8 +132,7 @@ export function useLibraries(options?: { enabled?: boolean }) {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['manga', 'libraries'],
     queryFn: fetchLibraries,
-    staleTime: 10 * 60 * 1000, // 10 minutes - libraries rarely change
-    refetchOnWindowFocus: false,
+    ...CACHE_STATIC,
     enabled: options?.enabled !== false,
   });
 
@@ -157,8 +156,7 @@ export function useSeries(options?: {
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['manga', 'series', options?.libraryId, options?.page, options?.size, options?.search],
     queryFn: () => fetchSeries(options),
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    refetchOnWindowFocus: false,
+    ...CACHE_MODERATE,
     enabled: options?.enabled !== false,
   });
 
@@ -179,8 +177,7 @@ export function useSeriesById(seriesId: string | null) {
     queryKey: ['manga', 'series', seriesId],
     queryFn: () => (seriesId ? fetchSeriesById(seriesId) : Promise.resolve(null)),
     enabled: !!seriesId,
-    staleTime: 2 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    ...CACHE_MODERATE,
   });
 
   return {
@@ -202,8 +199,7 @@ export function useBooks(seriesId: string | null, options?: {
     queryKey: ['manga', 'books', seriesId, options?.page, options?.size, options?.unpaged],
     queryFn: () => (seriesId ? fetchBooks(seriesId, options) : Promise.resolve(null)),
     enabled: !!seriesId,
-    staleTime: 2 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    ...CACHE_MODERATE,
   });
 
   return {
@@ -223,10 +219,8 @@ export function useBookById(bookId: string | null, options?: { fresh?: boolean }
     queryKey: ['manga', 'book', bookId],
     queryFn: () => (bookId ? fetchBookById(bookId) : Promise.resolve(null)),
     enabled: !!bookId,
-    // Use shorter stale time to ensure we get fresh progress data
-    staleTime: options?.fresh ? 0 : 30 * 1000, // 30 seconds for regular, 0 for fresh
-    refetchOnWindowFocus: false,
-    refetchOnMount: options?.fresh ? 'always' : true, // Always refetch when mounting reader
+    ...CACHE_FAST,
+    ...(options?.fresh && { staleTime: 0, refetchOnMount: 'always' as const }),
   });
 
   return {
@@ -244,8 +238,7 @@ export function useBookPages(bookId: string | null) {
     queryKey: ['manga', 'pages', bookId],
     queryFn: () => (bookId ? fetchBookPages(bookId) : Promise.resolve([])),
     enabled: !!bookId,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    ...CACHE_STATIC,
   });
 
   return {
@@ -266,7 +259,7 @@ export function useBooksInProgress(options?: {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['manga', 'in-progress', options?.page, options?.size],
     queryFn: () => fetchBooksInProgress(options),
-    staleTime: 60 * 1000, // 1 minute - progress changes frequently
+    ...CACHE_MODERATE,
     refetchOnWindowFocus: true,
     enabled: options?.enabled !== false,
   });
@@ -289,7 +282,7 @@ export function useOnDeck(options?: {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['manga', 'on-deck', options?.page, options?.size],
     queryFn: () => fetchOnDeck(options),
-    staleTime: 60 * 1000,
+    ...CACHE_MODERATE,
     refetchOnWindowFocus: true,
     enabled: options?.enabled !== false,
   });
@@ -311,16 +304,14 @@ export function useAdjacentBooks(bookId: string | null) {
     queryKey: ['manga', 'next-book', bookId],
     queryFn: () => (bookId ? fetchNextBook(bookId) : Promise.resolve(null)),
     enabled: !!bookId,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    ...CACHE_STATIC,
   });
 
   const previousQuery = useQuery({
     queryKey: ['manga', 'previous-book', bookId],
     queryFn: () => (bookId ? fetchPreviousBook(bookId) : Promise.resolve(null)),
     enabled: !!bookId,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    ...CACHE_STATIC,
   });
 
   return {
@@ -548,8 +539,7 @@ export function useReadLists(options?: {
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['manga', 'readlists', options?.page, options?.size, options?.search],
     queryFn: () => fetchReadLists(options),
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    refetchOnWindowFocus: false,
+    ...CACHE_MODERATE,
     enabled: options?.enabled !== false,
   });
 
@@ -570,8 +560,7 @@ export function useReadListById(readListId: string | null) {
     queryKey: ['manga', 'readlist', readListId],
     queryFn: () => (readListId ? fetchReadListById(readListId) : Promise.resolve(null)),
     enabled: !!readListId,
-    staleTime: 2 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    ...CACHE_MODERATE,
   });
 
   return {
@@ -591,8 +580,7 @@ export function useReadListBooks(readListId: string | null, options?: {
     queryKey: ['manga', 'readlist-books', readListId, options?.page, options?.size, options?.unpaged],
     queryFn: () => (readListId ? fetchReadListBooks(readListId, options) : Promise.resolve(null)),
     enabled: !!readListId,
-    staleTime: 2 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    ...CACHE_MODERATE,
   });
 
   return {
@@ -612,16 +600,14 @@ export function useReadListAdjacentBooks(readListId: string | null, bookId: stri
     queryKey: ['manga', 'readlist-next-book', readListId, bookId],
     queryFn: () => (readListId && bookId ? fetchReadListAdjacentBook(readListId, bookId, 'next') : Promise.resolve(null)),
     enabled: !!readListId && !!bookId,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    ...CACHE_STATIC,
   });
 
   const previousQuery = useQuery({
     queryKey: ['manga', 'readlist-previous-book', readListId, bookId],
     queryFn: () => (readListId && bookId ? fetchReadListAdjacentBook(readListId, bookId, 'previous') : Promise.resolve(null)),
     enabled: !!readListId && !!bookId,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    ...CACHE_STATIC,
   });
 
   return {

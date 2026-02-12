@@ -920,7 +920,7 @@ export async function fetchStandings(sport: SportType): Promise<TeamStanding[]> 
     const url = `${standingsBaseUrl}/${path}/standings`;
 
     const response = await fetch(url, {
-      next: { revalidate: 300 }, // 5-minute ISR — standings change infrequently
+      cache: 'no-store',
       headers: {
         'Accept': 'application/json',
       },

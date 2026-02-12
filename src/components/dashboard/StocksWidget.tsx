@@ -2,11 +2,11 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { fetchStockQuotes } from '@/lib/api/stocks';
+import { CACHE_FAST } from '@/lib/cache-config';
 import { cn } from '@/lib/utils';
 import { StockQuote } from '@/types/stocks';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowUp, ArrowDown } from 'lucide-react';
-import { useEffect } from 'react';
 import Image from 'next/image';
 
 function formatPrice(price: number): string {
@@ -86,17 +86,11 @@ function StockCard({ quote }: { quote: StockQuote }) {
 }
 
 export function StocksWidget() {
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['stockQuotes'],
     queryFn: fetchStockQuotes,
-    staleTime: 60000, // Consider stale after 1 minute
-    refetchInterval: 60000, // Auto-refresh every 1 minute
+    ...CACHE_FAST,
   });
-
-  // Refetch on mount and window focus
-  useEffect(() => {
-    refetch();
-  }, [refetch]);
 
   if (isLoading) {
     return (

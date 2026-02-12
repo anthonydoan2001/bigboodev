@@ -6,6 +6,7 @@ import { fetchCommodityQuotesFromDB } from '@/lib/api/commodities';
 import { fetchCryptoQuotesFromDB } from '@/lib/api/crypto';
 import { fetchGasPrice } from '@/lib/api/gas';
 import { fetchStockQuotes } from '@/lib/api/stocks';
+import { CACHE_DASHBOARD } from '@/lib/cache-config';
 import { cn } from '@/lib/utils';
 import { CommodityQuote } from '@/types/commodities';
 import { CryptoQuote } from '@/types/crypto';
@@ -230,35 +231,27 @@ const CommodityCard = memo(function CommodityCard({ commodity }: { commodity: Co
 
 export function PricesWidget() {
   const { data: gasData, isLoading: gasLoading } = useQuery({
-    queryKey: ['gasPrice'],
+    queryKey: ['dashboard', 'gas'],
     queryFn: fetchGasPrice,
-    staleTime: 1800000, // 30 minutes
-    refetchInterval: 1800000,
-    refetchOnMount: 'always' as const,
+    ...CACHE_DASHBOARD,
   });
 
   const { data: stocksData, isLoading: stocksLoading, error: stocksError } = useQuery({
-    queryKey: ['stockQuotes'],
+    queryKey: ['dashboard', 'stocks'],
     queryFn: fetchStockQuotes,
-    staleTime: 3600000, // Consider stale after 1 hour
-    refetchInterval: 3600000, // Auto-refresh every 1 hour
-    refetchOnMount: 'always', // Refetch on mount if stale
+    ...CACHE_DASHBOARD,
   });
 
   const { data: cryptoData, isLoading: cryptoLoading, error: cryptoError } = useQuery({
-    queryKey: ['cryptoQuotes'],
+    queryKey: ['dashboard', 'crypto'],
     queryFn: fetchCryptoQuotesFromDB,
-    staleTime: 3600000, // Consider stale after 1 hour
-    refetchInterval: 3600000, // Auto-refresh every 1 hour
-    refetchOnMount: 'always', // Refetch on mount if stale
+    ...CACHE_DASHBOARD,
   });
 
   const { data: commodityData, isLoading: commodityLoading, error: commodityError } = useQuery({
-    queryKey: ['commodityQuotes'],
+    queryKey: ['dashboard', 'commodities'],
     queryFn: fetchCommodityQuotesFromDB,
-    staleTime: 3600000, // Consider stale after 1 hour
-    refetchInterval: 3600000, // Auto-refresh every 1 hour
-    refetchOnMount: 'always',
+    ...CACHE_DASHBOARD,
   });
 
   const isLoading = stocksLoading || cryptoLoading || gasLoading || commodityLoading;

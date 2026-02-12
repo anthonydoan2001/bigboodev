@@ -1,3 +1,4 @@
+import { CACHE_MODERATE, CACHE_STATIC } from '@/lib/cache-config';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchBookmarks, fetchBookmark, fetchBookmarkFolders, fetchPinnedBookmarks, fetchBookmarkSections } from '@/lib/api/bookmarks';
 import { BookmarksFilters, BookmarkWithRelations, BookmarkFolderTreeNode, BookmarkSection } from '@/types/bookmarks';
@@ -6,9 +7,8 @@ export function useBookmarks(filters?: BookmarksFilters, options?: { includeCoun
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['bookmarks', filters, options?.includeCounts],
     queryFn: () => fetchBookmarks(filters, options?.includeCounts),
-    staleTime: 60000, // 60s to reduce refetches
+    ...CACHE_MODERATE,
     enabled: options?.enabled !== false,
-    refetchOnWindowFocus: false,
   });
 
   return {
@@ -26,8 +26,7 @@ export function useBookmark(id: string | null) {
     queryKey: ['bookmark', id],
     queryFn: () => (id ? fetchBookmark(id) : Promise.resolve(null)),
     enabled: !!id,
-    staleTime: 120000, // 2 minutes
-    refetchOnWindowFocus: false,
+    ...CACHE_MODERATE,
   });
 
   return {
@@ -42,8 +41,7 @@ export function useBookmarkFolders() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['bookmarkFolders'],
     queryFn: fetchBookmarkFolders,
-    staleTime: 120000, // 2 minutes
-    refetchOnWindowFocus: false,
+    ...CACHE_STATIC,
   });
 
   return {
@@ -59,8 +57,7 @@ export function useBookmarkSections() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['bookmarkSections'],
     queryFn: fetchBookmarkSections,
-    staleTime: 120000,
-    refetchOnWindowFocus: false,
+    ...CACHE_STATIC,
   });
 
   return {
@@ -78,7 +75,7 @@ export function usePrefetchBookmarks() {
     queryClient.prefetchQuery({
       queryKey: ['bookmarks', { folderId }, false],
       queryFn: () => fetchBookmarks({ folderId }),
-      staleTime: 60000,
+      ...CACHE_MODERATE,
     });
   };
 }
@@ -87,8 +84,7 @@ export function usePinnedBookmarks(limit: number = 3) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['pinnedBookmarks', limit],
     queryFn: () => fetchPinnedBookmarks(limit),
-    staleTime: 60000, // 1 minute
-    refetchOnWindowFocus: false,
+    ...CACHE_MODERATE,
   });
 
   return {

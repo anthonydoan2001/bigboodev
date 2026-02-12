@@ -2,6 +2,7 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { fetchWeather } from '@/lib/api/weather';
+import { CACHE_SLOW } from '@/lib/cache-config';
 import { useQuery } from '@tanstack/react-query';
 import { WeatherIcon } from './WeatherIcon';
 
@@ -9,8 +10,7 @@ export function WeatherWidget() {
   const { data: weather, isLoading, error } = useQuery({
     queryKey: ['weather'],
     queryFn: fetchWeather,
-    staleTime: 15 * 60 * 1000, // 15 minutes — weather doesn't change fast
-    refetchOnWindowFocus: false,
+    ...CACHE_SLOW,
   });
 
   if (isLoading) {

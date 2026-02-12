@@ -1,3 +1,4 @@
+import { CACHE_FAST, CACHE_MODERATE, CACHE_STATIC } from '@/lib/cache-config';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchCalibreSettings,
@@ -34,8 +35,7 @@ export function useCalibreSettings() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['calibre-settings'],
     queryFn: fetchCalibreSettings,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    ...CACHE_STATIC,
   });
 
   return {
@@ -91,8 +91,7 @@ export function useCalibreBooks(feed: string = 'new', options?: { enabled?: bool
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['calibre', 'books', feed],
     queryFn: () => fetchBooks(feed),
-    staleTime: 2 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    ...CACHE_MODERATE,
     enabled: options?.enabled !== false,
   });
 
@@ -112,8 +111,7 @@ export function useCalibreBook(bookId: number | null) {
     queryKey: ['calibre', 'book', bookId],
     queryFn: () => (bookId ? fetchBookById(bookId) : Promise.resolve(null)),
     enabled: !!bookId,
-    staleTime: 2 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    ...CACHE_MODERATE,
   });
 
   return {
@@ -129,8 +127,7 @@ export function useBookSearch(query: string, options?: { enabled?: boolean }) {
     queryKey: ['calibre', 'search', query],
     queryFn: () => searchBooks(query),
     enabled: (options?.enabled !== false) && query.length > 0,
-    staleTime: 60 * 1000,
-    refetchOnWindowFocus: false,
+    ...CACHE_MODERATE,
   });
 
   return {
@@ -149,8 +146,7 @@ export function useCalibreAuthors(options?: { enabled?: boolean }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['calibre', 'authors'],
     queryFn: fetchAuthors,
-    staleTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    ...CACHE_STATIC,
     enabled: options?.enabled !== false,
   });
 
@@ -161,8 +157,7 @@ export function useCalibreSeries(options?: { enabled?: boolean }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['calibre', 'series'],
     queryFn: fetchSeries,
-    staleTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    ...CACHE_STATIC,
     enabled: options?.enabled !== false,
   });
 
@@ -173,8 +168,7 @@ export function useCalibreShelves(options?: { enabled?: boolean }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['calibre', 'shelves'],
     queryFn: fetchShelves,
-    staleTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    ...CACHE_STATIC,
     enabled: options?.enabled !== false,
   });
 
@@ -189,8 +183,7 @@ export function useReadingProgress(bookId: string | null, format: string | null)
     queryFn: () =>
       bookId && format ? fetchReadingProgress(bookId, format) : Promise.resolve(null),
     enabled: !!bookId && !!format,
-    staleTime: 30 * 1000,
-    refetchOnWindowFocus: false,
+    ...CACHE_FAST,
   });
 
   return {
@@ -205,8 +198,7 @@ export function useRecentlyRead(options?: { enabled?: boolean }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['calibre', 'progress', 'recent'],
     queryFn: fetchRecentlyRead,
-    staleTime: 30 * 1000,
-    refetchOnWindowFocus: false,
+    ...CACHE_FAST,
     enabled: options?.enabled !== false,
   });
 
@@ -250,8 +242,7 @@ export function useAnnotations(bookId: string | null) {
     queryKey: ['calibre', 'annotations', bookId],
     queryFn: () => (bookId ? fetchAnnotations(bookId) : Promise.resolve([])),
     enabled: !!bookId,
-    staleTime: 30 * 1000,
-    refetchOnWindowFocus: false,
+    ...CACHE_FAST,
   });
 
   return { annotations: data ?? [], isLoading, error, refetch };
@@ -293,8 +284,7 @@ export function useBookmarks(bookId: string | null) {
     queryKey: ['calibre', 'bookmarks', bookId],
     queryFn: () => (bookId ? fetchBookmarks(bookId) : Promise.resolve([])),
     enabled: !!bookId,
-    staleTime: 30 * 1000,
-    refetchOnWindowFocus: false,
+    ...CACHE_FAST,
   });
 
   return { bookmarks: data ?? [], isLoading, error, refetch };

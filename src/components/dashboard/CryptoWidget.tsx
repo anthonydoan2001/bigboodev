@@ -2,11 +2,11 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { fetchCryptoQuotesFromDB } from '@/lib/api/crypto';
+import { CACHE_FAST } from '@/lib/cache-config';
 import { cn } from '@/lib/utils';
 import { CryptoQuote } from '@/types/crypto';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowUp, ArrowDown } from 'lucide-react';
-import { useEffect } from 'react';
 import Image from 'next/image';
 
 function formatPrice(price: number): string {
@@ -93,17 +93,11 @@ function CryptoCard({ crypto }: { crypto: CryptoQuote }) {
 }
 
 export function CryptoWidget() {
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['cryptoQuotes'],
     queryFn: fetchCryptoQuotesFromDB,
-    staleTime: 30000, // Consider stale after 30 seconds
-    refetchInterval: 30000, // Auto-refresh every 30 seconds
+    ...CACHE_FAST,
   });
-
-  // Refetch on mount and window focus
-  useEffect(() => {
-    refetch();
-  }, [refetch]);
 
   if (isLoading) {
     return (

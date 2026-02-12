@@ -2,6 +2,7 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CACHE_REALTIME } from '@/lib/cache-config';
 import { GameScore } from '@/types/sports';
 import { useQuery } from '@tanstack/react-query';
 import { Clock } from 'lucide-react';
@@ -118,16 +119,11 @@ export function RocketsGameWidget() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['rockets-game'],
     queryFn: fetchRocketsGames,
-    staleTime: 0,
-    refetchOnWindowFocus: false,
+    ...CACHE_REALTIME,
     refetchInterval: (query) => {
       const result = query.state.data;
-      // Refresh every 30 seconds if there's a live game
-      if (result?.liveGame) {
-        return 30000;
-      }
-      // Otherwise refresh every 5 minutes
-      return 300000;
+      if (result?.liveGame) return 30_000;
+      return 5 * 60_000;
     },
   });
 

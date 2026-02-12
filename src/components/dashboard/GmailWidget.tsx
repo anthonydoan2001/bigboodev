@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchGmailEmails, connectGmail } from '@/lib/api/gmail';
+import { CACHE_MODERATE } from '@/lib/cache-config';
 import { GmailEmail } from '@/types/gmail';
 import { useQuery } from '@tanstack/react-query';
 import { Mail, Circle } from 'lucide-react';
@@ -110,9 +111,7 @@ export const GmailWidget = memo(function GmailWidget() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['gmail'],
     queryFn: fetchGmailEmails,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnMount: true,
-    refetchOnWindowFocus: false,
+    ...CACHE_MODERATE,
   });
 
   useEffect(() => {

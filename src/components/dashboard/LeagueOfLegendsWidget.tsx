@@ -3,10 +3,10 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchLeagueStats, fetchAramChallenge } from '@/lib/api/league-of-legends';
+import { CACHE_MODERATE } from '@/lib/cache-config';
 import { cn } from '@/lib/utils';
 import { RankedEntry, AramChallengeResponse } from '@/types/league-of-legends';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
 import Image from 'next/image';
 import { Swords } from 'lucide-react';
 
@@ -153,25 +153,17 @@ function AramProgressBar({ data }: { data: AramChallengeResponse }) {
 }
 
 export function LeagueOfLegendsWidget() {
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['leagueStats'],
     queryFn: fetchLeagueStats,
-    staleTime: 300000, // 5 minutes
-    refetchInterval: 300000, // Auto-refresh every 5 minutes
+    ...CACHE_MODERATE,
   });
 
-  const { data: aramData, refetch: refetchAram } = useQuery({
+  const { data: aramData } = useQuery({
     queryKey: ['aramChallenge'],
     queryFn: fetchAramChallenge,
-    staleTime: 300000, // 5 minutes
-    refetchInterval: 300000, // Auto-refresh every 5 minutes
+    ...CACHE_MODERATE,
   });
-
-  // Refetch on mount
-  useEffect(() => {
-    refetch();
-    refetchAram();
-  }, [refetch, refetchAram]);
 
   if (isLoading) {
     return (
