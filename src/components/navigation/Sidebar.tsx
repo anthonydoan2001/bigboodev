@@ -74,7 +74,7 @@ export function Sidebar() {
     <>
       <aside
         className={cn(
-          "fixed left-0 top-0 h-screen border-r bg-card/80 backdrop-blur-md z-40",
+          "fixed left-0 top-0 h-screen border-r bg-card/80 backdrop-blur-md z-40 overflow-x-hidden",
           "transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
           isCollapsed ? "w-[70px]" : "w-64"
         )}
@@ -188,7 +188,18 @@ export function Sidebar() {
               const href = sha
                 ? `https://github.com/anthonydoan2001/bigboodev/commit/${sha}`
                 : undefined;
-              return href ? (
+              const buildTime = process.env.NEXT_PUBLIC_BUILD_TIMESTAMP;
+              const formatted = buildTime
+                ? new Date(buildTime).toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true,
+                  })
+                : null;
+              const commitEl = href ? (
                 <a
                   href={href}
                   target="_blank"
@@ -199,6 +210,16 @@ export function Sidebar() {
                 </a>
               ) : (
                 <span className="text-xs text-muted-foreground/60 font-mono">{short}</span>
+              );
+              return (
+                <div className="truncate">
+                  {commitEl}
+                  {formatted && (
+                    <span className="text-[10px] text-muted-foreground/40 font-mono ml-1.5">
+                      {formatted}
+                    </span>
+                  )}
+                </div>
               );
             })()}
           </div>
