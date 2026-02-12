@@ -1,11 +1,16 @@
 'use client';
 
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import Image from 'next/image';
-import { useSwipeable } from 'react-swipeable';
-import { useMangaStore, useSeriesZoom } from '@/lib/stores/manga-store';
-import { useUpdateReadProgress, useAdjacentBooks, useReadListAdjacentBooks } from '@/lib/hooks/useManga';
-import { useDebouncedCallback } from '@/lib/hooks/useDebouncedCallback';
+import { useMangaStore } from '@/lib/stores/manga-store';
+import { useAdjacentBooks, useReadListAdjacentBooks } from '@/lib/hooks/useManga';
+import { useReaderSession } from '@/lib/hooks/manga/reader/useReaderSession';
+import { useScrollTracking } from '@/lib/hooks/manga/reader/useScrollTracking';
+import { useReaderZoom } from '@/lib/hooks/manga/reader/useReaderZoom';
+import { useProgressSaving } from '@/lib/hooks/manga/reader/useProgressSaving';
+import { useAutoHideUI } from '@/lib/hooks/manga/reader/useAutoHideUI';
+import { useReaderKeyboard } from '@/lib/hooks/manga/reader/useReaderKeyboard';
+import { useReaderGestures } from '@/lib/hooks/manga/reader/useReaderGestures';
 import { getPageUrl } from '@/lib/api/manga';
 import { ReaderSettings } from './ReaderSettings';
 import { Button } from '@/components/ui/button';
@@ -35,64 +40,83 @@ interface MangaReaderProps {
 
 export function MangaReader({ book, pages, context = { type: 'series' } }: MangaReaderProps) {
   const router = useRouter();
-  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const [loadedPages, setLoadedPages] = useState<Set<number>>(new Set());
-  const [isHydrated, setIsHydrated] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(true);
-  const hasScrolledToSavedPage = useRef(false);
-  const prevZoomRef = useRef<number | null>(null);
 
   const {
     readingMode,
     currentPage,
-    isUIVisible,
     isSettingsOpen,
-    setSession,
     setCurrentPage,
     goToNextPage,
     goToPreviousPage,
-    showUI,
-    hideUI,
     openSettings,
     closeSettings,
-    setSeriesZoom,
   } = useMangaStore();
 
-  // Use the reactive selector hook for zoom
-  const zoom = useSeriesZoom(book.seriesId);
-  const zoomPercentage = Math.round(zoom * 100);
+  const totalPages = pages.length;
+  const isPageMode = readingMode === 'page-ltr' || readingMode === 'page-rtl';
+  const isRTL = readingMode === 'page-rtl' || readingMode === 'horizontal-scroll-rtl';
 
-  const handleZoomIn = () => {
-    const newZoom = Math.min(2, zoom + 0.1);
-    setSeriesZoom(book.seriesId, newZoom);
-  };
+  // --- Behavioral hooks ---
 
-  const handleZoomOut = () => {
-    const newZoom = Math.max(0.5, zoom - 0.1);
-    setSeriesZoom(book.seriesId, newZoom);
-  };
+  const { zoom, zoomPercentage, handleZoomIn, handleZoomOut, centerScrollPosition } = useReaderZoom({
+    seriesId: book.seriesId,
+    isPageMode,
+    currentPage,
+    scrollContainerRef,
+    pageRefs,
+  });
 
-  // Helper to center scroll position in container (for zoomed page mode)
-  const centerScrollPosition = useCallback(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
+  const { isInitializing } = useReaderSession({
+    book,
+    pages,
+    isPageMode,
+    zoom,
+    currentPage,
+    pageRefs,
+    scrollContainerRef,
+    centerScrollPosition,
+  });
 
-    // Calculate center scroll position
-    const scrollLeft = (container.scrollWidth - container.clientWidth) / 2;
-    const scrollTop = (container.scrollHeight - container.clientHeight) / 2;
+  useScrollTracking({
+    isPageMode,
+    setCurrentPage,
+    pageCount: pages.length,
+    bookId: book.id,
+    scrollContainerRef,
+    pageRefs,
+  });
 
-    container.scrollTo({
-      left: Math.max(0, scrollLeft),
-      top: Math.max(0, scrollTop),
-      behavior: 'instant'
-    });
-  }, []);
+  useProgressSaving({
+    bookId: book.id,
+    currentPage,
+    totalPages,
+  });
 
-  const { updateProgress } = useUpdateReadProgress();
+  const { isUIVisible, resetHideTimer } = useAutoHideUI();
 
-  // Use reading list navigation when coming from a reading list
+  useReaderKeyboard({
+    isRTL,
+    isPageMode,
+    isSettingsOpen,
+    goToNextPage,
+    goToPreviousPage,
+    closeSettings,
+    resetHideTimer,
+  });
+
+  const { swipeHandlers, handleTap } = useReaderGestures({
+    isRTL,
+    isPageMode,
+    goToNextPage,
+    goToPreviousPage,
+    resetHideTimer,
+  });
+
+  // --- Navigation ---
+
   const isReadlistContext = context.type === 'readlist';
   const readlistId = isReadlistContext ? context.readlistId : null;
 
@@ -102,7 +126,6 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
   const nextBook = isReadlistContext ? readlistAdjacent.nextBook : seriesAdjacent.nextBook;
   const previousBook = isReadlistContext ? readlistAdjacent.previousBook : seriesAdjacent.previousBook;
 
-  // Determine back link and navigation URLs based on context
   const backLink = isReadlistContext
     ? `/manga/readlist/${readlistId}`
     : `/manga/series/${book.seriesId}`;
@@ -114,365 +137,25 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
     return `/manga/read/${targetBookId}`;
   };
 
-  const totalPages = pages.length;
-  const isPageMode = readingMode === 'page-ltr' || readingMode === 'page-rtl';
-  const isRTL = readingMode === 'page-rtl' || readingMode === 'horizontal-scroll-rtl';
-
-  // Wait for zustand to hydrate from localStorage
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    const unsubFinishHydration = useMangaStore.persist.onFinishHydration(() => {
-      setIsHydrated(true);
-    });
-
-    // Check if already hydrated (e.g., navigating without refresh)
-    if (useMangaStore.persist.hasHydrated()) {
-      setIsHydrated(true);
-    }
-
-    return () => {
-      unsubFinishHydration();
-    };
-  }, []);
-  /* eslint-enable react-hooks/set-state-in-effect */
-
-  // Initialize session only after hydration
-  useEffect(() => {
-    if (isHydrated) {
-      setSession(book, pages);
-    }
-  }, [isHydrated, book, pages, setSession]);
-
-  // Reset state when book changes
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    hasScrolledToSavedPage.current = false;
-    setIsInitializing(true);
-    // Don't clear pageRefs - they'll be updated naturally and the observer needs them
-  }, [book.id]);
-  /* eslint-enable react-hooks/set-state-in-effect */
-
-  // Scroll to saved page position in scroll modes (after hydration and session init)
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    // If in page mode or starting from page 1, no need to scroll - ready immediately
-    if (!isHydrated) return;
-
-    if (isPageMode || currentPage <= 1) {
-      setIsInitializing(false);
-      // Center scroll position if in page mode with zoom > 1
-      if (isPageMode && zoom > 1) {
-        requestAnimationFrame(() => centerScrollPosition());
-      }
-      return;
-    }
-
-    if (hasScrolledToSavedPage.current) return;
-
-    // Wait for pages to render, then scroll to the saved position
-    // Use requestAnimationFrame to ensure DOM is ready
-    const timeoutIds: NodeJS.Timeout[] = [];
-    let cancelled = false;
-
-    const attemptScroll = (attempt = 0) => {
-      if (cancelled) return;
-
-      const pageElement = pageRefs.current.get(currentPage);
-      if (pageElement && scrollContainerRef.current) {
-        // Use requestAnimationFrame for smoother scroll timing
-        requestAnimationFrame(() => {
-          if (!cancelled && pageElement) {
-            pageElement.scrollIntoView({ behavior: 'instant', block: 'start', inline: 'start' });
-            hasScrolledToSavedPage.current = true;
-            // Wait a bit for scroll to complete, then show content
-            setTimeout(() => setIsInitializing(false), 100);
-          }
-        });
-      } else if (attempt < 20) {
-        // Retry up to 20 times (2 seconds total)
-        const timeoutId = setTimeout(() => attemptScroll(attempt + 1), 100);
-        timeoutIds.push(timeoutId);
-      } else {
-        // Give up after max attempts and show content anyway
-        setIsInitializing(false);
-      }
-    };
-
-    // Start after a small delay to let initial render complete
-    const initialTimeout = setTimeout(() => attemptScroll(0), 150);
-    timeoutIds.push(initialTimeout);
-
-    return () => {
-      cancelled = true;
-      timeoutIds.forEach(id => clearTimeout(id));
-    };
-  }, [isHydrated, isPageMode, currentPage, book.id, zoom, centerScrollPosition]);
-  /* eslint-enable react-hooks/set-state-in-effect */
-
-  // Track visible page in scroll modes using Intersection Observer
-  useEffect(() => {
-    if (isPageMode) return;
-
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    const observerOptions: IntersectionObserverInit = {
-      root: container,
-      rootMargin: '0px',
-      threshold: 0.5, // Trigger when 50% of page is visible
-    };
-
-    const visiblePages = new Set<number>();
-    let rafId: number | null = null;
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        const pageNum = parseInt(entry.target.getAttribute('data-page') || '0', 10);
-        if (pageNum > 0) {
-          if (entry.isIntersecting) {
-            visiblePages.add(pageNum);
-          } else {
-            visiblePages.delete(pageNum);
-          }
-        }
-      });
-
-      // Debounce the page update using requestAnimationFrame
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-      }
-
-      rafId = requestAnimationFrame(() => {
-        // Update current page to the lowest visible page number
-        if (visiblePages.size > 0) {
-          const lowestVisiblePage = Math.min(...visiblePages);
-          setCurrentPage(lowestVisiblePage);
-        }
-      });
-    }, observerOptions);
-
-    // Wait a bit for pages to render, then observe
-    const setupTimer = setTimeout(() => {
-      pageRefs.current.forEach((element) => {
-        observer.observe(element);
-      });
-    }, 200);
-
-    return () => {
-      clearTimeout(setupTimer);
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-      }
-      observer.disconnect();
-    };
-  }, [isPageMode, setCurrentPage, pages.length, book.id]);
-
-  // Preserve scroll position when zoom changes in scroll modes, or center in page mode
-  useEffect(() => {
-    // Skip on initial render (prevZoomRef is null)
-    if (prevZoomRef.current === null) {
-      prevZoomRef.current = zoom;
-      return;
-    }
-
-    // Skip if zoom hasn't changed
-    if (prevZoomRef.current === zoom) return;
-
-    // In page mode, center the scroll position when zoomed in
-    if (isPageMode) {
-      prevZoomRef.current = zoom;
-      if (zoom > 1) {
-        requestAnimationFrame(() => centerScrollPosition());
-      }
-      return;
-    }
-
-    const currentPageEl = pageRefs.current.get(currentPage);
-    if (currentPageEl) {
-      // Use requestAnimationFrame to ensure DOM has updated with new sizes
-      requestAnimationFrame(() => {
-        currentPageEl.scrollIntoView({ behavior: 'instant', block: 'start' });
-      });
-    }
-
-    prevZoomRef.current = zoom;
-  }, [zoom, currentPage, isPageMode, centerScrollPosition]);
-
-  // Debounced progress save - flush on unmount to ensure progress is saved when navigating away
-  const saveProgress = useDebouncedCallback(
-    (page: number, completed: boolean) => {
-      updateProgress({
-        bookId: book.id,
-        progress: { page, completed },
-      });
-    },
-    2000,
-    { flushOnUnmount: true }
-  );
-
-  // Save progress when page changes
-  useEffect(() => {
-    if (currentPage > 0 && totalPages > 0) {
-      const isCompleted = currentPage >= totalPages;
-      saveProgress(currentPage, isCompleted);
-    }
-  }, [currentPage, totalPages, saveProgress]);
-
-  // Auto-hide UI after inactivity
-  const resetHideTimer = useCallback(() => {
-    if (hideTimeoutRef.current) {
-      clearTimeout(hideTimeoutRef.current);
-    }
-    showUI();
-    hideTimeoutRef.current = setTimeout(() => {
-      if (!isSettingsOpen) {
-        hideUI();
-      }
-    }, 3000);
-  }, [showUI, hideUI, isSettingsOpen]);
-
-  useEffect(() => {
-    resetHideTimer();
-    return () => {
-      if (hideTimeoutRef.current) {
-        clearTimeout(hideTimeoutRef.current);
-      }
-    };
-  }, [resetHideTimer]);
-
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (isSettingsOpen) return;
-
-      switch (e.key) {
-        case 'ArrowLeft':
-          if (isRTL) {
-            goToNextPage();
-          } else {
-            goToPreviousPage();
-          }
-          resetHideTimer();
-          break;
-        case 'ArrowRight':
-          if (isRTL) {
-            goToPreviousPage();
-          } else {
-            goToNextPage();
-          }
-          resetHideTimer();
-          break;
-        case 'ArrowUp':
-          if (!isPageMode) {
-            goToPreviousPage();
-            resetHideTimer();
-          }
-          break;
-        case 'ArrowDown':
-          if (!isPageMode) {
-            goToNextPage();
-            resetHideTimer();
-          }
-          break;
-        case 'Escape':
-          if (isSettingsOpen) {
-            closeSettings();
-          }
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isRTL, isPageMode, isSettingsOpen, goToNextPage, goToPreviousPage, resetHideTimer, closeSettings]);
-
-  // Swipe handlers
-  const swipeHandlers = useSwipeable({
-    onSwipedLeft: () => {
-      if (isRTL) {
-        goToPreviousPage();
-      } else {
-        goToNextPage();
-      }
-      resetHideTimer();
-    },
-    onSwipedRight: () => {
-      if (isRTL) {
-        goToNextPage();
-      } else {
-        goToPreviousPage();
-      }
-      resetHideTimer();
-    },
-    onSwipedUp: () => {
-      if (!isPageMode) {
-        goToNextPage();
-        resetHideTimer();
-      }
-    },
-    onSwipedDown: () => {
-      if (!isPageMode) {
-        goToPreviousPage();
-        resetHideTimer();
-      }
-    },
-    preventScrollOnSwipe: isPageMode,
-    trackMouse: false,
-  });
-
-  // Handle tap zones for page mode
-  const handleTap = (e: React.MouseEvent) => {
-    if (!isPageMode) {
-      resetHideTimer();
-      return;
-    }
-
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const width = rect.width;
-
-    // Tap zones: left 1/3 = previous, right 1/3 = next, center = toggle UI
-    if (x < width / 3) {
-      if (isRTL) {
-        goToNextPage();
-      } else {
-        goToPreviousPage();
-      }
-    } else if (x > (width * 2) / 3) {
-      if (isRTL) {
-        goToPreviousPage();
-      } else {
-        goToNextPage();
-      }
-    }
-    resetHideTimer();
-  };
-
-  // Page loaded callback
-  const handlePageLoad = (pageNum: number) => {
-    setLoadedPages((prev) => new Set(prev).add(pageNum));
-  };
-
-  // Navigate to next/previous book
   const handleNextBook = () => {
-    if (nextBook) {
-      router.push(getBookUrl(nextBook.id));
-    }
+    if (nextBook) router.push(getBookUrl(nextBook.id));
   };
 
   const handlePreviousBook = () => {
-    if (previousBook) {
-      router.push(getBookUrl(previousBook.id));
-    }
+    if (previousBook) router.push(getBookUrl(previousBook.id));
   };
 
-  // Render page image
+  // --- Page rendering ---
+
+  const handlePageLoad = useCallback((pageNum: number) => {
+    setLoadedPages((prev) => new Set(prev).add(pageNum));
+  }, []);
+
   const renderPage = (pageNum: number, index: number) => {
     const pageUrl = getPageUrl(book.id, pageNum);
     const page = pages[index];
     const isLoaded = loadedPages.has(pageNum);
 
-    // Calculate zoomed dimensions for scroll modes
     const zoomedWidth = page ? Math.round(page.width * zoom) : undefined;
     const zoomedHeight = page ? Math.round(page.height * zoom) : undefined;
 
@@ -525,6 +208,8 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
     );
   };
 
+  // --- Render ---
+
   return (
     <div
       className="fixed inset-0 bg-black flex flex-col"
@@ -539,7 +224,6 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
         )}
       >
         <div className="bg-gradient-to-b from-black/80 to-transparent px-3 sm:px-4 py-3">
-          {/* Single unified controls row */}
           <div className="relative flex items-center gap-2 sm:gap-3">
             {/* Left: Back + Book Title */}
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
@@ -565,7 +249,7 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
               </div>
             </div>
 
-            {/* Center: Page Navigation + Zoom - Absolutely centered */}
+            {/* Center: Page Navigation + Zoom */}
             <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 sm:gap-1.5 bg-black/30 rounded-lg px-2 sm:px-3 py-1.5">
               <Button
                 variant="ghost"
@@ -662,7 +346,7 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
         </div>
       </div>
 
-      {/* Loading overlay - shown while initializing and scrolling to saved position */}
+      {/* Loading overlay */}
       {isInitializing && (
         <div className="absolute inset-0 bg-black flex items-center justify-center z-40">
           <div className="text-center space-y-4">
@@ -677,27 +361,21 @@ export function MangaReader({ book, pages, context = { type: 'series' } }: Manga
         ref={scrollContainerRef}
         className={cn(
           'flex-1 overflow-auto',
-          // Only center in page mode when zoom <= 1 (content fits in viewport)
-          // When zoomed in (zoom > 1), let content overflow naturally from top-left for proper scrolling
           isPageMode && zoom <= 1 && 'flex items-center justify-center',
           readingMode === 'vertical-scroll' && 'overflow-y-auto overflow-x-hidden',
           readingMode === 'horizontal-scroll-ltr' && 'overflow-x-auto overflow-y-auto flex flex-row',
           readingMode === 'horizontal-scroll-rtl' && 'overflow-x-auto overflow-y-auto flex flex-row-reverse',
-          isInitializing && 'invisible' // Hide content while initializing to prevent flash
+          isInitializing && 'invisible'
         )}
         onClick={handleTap}
       >
         {isPageMode ? (
-          // Page-by-page mode: show only current page with zoom
-          // When zoomed out (zoom <= 1), center the content
-          // When zoomed in (zoom > 1), use min dimensions to enable scrolling from edges
           <div className={cn(
             zoom <= 1 ? 'w-full h-full flex items-center justify-center' : 'min-w-full min-h-full'
           )}>
             {renderPage(currentPage, currentPage - 1)}
           </div>
         ) : (
-          // Scroll mode: show all pages with zoomed dimensions
           <div
             className={cn(
               readingMode === 'vertical-scroll' && 'flex flex-col items-center w-full',
