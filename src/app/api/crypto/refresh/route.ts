@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { fetchCryptoMap, fetchCryptoInfo, fetchCryptoQuotes, retryWithBackoff, CRYPTO_SYMBOLS_TO_TRACK } from '@/lib/api/crypto';
+import { fetchCryptoMap, fetchCryptoInfo, fetchCryptoQuotes, retryWithBackoff, getCryptoSymbols } from '@/lib/api/crypto';
 import { NextResponse } from 'next/server';
 import { withAuthOrCron } from '@/lib/api-auth';
 import { checkMonthlyRateLimit } from '@/lib/api/crypto-rate-limit';
@@ -18,6 +18,8 @@ const METADATA_REFRESH_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
  */
 async function handleRefresh(_request: Request, _auth: { type: 'session' | 'cron'; token: string }) {
   try {
+    const cryptoSymbols = await getCryptoSymbols();
+
     // Proactive rate limit check - skip refresh if approaching monthly limit
     const rateLimitStatus = await checkMonthlyRateLimit();
     if (rateLimitStatus.shouldSkip) {
@@ -61,18 +63,18 @@ async function handleRefresh(_request: Request, _auth: { type: 'session' | 'cron
     }
 
     // Determine which symbols need ID lookup
-    const symbolsNeedingIds = CRYPTO_SYMBOLS_TO_TRACK.filter(s => !idMap.has(s));
+    const symbolsNeedingIds = cryptoSymbols.filter(s => !idMap.has(s));
 
     // Only call fetchCryptoMap if we're missing IDs
     if (symbolsNeedingIds.length > 0) {
-      const mapResponse = await retryWithBackoff(() => fetchCryptoMap());
+      const mapResponse = await retryWithBackoff(() => fetchCryptoMap(cryptoSymbols));
 
       if (!mapResponse.data || !Array.isArray(mapResponse.data)) {
         throw new Error('Invalid response format from CoinMarketCap map');
       }
 
       for (const coin of mapResponse.data) {
-        if (CRYPTO_SYMBOLS_TO_TRACK.includes(coin.symbol)) {
+        if (cryptoSymbols.includes(coin.symbol)) {
           idMap.set(coin.symbol, coin.id);
           // New symbols always need metadata
           if (!quotesNeedingMetadata.includes(coin.symbol)) {
@@ -117,7 +119,7 @@ async function handleRefresh(_request: Request, _auth: { type: 'session' | 'cron
 
     const results = [];
     const errors = [];
-    const allowedSymbols = new Set(CRYPTO_SYMBOLS_TO_TRACK);
+    const allowedSymbols = new Set(cryptoSymbols);
 
     // Step 4: Process and save results
     for (const [id, coinData] of Object.entries(quotesResponse.data)) {

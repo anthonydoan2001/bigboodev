@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { fetchStockQuote, fetchCompanyProfile, retryWithBackoff, STOCK_SYMBOLS, isMarketHours } from '@/lib/api/stocks';
+import { fetchStockQuote, fetchCompanyProfile, retryWithBackoff, getStockSymbols, isMarketHours } from '@/lib/api/stocks';
 import { NextResponse } from 'next/server';
 import { withAuthOrCron } from '@/lib/api-auth';
 
@@ -37,11 +37,12 @@ async function handleRefresh(request: Request, auth: { type: 'session' | 'cron';
       });
     }
 
+    const stockSymbols = await getStockSymbols();
     const results = [];
     const errors = [];
 
     // Fetch all stocks with retry logic
-    for (const symbol of STOCK_SYMBOLS) {
+    for (const symbol of stockSymbols) {
       try {
         void 0; //(`Fetching quote for ${symbol}...`);
         const quote = await retryWithBackoff(() => fetchStockQuote(symbol));

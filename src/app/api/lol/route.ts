@@ -7,10 +7,9 @@ import {
   LeagueStatsResponse,
   RankedEntry,
 } from '@/types/league-of-legends';
+import { getDashboardSettings } from '@/lib/settings';
 
 const RIOT_API_KEY = process.env.RIOT_API_KEY;
-const SUMMONER_NAME = 'ExoticLime';
-const SUMMONER_TAG = 'NA1';
 const REGION = 'na1';
 const AMERICAS_REGION = 'americas';
 
@@ -53,6 +52,10 @@ async function getLeagueStats(): Promise<LeagueStatsResponse> {
   if (cachedData && now - cacheTimestamp < CACHE_TTL) {
     return cachedData;
   }
+
+  const settings = await getDashboardSettings();
+  const SUMMONER_NAME = settings.lol.summonerName;
+  const SUMMONER_TAG = settings.lol.tag;
 
   // Fetch latest DDragon version and account in parallel
   const [versionsRes, account] = await Promise.all([

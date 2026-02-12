@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api-auth';
 import { RiotAccountResponse, AramChallengeResponse } from '@/types/league-of-legends';
+import { getDashboardSettings } from '@/lib/settings';
 
 const RIOT_API_KEY = process.env.RIOT_API_KEY;
-const SUMMONER_NAME = 'ExoticLime';
-const SUMMONER_TAG = 'NA1';
 const REGION = 'na1';
 const AMERICAS_REGION = 'americas';
 
@@ -92,6 +91,10 @@ async function getAramChallengeData(): Promise<AramChallengeResponse> {
   if (cachedData && now - cacheTimestamp < CACHE_TTL) {
     return cachedData;
   }
+
+  const settings = await getDashboardSettings();
+  const SUMMONER_NAME = settings.lol.summonerName;
+  const SUMMONER_TAG = settings.lol.tag;
 
   // Step 1: Get PUUID from Riot ID (Account-V1)
   const accountUrl = `https://${AMERICAS_REGION}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(SUMMONER_NAME)}/${encodeURIComponent(SUMMONER_TAG)}`;

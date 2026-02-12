@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api-auth';
+import { getStockSymbols } from '@/lib/api/stocks';
 
 /**
  * API route to fetch stock quotes from the database
@@ -8,7 +9,9 @@ import { withAuth } from '@/lib/api-auth';
  */
 export const GET = withAuth(async () => {
   try {
+    const configuredSymbols = await getStockSymbols();
     const quotes = await db.stockQuote.findMany({
+      where: { symbol: { in: configuredSymbols } },
       orderBy: { symbol: 'asc' },
     });
 

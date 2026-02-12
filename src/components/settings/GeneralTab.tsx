@@ -2,6 +2,10 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThemeSelector } from './ThemeSelector';
+import { WeatherSettings } from './WeatherSettings';
+import { PricesSettings } from './PricesSettings';
+import { CountdownSettings } from './CountdownSettings';
+import { LeagueSettings } from './LeagueSettings';
 
 export function GeneralTab() {
   return (
@@ -17,6 +21,10 @@ export function GeneralTab() {
           <ThemeSelector />
         </CardContent>
       </Card>
+      <WeatherSettings />
+      <PricesSettings />
+      <CountdownSettings />
+      <LeagueSettings />
     </div>
   );
 }

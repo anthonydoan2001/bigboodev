@@ -656,6 +656,16 @@ model BookBookmark {
   @@map("book_bookmarks")
 }
 
+model DashboardSettings {
+  id        String   @id @default(cuid())
+  userId    String   @unique @map("user_id")
+  settings  Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("dashboard_settings")
+}
+
 model Session {
   id        String   @id @default(cuid())
   token     String   @unique

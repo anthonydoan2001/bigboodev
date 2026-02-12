@@ -1,6 +1,7 @@
 'use client';
 
 import { KomgaSettings } from './KomgaSettings';
+import { CalibreWebSettings } from './CalibreWebSettings';
 
 export function IntegrationsTab() {
   return (
@@ -12,6 +13,7 @@ export function IntegrationsTab() {
         </p>
       </div>
       <KomgaSettings />
+      <CalibreWebSettings />
     </div>
   );
 }

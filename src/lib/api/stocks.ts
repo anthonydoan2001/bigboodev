@@ -1,12 +1,16 @@
 import { FinnhubQuoteResponse, StockQuotesResponse, FinnhubCompanyProfile } from '@/types/stocks';
 import { trackApiUsage } from '@/lib/api-usage';
+import { getDashboardSettings, DASHBOARD_DEFAULTS } from '@/lib/settings';
 
 const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY || 'd5hhjthr01qqequ2hnigd5hhjthr01qqequ2hnj0';
 const FINNHUB_BASE_URL = 'https://finnhub.io/api/v1';
-const STOCKS_TO_TRACK = ['NVDA', 'AAPL', 'MSFT', 'GOOGL', 'TSLA', 'AMZN', 'META'];
 
+export const STOCK_SYMBOLS = DASHBOARD_DEFAULTS.stocks;
 
-export const STOCK_SYMBOLS = STOCKS_TO_TRACK;
+export async function getStockSymbols(): Promise<string[]> {
+  const settings = await getDashboardSettings();
+  return settings.stocks;
+}
 
 /**
  * Fetches company profile (including logo) from Finnhub API

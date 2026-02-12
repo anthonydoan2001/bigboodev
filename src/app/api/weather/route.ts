@@ -2,11 +2,10 @@ import { NextResponse } from 'next/server';
 import { WeatherResponse } from '@/types/weather';
 import { withAuth } from '@/lib/api-auth';
 import { trackApiUsage } from '@/lib/api-usage';
+import { getDashboardSettings } from '@/lib/settings';
 
 const API_KEY = process.env.OPENWEATHER_API_KEY;
 const BASE_URL = 'https://api.openweathermap.org/data/2.5';
-const LAT = '29.9717'; // Cypress, TX Latitude
-const LON = '-95.6938'; // Cypress, TX Longitude
 
 interface OpenWeatherForecastItem {
   dt: number;
@@ -62,6 +61,11 @@ export const GET = withAuth(async () => {
   }
 
   try {
+    const settings = await getDashboardSettings();
+    const LAT = settings.weather.lat;
+    const LON = settings.weather.lon;
+    const locationName = settings.weather.name;
+
     // Fetch Current Weather
     const currentRes = await fetch(
       `${BASE_URL}/weather?lat=${LAT}&lon=${LON}&units=imperial&appid=${API_KEY}`,
@@ -100,7 +104,7 @@ export const GET = withAuth(async () => {
     // Transform Data
     const weather: WeatherResponse = {
       current: {
-        location: 'Cypress, TX',
+        location: locationName,
         temperature: Math.round(currentData.main.temp),
         feelsLike: Math.round(currentData.main.feels_like),
         condition: currentData.weather[0].main,

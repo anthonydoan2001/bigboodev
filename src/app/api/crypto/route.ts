@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api-auth';
+import { getCryptoSymbols } from '@/lib/api/crypto';
 
 /**
  * API route to fetch crypto quotes from the database
@@ -8,7 +9,9 @@ import { withAuth } from '@/lib/api-auth';
  */
 export const GET = withAuth(async () => {
   try {
+    const configuredSymbols = await getCryptoSymbols();
     const quotes = await db.cryptoQuote.findMany({
+      where: { symbol: { in: configuredSymbols } },
       orderBy: { symbol: 'asc' },
     });
 

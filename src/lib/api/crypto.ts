@@ -5,12 +5,17 @@ import {
   CryptoQuotesResponse,
 } from '@/types/crypto';
 import { trackApiUsage } from '@/lib/api-usage';
+import { getDashboardSettings, DASHBOARD_DEFAULTS } from '@/lib/settings';
 
 const CMC_API_KEY = process.env.COINMARKETCAP_API_KEY || '';
 const CMC_BASE_URL = 'https://pro-api.coinmarketcap.com';
-const CRYPTO_SYMBOLS = ['BTC', 'ETH', 'SOL'];
 
-export const CRYPTO_SYMBOLS_TO_TRACK = CRYPTO_SYMBOLS;
+export const CRYPTO_SYMBOLS_TO_TRACK = DASHBOARD_DEFAULTS.crypto;
+
+export async function getCryptoSymbols(): Promise<string[]> {
+  const settings = await getDashboardSettings();
+  return settings.crypto;
+}
 
 /**
  * Sleep utility for retry logic
@@ -57,12 +62,13 @@ export async function retryWithBackoff<T>(
  * Fetches CoinMarketCap ID mapping for crypto symbols
  * Filters to get the main/active coin for each symbol (handles duplicates)
  */
-export async function fetchCryptoMap(): Promise<CoinMarketCapMapResponse> {
+export async function fetchCryptoMap(symbols?: string[]): Promise<CoinMarketCapMapResponse> {
   if (!CMC_API_KEY) {
     throw new Error('COINMARKETCAP_API_KEY is not set');
   }
 
-  const url = `${CMC_BASE_URL}/v1/cryptocurrency/map?symbol=${CRYPTO_SYMBOLS.join(',')}`;
+  const symbolList = symbols || CRYPTO_SYMBOLS_TO_TRACK;
+  const url = `${CMC_BASE_URL}/v1/cryptocurrency/map?symbol=${symbolList.join(',')}`;
   
   const response = await fetch(url, {
     headers: {
