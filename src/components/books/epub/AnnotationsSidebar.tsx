@@ -3,7 +3,7 @@
 import { X, Trash2, Bookmark, Highlighter, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { HIGHLIGHT_DOT_COLORS } from './constants';
+import { HIGHLIGHT_DOT_COLORS } from '../shared/constants';
 import type { BookAnnotation, BookBookmark } from '@/types/calibre-web';
 
 interface AnnotationsSidebarProps {

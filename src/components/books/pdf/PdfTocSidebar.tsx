@@ -3,14 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { X, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface PdfOutlineItem {
-  title: string;
-  dest: string | unknown[] | null;
-  items: PdfOutlineItem[];
-  bold: boolean;
-  italic: boolean;
-}
+import type { PdfOutlineItem } from './hooks/usePdfDocument';
 
 interface PdfTocSidebarProps {
   outline: PdfOutlineItem[];

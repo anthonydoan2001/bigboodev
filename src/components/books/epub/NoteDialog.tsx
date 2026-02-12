@@ -9,7 +9,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ANNOTATION_COLORS, HIGHLIGHT_DOT_COLORS } from './constants';
+import { ANNOTATION_COLORS, HIGHLIGHT_DOT_COLORS } from '../shared/constants';
 import type { BookAnnotation, AnnotationColor } from '@/types/calibre-web';
 
 interface NoteDialogProps {

@@ -1,6 +1,6 @@
 'use client';
 
-import { ANNOTATION_COLORS, HIGHLIGHT_DOT_COLORS } from './constants';
+import { ANNOTATION_COLORS, HIGHLIGHT_DOT_COLORS } from '../shared/constants';
 import { StickyNote } from 'lucide-react';
 import type { AnnotationColor } from '@/types/calibre-web';
 

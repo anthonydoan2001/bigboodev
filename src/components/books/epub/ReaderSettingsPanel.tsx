@@ -4,7 +4,7 @@ import { X, BookOpen, ScrollText, Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useEpubReaderStore, type EpubTheme, type FlowMode } from '@/lib/stores/epub-reader-store';
-import { FONT_FAMILIES } from './constants';
+import { FONT_FAMILIES } from '../shared/constants';
 import { cn } from '@/lib/utils';
 
 interface ReaderSettingsPanelProps {

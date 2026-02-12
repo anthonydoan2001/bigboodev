@@ -3,8 +3,8 @@
 import { use, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useCalibreBook } from '@/lib/hooks/useBooks';
-import { EpubReader } from '@/components/books/EpubReader';
-import { PdfReader } from '@/components/books/PdfReader';
+import { EpubReader } from '@/components/books/epub/EpubReader';
+import { PdfReader } from '@/components/books/pdf/PdfReader';
 import { Loader2 } from 'lucide-react';
 
 function ReaderContent({ bookId }: { bookId: number }) {
