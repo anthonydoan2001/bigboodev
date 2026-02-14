@@ -5,8 +5,8 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     environment: 'node',
-    include: ['__tests__/**/*.test.ts'],
-    setupFiles: ['__tests__/setup.ts'],
+    include: ['tests/**/*.test.ts'],
+    setupFiles: ['tests/setup.ts'],
     coverage: {
       provider: 'v8',
       include: ['src/lib/**/*.ts', 'src/middleware.ts'],
