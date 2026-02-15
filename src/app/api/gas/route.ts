@@ -138,6 +138,4 @@ async function handleGet(request: Request, auth: { type: 'session' | 'cron'; tok
   }
 }
 
-export const GET = process.env.NODE_ENV === 'development'
-  ? async (request: Request) => handleGet(request, { type: 'cron', token: 'dev' })
-  : withAuthOrCron(handleGet);
+export const GET = withAuthOrCron(handleGet);

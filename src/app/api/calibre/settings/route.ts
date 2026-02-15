@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { withAuth } from '@/lib/api-auth';
 import { CalibreWebClient } from '@/lib/calibre-web';
+import { encrypt, decrypt } from '@/lib/credential-encryption';
 
 const DEFAULT_USER_ID = 'default';
 
@@ -72,10 +73,11 @@ export const POST = withAuth(async (request: Request) => {
       );
     }
 
+    const encryptedPassword = encrypt(password);
     const settings = await db.calibreWebSettings.upsert({
       where: { userId: DEFAULT_USER_ID },
-      update: { serverUrl, username, password },
-      create: { userId: DEFAULT_USER_ID, serverUrl, username, password },
+      update: { serverUrl, username, password: encryptedPassword },
+      create: { userId: DEFAULT_USER_ID, serverUrl, username, password: encryptedPassword },
       select: {
         id: true,
         serverUrl: true,
@@ -119,11 +121,11 @@ export const PATCH = withAuth(async (request: Request) => {
     const updateData: { serverUrl?: string; username?: string; password?: string } = {};
     if (serverUrl) updateData.serverUrl = serverUrl;
     if (username) updateData.username = username;
-    if (password) updateData.password = password;
+    if (password) updateData.password = encrypt(password);
 
     const testServerUrl = serverUrl || existing.serverUrl;
     const testUsername = username || existing.username;
-    const testPassword = password || existing.password;
+    const testPassword = password || decrypt(existing.password);
 
     const client = new CalibreWebClient(testServerUrl, testUsername, testPassword);
     const result = await client.testConnection();

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { withAuth } from '@/lib/api-auth';
 import { KomgaClient } from '@/lib/komga';
+import { encrypt, decrypt } from '@/lib/credential-encryption';
 
 const DEFAULT_USER_ID = 'default';
 
@@ -75,19 +76,20 @@ export const POST = withAuth(async (request: Request) => {
       );
     }
 
-    // Upsert settings
+    // Upsert settings (password encrypted at rest)
+    const encryptedPassword = encrypt(password);
     const settings = await db.komgaSettings.upsert({
       where: { userId: DEFAULT_USER_ID },
       update: {
         serverUrl,
         email,
-        password, // In production, this should be encrypted
+        password: encryptedPassword,
       },
       create: {
         userId: DEFAULT_USER_ID,
         serverUrl,
         email,
-        password,
+        password: encryptedPassword,
       },
       select: {
         id: true,
@@ -133,16 +135,16 @@ export const PATCH = withAuth(async (request: Request) => {
       );
     }
 
-    // Build update data
+    // Build update data (encrypt password if provided)
     const updateData: { serverUrl?: string; email?: string; password?: string } = {};
     if (serverUrl) updateData.serverUrl = serverUrl;
     if (email) updateData.email = email;
-    if (password) updateData.password = password;
+    if (password) updateData.password = encrypt(password);
 
-    // Test connection with new settings
+    // Test connection with new settings (decrypt existing password if needed)
     const testServerUrl = serverUrl || existing.serverUrl;
     const testEmail = email || existing.email;
-    const testPassword = password || existing.password;
+    const testPassword = password || decrypt(existing.password);
 
     const client = new KomgaClient(testServerUrl, testEmail, testPassword);
     const result = await client.testConnection();

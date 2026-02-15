@@ -1,6 +1,30 @@
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api-auth';
 
+/**
+ * Block URLs targeting internal networks, cloud metadata, or non-HTTP schemes.
+ */
+function isSafeUrl(urlStr: string): boolean {
+  try {
+    const url = new URL(urlStr);
+    if (!['http:', 'https:'].includes(url.protocol)) return false;
+    const hostname = url.hostname.toLowerCase();
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '[::1]') return false;
+    if (hostname.startsWith('10.')) return false;
+    if (hostname.startsWith('192.168.')) return false;
+    if (hostname.startsWith('172.')) {
+      const second = parseInt(hostname.split('.')[1], 10);
+      if (second >= 16 && second <= 31) return false;
+    }
+    if (hostname === '169.254.169.254') return false;
+    if (hostname.endsWith('.internal') || hostname.endsWith('.local')) return false;
+    if (hostname === '0.0.0.0') return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export const POST = withAuth(async (request: Request, _sessionToken: string) => {
   try {
     const body = await request.json();
@@ -16,6 +40,11 @@ export const POST = withAuth(async (request: Request, _sessionToken: string) => 
       parsedUrl = new URL(url);
     } catch {
       return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
+    }
+
+    // Block internal/private URLs (SSRF protection)
+    if (!isSafeUrl(url)) {
+      return NextResponse.json({ error: 'URL not allowed' }, { status: 400 });
     }
 
     // Fetch the page with timeout

@@ -219,7 +219,4 @@ async function handleRefresh(_request: Request, _auth: { type: 'session' | 'cron
   }
 }
 
-// Export with auth in production, bypass in development
-export const GET = process.env.NODE_ENV === 'development'
-  ? async (request: Request) => handleRefresh(request, { type: 'cron', token: 'dev' })
-  : withAuthOrCron(handleRefresh);
+export const GET = withAuthOrCron(handleRefresh);

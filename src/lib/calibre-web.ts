@@ -14,6 +14,7 @@ import {
   OPDSLink,
 } from '@/types/calibre-web';
 import { db } from '@/lib/db';
+import { decrypt } from '@/lib/credential-encryption';
 
 // ============ Credential Cache ============
 
@@ -34,7 +35,7 @@ export async function getCachedCredentials() {
     cachedClient = null;
     return null;
   }
-  cachedCredentials = { serverUrl: settings.serverUrl, username: settings.username, password: settings.password };
+  cachedCredentials = { serverUrl: settings.serverUrl, username: settings.username, password: decrypt(settings.password) };
   credentialsCachedAt = Date.now();
   cachedClient = null; // invalidate client when credentials refresh
   return cachedCredentials;

@@ -23,27 +23,12 @@
 
 import { NextResponse } from 'next/server';
 import { cleanupOldApiUsage, aggregateRecentHourly, getStorageStats } from '@/lib/api-usage-cleanup';
+import { withAuthOrCron } from '@/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for cleanup
 
-export async function GET(request: Request) {
-  // Verify authorization
-  const authHeader = request.headers.get('authorization');
-  const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
-
-  if (!process.env.CRON_SECRET) {
-    void 0; //('⚠️  CRON_SECRET not set in environment variables');
-  }
-
-  if (authHeader !== expectedAuth) {
-    void 0; //('Unauthorized cleanup attempt');
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
-  }
-
+async function handleCleanup(_request: Request, _auth: { type: 'session' | 'cron'; token: string }) {
   const startTime = Date.now();
 
   try {
@@ -98,19 +83,17 @@ export async function GET(request: Request) {
       {
         success: false,
         error: 'Cleanup failed',
-        details: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
+        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined,
       },
       { status: 500 }
     );
   }
 }
 
+export const GET = withAuthOrCron(handleCleanup);
+
 /**
  * Manual trigger (for testing)
  * POST /api/cron/cleanup-api-usage
  */
-export async function POST(request: Request) {
-  // Same as GET but allows manual triggering
-  return GET(request);
-}
+export const POST = withAuthOrCron(handleCleanup);

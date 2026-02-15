@@ -2,13 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, requireAuth } from '@/lib/api-auth';
 import { getCachedClient, getCoverPaths, setCoverPathWorked } from '@/lib/calibre-web';
 
-// Paths that don't require session auth (images accessed directly by browser)
+// Paths that don't require session auth (images accessed directly by browser/Next.js Image)
 function isBinaryPath(path: string[]): boolean {
   if (path.length < 2) return false;
-  // covers: books/{id}/cover
+  // covers only: books/{id}/cover
   if (path[path.length - 1] === 'cover') return true;
-  // downloads: books/{id}/download/{format}
-  if (path.length >= 3 && path[path.length - 2] === 'download') return true;
+  // Note: downloads require auth — not exempted here
   return false;
 }
 

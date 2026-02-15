@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { withAuth } from '@/lib/api-auth';
 import { createBasicAuthHeader } from '@/lib/komga';
+import { decrypt } from '@/lib/credential-encryption';
 
 const DEFAULT_USER_ID = 'default';
 
@@ -17,7 +18,7 @@ async function getKomgaCredentials() {
   return {
     serverUrl: settings.serverUrl,
     email: settings.email,
-    password: settings.password,
+    password: decrypt(settings.password),
   };
 }
 
